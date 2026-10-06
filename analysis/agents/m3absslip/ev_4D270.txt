@@ -1,0 +1,4100 @@
+4D270:  subi r0,32
+4D272:  movi r1,16
+4D274:  stm r8-r15,(r0)
+4D276:  bseti r1,7
+4D278:  subu r0,r1
+4D27A:  movi r7,120
+4D27C:  addu r7,r0
+4D27E:  movi r6,0
+4D280:  st.h r6,(r7,0)
+4D282:  st.h r6,(r7,2)
+4D284:  addi r7,2
+4D286:  mov r8,r7
+4D288:  addi r8,14
+4D28A:  ld.b r1,(r8,2)
+4D28C:  ld.b r2,(r8,3)
+4D28E:  bclri r1,5
+4D290:  bclri r1,7
+4D292:  bclri r1,6
+4D294:  bclri r1,2
+4D296:  bclri r2,3
+4D298:  bclri r1,1
+4D29A:  bclri r1,0
+4D29C:  bclri r2,7
+4D29E:  bclri r2,2
+4D2A0:  bclri r1,3
+4D2A2:  ld.b r10,(r8,4)
+4D2A4:  bclri r2,0
+4D2A6:  bclri r1,4
+4D2A8:  bclri r2,6
+4D2AA:  bclri r10,7
+4D2AC:  st.b r1,(r8,2)
+4D2AE:  bclri r2,5
+4D2B0:  bclri r10,4
+4D2B2:  ld.b r1,(r8,5)
+4D2B4:  bclri r10,2
+4D2B6:  bclri r2,1
+4D2B8:  bclri r10,1
+4D2BA:  st.b r2,(r8,3)
+4D2BC:  bclri r1,7
+4D2BE:  bclri r10,0
+4D2C0:  bclri r1,6
+4D2C2:  movi r2,104
+4D2C4:  st.b r10,(r8,4)
+4D2C6:  st.b r1,(r8,5)
+4D2C8:  st.h r6,(r7,10)
+4D2CA:  st.h r6,(r7,12)
+4D2CC:  st.h r6,(r8,0)
+4D2CE:  addu r2,r0
+4D2D0:  jsri [0x4d670] ; -> 0x0004f85a
+4D2D2:  movi r2,104
+4D2D4:  addu r2,r0
+4D2D6:  jsri [0x4d674] ; -> 0x0004fff6
+4D2D8:  movi r2,104
+4D2DA:  addu r2,r0
+4D2DC:  movi r6,0
+4D2DE:  st.h r6,(r2,0)
+4D2E0:  st.h r6,(r2,2)
+4D2E2:  addi r2,2
+4D2E4:  subi r2,2
+4D2E6:  jsri [0x4d678] ; -> 0x0004f7d6
+4D2E8:  movi r2,124
+4D2EA:  addu r2,r0
+4D2EC:  movi r6,0
+4D2EE:  subi r2,20
+4D2F0:  st.h r6,(r2,20)
+4D2F2:  jsri [0x4d67c] ; -> 0x0004f5d4
+4D2F4:  movi r2,110
+4D2F6:  addu r2,r0
+4D2F8:  movi r6,0
+4D2FA:  st.h r6,(r2,0)
+4D2FC:  st.h r6,(r2,2)
+4D2FE:  st.h r6,(r2,4)
+4D300:  st.h r6,(r2,6)
+4D302:  addi r2,6
+4D304:  subi r2,12
+4D306:  jsri [0x4d680] ; -> 0x00052380
+4D308:  movi r2,104
+4D30A:  addu r2,r0
+4D30C:  jsri [0x4d684] ; -> 0x00052774
+4D30E:  movi r2,104
+4D310:  addu r2,r0
+4D312:  jsri [0x4d688] ; -> 0x00052c54
+4D314:  movi r2,104
+4D316:  addu r2,r0
+4D318:  jsri [0x4d68c] ; -> 0x00052cd0
+4D31A:  movi r2,104
+4D31C:  addu r2,r0
+4D31E:  jsri [0x4d690] ; -> 0x0004f38e
+4D320:  movi r2,108
+4D322:  addu r2,r0
+4D324:  movi r6,0
+4D326:  subi r2,4
+4D328:  st.h r6,(r2,4)
+4D32A:  jsri [0x4d694] ; -> 0x000477e8
+4D32C:  movi r2,126
+4D32E:  addu r2,r0
+4D330:  movi r6,0
+4D332:  subi r2,22
+4D334:  st.h r6,(r2,22)
+4D336:  jsri [0x4d698] ; -> 0x000466a4
+4D338:  lrw r10,[0x4d69c] ; = 0x00400978
+4D33A:  ld.w r10,(r10,0)
+4D33C:  btsti r10,7
+4D33E:  bf 0x4d380
+4D340:  lrw r1,[0x4d6a0] ; = 0x00408daa
+4D342:  lrw r7,[0x4d6a4] ; = 0x00408da8
+4D344:  ld.h r1,(r1,0)
+4D346:  ld.h r7,(r7,0)
+4D348:  sexth r1
+4D34A:  sexth r7
+4D34C:  cmplt r7,r1
+4D34E:  bf 0x4d37c
+4D350:  lrw r7,[0x4d6a8] ; = 0x00402914
+4D352:  ld.b r7,(r7,0)
+4D354:  btsti r7,6
+4D356:  bt 0x4d368
+4D358:  lrw r7,[0x4d6ac] ; = 0x00408dc6
+4D35A:  movi r6,64
+4D35C:  ld.b r7,(r7,0)
+4D35E:  bseti r6,7
+4D360:  and r7,r6
+4D362:  movi r6,64
+4D364:  cmpne r7,r6
+4D366:  bf 0x4d37c
+4D368:  ld.h r6,(r10,26)
+4D36A:  mov r7,r1
+4D36C:  subu r7,r6
+4D36E:  sexth r7
+4D370:  st.w r7,(r0,40)
+4D372:  ld.h r5,(r10,28)
+4D374:  subu r1,r5
+4D376:  sexth r1
+4D378:  st.w r1,(r0,56)
+4D37A:  br 0x4d3a4
+4D37C:  btsti r10,7
+4D37E:  bt 0x4d38a
+4D380:  lrw r7,[0x4d6b0] ; = 0x00408dea
+4D382:  movi r1,28
+4D384:  ld.b r7,(r7,7)
+4D386:  btsti r7,7
+4D388:  bt 0x4d38c
+4D38A:  movi r1,26
+4D38C:  lrw r2,[0x4d6a4] ; = 0x00408da8
+4D38E:  mov r6,r10
+4D390:  addu r6,r1
+4D392:  ld.h r2,(r2,0)
+4D394:  ld.h r6,(r6,0)
+4D396:  rsub r6,r2
+4D398:  sexth r6
+4D39A:  st.w r6,(r0,40)
+4D39C:  ld.h r5,(r10,28)
+4D39E:  rsub r5,r2
+4D3A0:  sexth r5
+4D3A2:  st.w r5,(r0,56)
+4D3A4:  movi r6,0
+4D3A6:  st.w r6,(r0,60)
+4D3A8:  st.w r10,(r0,44)
+4D3AA:  btsti r10,7
+4D3AC:  bt 0x4d3ba
+4D3AE:  movi r1,64
+4D3B0:  xor r1,r10
+4D3B2:  lrw r7,[0x4d69c] ; = 0x00400978
+4D3B4:  movi r5,64
+4D3B6:  xor r5,r1
+4D3B8:  st.w r5,(r7,0)
+4D3BA:  lrw r10,[0x4d69c] ; = 0x00400978
+4D3BC:  ld.w r10,(r10,0)
+4D3BE:  ld.b r1,(r10,0)
+4D3C0:  btsti r1,5
+4D3C2:  bf 0x4d3dc
+4D3C4:  movi r7,57
+4D3C6:  addu r7,r10
+4D3C8:  ld.b r7,(r7,0)
+4D3CA:  sextb r7
+4D3CC:  cmplti r7,14
+4D3CE:  bt 0x4d3d4
+4D3D0:  btsti r10,7
+4D3D2:  bf 0x4d48a
+4D3D4:  lrw r7,[0x4d6b0] ; = 0x00408dea
+4D3D6:  ld.b r7,(r7,5)
+4D3D8:  btsti r7,1
+4D3DA:  bf 0x4d40e
+4D3DC:  btsti r10,7
+4D3DE:  bf 0x4d48a
+4D3E0:  btsti r1,5
+4D3E2:  bf 0x4d48a
+4D3E4:  lrw r7,[0x4d6b0] ; = 0x00408dea
+4D3E6:  ld.b r7,(r7,2)
+4D3E8:  btsti r7,2
+4D3EA:  bt 0x4d48a
+4D3EC:  movi r1,64
+4D3EE:  lrw r7,[0x4d69c] ; = 0x00400978
+4D3F0:  xor r1,r10
+4D3F2:  st.w r1,(r7,0)
+4D3F4:  ld.b r7,(r1,0)
+4D3F6:  btsti r7,5
+4D3F8:  bt 0x4d40e
+4D3FA:  lrw r7,[0x4d6a4] ; = 0x00408da8
+4D3FC:  ld.h r6,(r1,26)
+4D3FE:  ld.h r7,(r7,0)
+4D400:  sexth r6
+4D402:  sexth r7
+4D404:  subu r7,r6
+4D406:  movi r6,72
+4D408:  bseti r6,7
+4D40A:  cmplt r6,r7
+4D40C:  bf 0x4d48a
+4D40E:  lrw r7,[0x4d69c] ; = 0x00400978
+4D410:  ld.w r6,(r0,44)
+4D412:  movi r5,42
+4D414:  st.w r6,(r7,0)
+4D416:  ld.w r6,(r0,44)
+4D418:  lrw r10,[0x4d6b4] ; = 0x0040903a
+4D41A:  addu r5,r6
+4D41C:  ld.h r6,(r5,0)
+4D41E:  ixh r6,r6
+4D420:  addu r10,r6
+4D422:  ld.b r7,(r10,1)
+4D424:  btsti r7,7
+4D426:  bt 0x4d48a
+4D428:  ld.b r7,(r10,2)
+4D42A:  btsti r7,7
+4D42C:  bt 0x4d48a
+4D42E:  ld.w r7,(r0,44)
+4D430:  movi r10,64
+4D432:  bseti r10,7
+4D434:  xor r10,r7
+4D436:  lrw r7,[0x4d69c] ; = 0x00400978
+4D438:  movi r6,42
+4D43A:  addu r6,r10
+4D43C:  st.w r10,(r7,0)
+4D43E:  ld.h r6,(r6,0)
+4D440:  lrw r7,[0x4d6b8] ; = 0x0040905e
+4D442:  ixh r6,r6
+4D444:  addu r7,r6
+4D446:  ld.b r7,(r7,0)
+4D448:  btsti r7,0
+4D44A:  bf 0x4d454
+4D44C:  lrw r7,[0x4d6bc] ; = 0x00408e68
+4D44E:  ld.b r7,(r7,0)
+4D450:  btsti r7,5
+4D452:  bt 0x4d48a
+4D454:  lrw r7,[0x4d69c] ; = 0x00400978
+4D456:  ld.w r6,(r0,44)
+4D458:  st.w r6,(r7,0)
+4D45A:  movi r7,110
+4D45C:  addu r7,r0
+4D45E:  movi r6,120
+4D460:  ld.h r7,(r7,0)
+4D462:  addu r6,r0
+4D464:  ld.h r6,(r6,0)
+4D466:  sexth r7
+4D468:  asri r7,1
+4D46A:  sexth r6
+4D46C:  addu r7,r6
+4D46E:  movi r6,122
+4D470:  addu r6,r0
+4D472:  ld.h r6,(r6,0)
+4D474:  sexth r6
+4D476:  addu r7,r6
+4D478:  ld.w r6,(r0,40)
+4D47A:  cmplt r6,r7
+4D47C:  bt 0x4d500
+4D47E:  ld.w r7,(r0,40)
+4D480:  movi r6,25
+4D482:  lsli r6,4
+4D484:  cmplt r6,r7
+4D486:  bf 0x4d500
+4D488:  br 0x4d4fc
+4D48A:  lrw r7,[0x4d69c] ; = 0x00400978
+4D48C:  ld.w r6,(r0,44)
+4D48E:  st.w r6,(r7,0)
+4D490:  ld.w r7,(r0,44)
+4D492:  movi r6,57
+4D494:  addu r6,r7
+4D496:  ld.b r7,(r6,0)
+4D498:  sextb r7
+4D49A:  cmplti r7,25
+4D49C:  bf 0x4d4c2
+4D49E:  lrw r7,[0x4d798] ; = 0x00408daf
+4D4A0:  movi r6,75
+4D4A2:  ld.b r7,(r7,0)
+4D4A4:  rsubi r6,0
+4D4A6:  sextb r7
+4D4A8:  cmplt r7,r6
+4D4AA:  bf 0x4d4ce
+4D4AC:  ld.w r6,(r0,44)
+4D4AE:  movi r5,42
+4D4B0:  addu r5,r6
+4D4B2:  lrw r7,[0x4d79c] ; = 0x00408f2a
+4D4B4:  ld.h r6,(r5,0)
+4D4B6:  ixh r7,r6
+4D4B8:  ld.h r7,(r7,0)
+4D4BA:  lrw r6,[0x4d7a0] ; = 0x00001388
+4D4BC:  sexth r7
+4D4BE:  cmplt r6,r7
+4D4C0:  bf 0x4d4ce
+4D4C2:  ld.w r7,(r0,44)
+4D4C4:  movi r10,6
+4D4C6:  addi r7,24
+4D4C8:  ld.b r7,(r7,0)
+4D4CA:  btsti r7,3
+4D4CC:  bt 0x4d4d6
+4D4CE:  movi r2,104
+4D4D0:  addu r2,r0
+4D4D2:  jsri [0x4d7a4] ; -> 0x0004f278
+4D4D4:  movi r10,14
+4D4D6:  mov r7,r0
+4D4D8:  addu r7,r10
+4D4DA:  movi r6,104
+4D4DC:  addu r7,r6
+4D4DE:  movi r6,120
+4D4E0:  addu r6,r0
+4D4E2:  ld.h r7,(r7,0)
+4D4E4:  ld.h r6,(r6,0)
+4D4E6:  sexth r7
+4D4E8:  sexth r6
+4D4EA:  addu r7,r6
+4D4EC:  movi r6,122
+4D4EE:  addu r6,r0
+4D4F0:  ld.h r6,(r6,0)
+4D4F2:  sexth r6
+4D4F4:  addu r7,r6
+4D4F6:  ld.w r6,(r0,40)
+4D4F8:  cmplt r6,r7
+4D4FA:  bt 0x4d500
+4D4FC:  movi r6,1
+4D4FE:  st.w r6,(r0,60)
+4D500:  lrw r7,[0x4d69c] ; = 0x00400978
+4D502:  ld.w r6,(r0,44)
+4D504:  movi r5,106
+4D506:  st.w r6,(r7,0)
+4D508:  ld.w r14,(r0,44)
+4D50A:  movi r6,108
+4D50C:  addi r14,32
+4D50E:  ld.h r1,(r14,10)
+4D510:  addu r6,r0
+4D512:  ld.h r2,(r6,0)
+4D514:  mov r10,r1
+4D516:  lrw r7,[0x4d7a8] ; = 0x004090ee
+4D518:  lsli r10,1
+4D51A:  sexth r2
+4D51C:  addu r7,r10
+4D51E:  addi r6,12
+4D520:  st.h r2,(r7,0)
+4D522:  subi r6,10
+4D524:  movi r7,122
+4D526:  ld.h r4,(r6,10)
+4D528:  addu r7,r0
+4D52A:  ld.h r11,(r7,0)
+4D52C:  ld.h r6,(r6,0)
+4D52E:  sexth r4
+4D530:  addu r5,r0
+4D532:  sexth r11
+4D534:  lrw r7,[0x4d7ac] ; = 0x004090f6
+4D536:  addu r6,r4
+4D538:  ld.h r5,(r5,0)
+4D53A:  addu r6,r11
+4D53C:  addu r7,r10
+4D53E:  addu r6,r5
+4D540:  st.h r6,(r7,0)
+4D542:  movi r6,112
+4D544:  addu r6,r0
+4D546:  movi r7,36
+4D548:  ld.h r6,(r6,0)
+4D54A:  addu r7,r0
+4D54C:  lrw r13,[0x4d7b0] ; = 0x004090fe
+4D54E:  st.h r6,(r7,0)
+4D550:  ld.h r7,(r7,0)
+4D552:  addu r13,r10
+4D554:  st.h r7,(r13,0)
+4D556:  movi r6,114
+4D558:  lrw r7,[0x4d7b4] ; = 0x00409106
+4D55A:  addu r6,r0
+4D55C:  ld.h r6,(r6,0)
+4D55E:  addu r7,r10
+4D560:  st.h r6,(r7,0)
+4D562:  movi r6,116
+4D564:  lrw r7,[0x4d7b8] ; = 0x0040910e
+4D566:  addu r6,r0
+4D568:  ld.h r6,(r6,0)
+4D56A:  addu r7,r10
+4D56C:  st.h r6,(r7,0)
+4D56E:  lrw r7,[0x4d7bc] ; = 0x00409130
+4D570:  mov r6,r1
+4D572:  movi r5,10
+4D574:  mult r6,r5
+4D576:  addu r7,r6
+4D578:  movi r6,126
+4D57A:  addu r6,r0
+4D57C:  ld.h r6,(r6,0)
+4D57E:  lrw r10,[0x4d6b4] ; = 0x0040903a
+4D580:  mov r3,r1
+4D582:  ixh r3,r3
+4D584:  st.h r6,(r7,0)
+4D586:  addu r3,r10
+4D588:  ld.b r1,(r3,0)
+4D58A:  btsti r1,6
+4D58C:  bt 0x4d598
+4D58E:  ld.b r7,(r3,1)
+4D590:  btsti r7,4
+4D592:  bf 0x4d5b0
+4D594:  btsti r1,7
+4D596:  bt 0x4d5b0
+4D598:  lrw r7,[0x4d6bc] ; = 0x00408e68
+4D59A:  ld.b r7,(r7,0)
+4D59C:  btsti r7,7
+4D59E:  bt 0x4d5b0
+4D5A0:  movi r7,36
+4D5A2:  movi r6,106
+4D5A4:  addu r7,r0
+4D5A6:  addu r6,r0
+4D5A8:  ld.h r7,(r7,0)
+4D5AA:  ld.h r6,(r6,0)
+4D5AC:  addu r6,r7
+4D5AE:  st.h r6,(r13,0)
+4D5B0:  movi r6,116
+4D5B2:  addu r6,r0
+4D5B4:  ld.h r6,(r6,0)
+4D5B6:  movi r1,100
+4D5B8:  sexth r6
+4D5BA:  mult r6,r1
+4D5BC:  divs r6,r1
+4D5BE:  ld.w r5,(r0,40)
+4D5C0:  ld.w r7,(r0,44)
+4D5C2:  cmplt r5,r6
+4D5C4:  mvcv r6
+4D5C6:  btsti r7,7
+4D5C8:  st.w r6,(r0,52)
+4D5CA:  bt 0x4d626
+4D5CC:  lrw r7,[0x4d6ac] ; = 0x00408dc6
+4D5CE:  ld.b r7,(r7,0)
+4D5D0:  btsti r7,2
+4D5D2:  bf 0x4d626
+4D5D4:  ld.w r7,(r0,44)
+4D5D6:  ld.b r7,(r7,0)
+4D5D8:  btsti r7,0
+4D5DA:  bt 0x4d626
+4D5DC:  ld.h r13,(r14,10)
+4D5DE:  lrw r7,[0x4d8a0] ; = 0x00408ef7
+4D5E0:  addu r7,r13
+4D5E2:  ld.b r7,(r7,0)
+4D5E4:  cmplti r7,16
+4D5E6:  bt 0x4d626
+4D5E8:  lrw r7,[0x4d79c] ; = 0x00408f2a
+4D5EA:  ixh r7,r13
+4D5EC:  ld.h r14,(r7,0)
+4D5EE:  ld.w r7,(r0,44)
+4D5F0:  movi r13,64
+4D5F2:  xor r13,r7
+4D5F4:  lrw r7,[0x4d69c] ; = 0x00400978
+4D5F6:  sexth r14
+4D5F8:  st.w r13,(r7,0)
+4D5FA:  ld.b r7,(r13,0)
+4D5FC:  btsti r7,0
+4D5FE:  bf 0x4d61e
+4D600:  movi r6,42
+4D602:  addu r6,r13
+4D604:  lrw r7,[0x4d8a4] ; = 0x00408ff0
+4D606:  ld.h r6,(r6,0)
+4D608:  movi r1,10
+4D60A:  ixh r7,r6
+4D60C:  ld.h r7,(r7,0)
+4D60E:  movi r6,12
+4D610:  sexth r7
+4D612:  mult r7,r6
+4D614:  divs r7,r1
+4D616:  cmplt r7,r14
+4D618:  bf 0x4d61e
+4D61A:  movi r6,1
+4D61C:  st.w r6,(r0,52)
+4D61E:  lrw r7,[0x4d69c] ; = 0x00400978
+4D620:  movi r6,64
+4D622:  xor r6,r13
+4D624:  st.w r6,(r7,0)
+4D626:  movi r6,0
+4D628:  movi r7,110
+4D62A:  st.w r6,(r0,44)
+4D62C:  addu r7,r0
+4D62E:  ld.h r7,(r7,0)
+4D630:  lrw r14,[0x4d69c] ; = 0x00400978
+4D632:  sexth r7
+4D634:  addu r7,r4
+4D636:  ld.w r6,(r0,40)
+4D638:  addu r7,r11
+4D63A:  ld.w r14,(r14,0)
+4D63C:  cmplt r6,r7
+4D63E:  bt 0x4d656
+4D640:  ld.b r7,(r8,2)
+4D642:  btsti r7,4
+4D644:  bf 0x4d656
+4D646:  movi r6,42
+4D648:  addu r6,r14
+4D64A:  lrw r11,[0x4d8a8] ; = 0x00409056
+4D64C:  ld.h r6,(r6,0)
+4D64E:  ixh r11,r6
+4D650:  ld.b r7,(r11,0)
+4D652:  bseti r7,2
+4D654:  st.b r7,(r11,0)
+4D656:  ld.h r11,(r14,6)
+4D658:  sexth r11
+4D65A:  cmplt r11,r2
+4D65C:  bf 0x4d664
+4D65E:  ld.b r7,(r14,0)
+4D660:  btsti r7,5
+4D662:  bf 0x4d6de
+4D664:  movi r5,42
+4D666:  addu r5,r14
+4D668:  lrw r6,[0x4d8ac] ; = 0x00409026
+4D66A:  ld.h r5,(r5,0)
+4D66C:  br 0x4d6c0
+4D66E:  bkpt
+4D670:  stop
+4D672:  bsr 0x4d728
+4D674:  stop
+4D676:  bsr 0x4d664
+4D678:  stop
+4D67A:  br 0x4d628
+4D67C:  stop
+4D67E:  br 0x4d228
+4D680:  wait
+4D682:  cmplti r0,25
+4D684:  wait
+4D686:  .short 0x2774
+4D688:  wait
+4D68A:  bmaski r4,5
+4D68C:  wait
+4D68E:  bmaski r0,13
+4D690:  stop
+4D692:  br 0x4ddb0
+4D694:  stop
+4D696:  lrw r7,[0x4da38] ; = 0x71a61d55
+4D698:  stop
+4D69A:  movi r4,106
+4D69C:  ldq r4-r7,(r0)
+4D69E:  .short 0x0978
+4D6A0:  ldq r4-r7,(r0)
+4D6A2:  ld.w r13,(r10,40)
+4D6A4:  ldq r4-r7,(r0)
+4D6A6:  ld.w r13,(r8,40)
+4D6A8:  ldq r4-r7,(r0)
+4D6AA:  rsubi r4,17
+4D6AC:  ldq r4-r7,(r0)
+4D6AE:  ld.w r13,(r6,48)
+4D6B0:  ldq r4-r7,(r0)
+4D6B2:  ld.w r13,(r10,56)
+4D6B4:  ldq r4-r7,(r0)
+4D6B6:  st.w r0,(r10,12)
+4D6B8:  ldq r4-r7,(r0)
+4D6BA:  st.w r0,(r14,20)
+4D6BC:  ldq r4-r7,(r0)
+4D6BE:  ld.w r14,(r8,24)
+4D6C0:  ixh r6,r5
+4D6C2:  ld.h r1,(r6,0)
+4D6C4:  sexth r1
+4D6C6:  btsti r1,31
+4D6C8:  inct r1
+4D6CA:  asri r1,1
+4D6CC:  btsti r1,31
+4D6CE:  mov r13,r1
+4D6D0:  bt 0x4d6d4
+4D6D2:  bmaski r13,32
+4D6D4:  cmplt r11,r13
+4D6D6:  bf 0x4d6f0
+4D6D8:  ld.b r7,(r14,0)
+4D6DA:  btsti r7,5
+4D6DC:  bf 0x4d6f0
+4D6DE:  movi r6,42
+4D6E0:  addu r6,r14
+4D6E2:  ld.h r6,(r6,0)
+4D6E4:  lrw r7,[0x4d9cc] ; = 0x0040902e
+4D6E6:  ixh r6,r6
+4D6E8:  addu r7,r6
+4D6EA:  ld.b r7,(r7,0)
+4D6EC:  btsti r7,3
+4D6EE:  bf 0x4d73c
+4D6F0:  mov r1,r14
+4D6F2:  addi r1,32
+4D6F4:  ld.h r14,(r1,10)
+4D6F6:  lrw r7,[0x4d9cc] ; = 0x0040902e
+4D6F8:  mov r6,r14
+4D6FA:  ixh r6,r6
+4D6FC:  addu r7,r6
+4D6FE:  ld.b r7,(r7,0)
+4D700:  btsti r7,3
+4D702:  bf 0x4d710
+4D704:  mov r7,r2
+4D706:  btsti r2,31
+4D708:  inct r7
+4D70A:  asri r7,1
+4D70C:  cmplt r11,r7
+4D70E:  bt 0x4d73c
+4D710:  movi r7,50
+4D712:  rsubi r7,0
+4D714:  cmplt r11,r7
+4D716:  bf 0x4d740
+4D718:  lrw r7,[0x4d8a8] ; = 0x00409056
+4D71A:  ixh r7,r14
+4D71C:  ld.b r7,(r7,0)
+4D71E:  btsti r7,2
+4D720:  bf 0x4d740
+4D722:  movi r6,100
+4D724:  ld.h r7,(r1,0)
+4D726:  rsubi r6,0
+4D728:  sexth r7
+4D72A:  cmplt r7,r6
+4D72C:  bf 0x4d740
+4D72E:  lrw r7,[0x4d798] ; = 0x00408daf
+4D730:  movi r6,60
+4D732:  ld.b r7,(r7,0)
+4D734:  rsubi r6,0
+4D736:  sextb r7
+4D738:  cmplt r6,r7
+4D73A:  bf 0x4d740
+4D73C:  movi r6,1
+4D73E:  st.w r6,(r0,44)
+4D740:  movi r2,84
+4D742:  addu r2,r0
+4D744:  movi r6,0
+4D746:  st.w r6,(r2,0)
+4D748:  addi r2,20
+4D74A:  jsri [0x4d9d0] ; -> 0x0004f518
+4D74C:  ld.w r7,(r0,44)
+4D74E:  cmpnei r7,0
+4D750:  bf 0x4d834
+4D752:  movi r7,112
+4D754:  addu r7,r0
+4D756:  ld.h r11,(r7,0)
+4D758:  ld.w r7,(r0,40)
+4D75A:  sexth r11
+4D75C:  cmplt r7,r11
+4D75E:  bt 0x4d776
+4D760:  lrw r7,[0x4d9d4] ; = 0x00400978
+4D762:  lrw r6,[0x4d9d8] ; = 0xfffffefc
+4D764:  ld.w r7,(r7,0)
+4D766:  addi r7,32
+4D768:  ld.h r7,(r7,0)
+4D76A:  sexth r7
+4D76C:  cmplt r7,r6
+4D76E:  bt 0x4d7c2
+4D770:  ld.b r7,(r8,4)
+4D772:  btsti r7,1
+4D774:  bt 0x4d7c2
+4D776:  bgeni r7,7
+4D778:  addu r7,r0
+4D77A:  ld.h r7,(r7,2)
+4D77C:  ld.w r6,(r0,40)
+4D77E:  sexth r7
+4D780:  addu r7,r11
+4D782:  cmplt r6,r7
+4D784:  bt 0x4d7d8
+4D786:  lrw r7,[0x4d9d4] ; = 0x00400978
+4D788:  lrw r6,[0x4d9d8] ; = 0xfffffefc
+4D78A:  ld.w r7,(r7,0)
+4D78C:  addi r7,32
+4D78E:  ld.h r7,(r7,0)
+4D790:  sexth r7
+4D792:  cmplt r7,r6
+4D794:  br 0x4d7c0
+4D796:  bkpt
+4D798:  ldq r4-r7,(r0)
+4D79A:  ld.w r13,(r15,40)
+4D79C:  ldq r4-r7,(r0)
+4D79E:  ld.w r15,(r10,8)
+4D7A0:  bkpt
+4D7A2:  bgenr r8,r8
+4D7A4:  stop
+4D7A6:  br 0x4dc98
+4D7A8:  ldq r4-r7,(r0)
+4D7AA:  st.w r0,(r14,56)
+4D7AC:  ldq r4-r7,(r0)
+4D7AE:  st.w r0,(r6,60)
+4D7B0:  ldq r4-r7,(r0)
+4D7B2:  st.w r0,(r14,60)
+4D7B4:  ldq r4-r7,(r0)
+4D7B6:  st.w r1,(r6,0)
+4D7B8:  ldq r4-r7,(r0)
+4D7BA:  st.w r1,(r14,0)
+4D7BC:  ldq r4-r7,(r0)
+4D7BE:  st.w r1,(r0,12)
+4D7C0:  bt 0x4d7d8
+4D7C2:  ld.b r7,(r8,4)
+4D7C4:  btsti r7,3
+4D7C6:  bf 0x4d86a
+4D7C8:  lrw r7,[0x4d9d4] ; = 0x00400978
+4D7CA:  ld.w r7,(r7,0)
+4D7CC:  addi r7,16
+4D7CE:  ld.b r7,(r7,0)
+4D7D0:  lsri r7,5
+4D7D2:  andi r7,7
+4D7D4:  cmplti r7,3
+4D7D6:  bt 0x4d86a
+4D7D8:  movi r7,120
+4D7DA:  addu r7,r0
+4D7DC:  ld.h r7,(r7,0)
+4D7DE:  ld.w r6,(r0,40)
+4D7E0:  sexth r7
+4D7E2:  addu r7,r11
+4D7E4:  cmplt r6,r7
+4D7E6:  bt 0x4d804
+4D7E8:  ld.b r7,(r8,4)
+4D7EA:  btsti r7,3
+4D7EC:  bf 0x4d804
+4D7EE:  lrw r7,[0x4d9d4] ; = 0x00400978
+4D7F0:  ld.w r7,(r7,0)
+4D7F2:  addi r7,16
+4D7F4:  ld.b r11,(r7,0)
+4D7F6:  mov r7,r11
+4D7F8:  lsri r7,5
+4D7FA:  andi r7,7
+4D7FC:  cmplti r7,3
+4D7FE:  bf 0x4d86a
+4D800:  btsti r11,4
+4D802:  bt 0x4d86a
+4D804:  lrw r7,[0x4dacc] ; = 0x00408da1
+4D806:  movi r6,96
+4D808:  ld.b r7,(r7,0)
+4D80A:  bseti r6,7
+4D80C:  tst r7,r6
+4D80E:  bf 0x4d818
+4D810:  lrw r7,[0x4dad0] ; = 0x00401ff2
+4D812:  ld.b r7,(r7,0)
+4D814:  btsti r7,7
+4D816:  bt 0x4d86a
+4D818:  lrw r7,[0x4dad4] ; = 0x00408db5
+4D81A:  ld.b r7,(r7,0)
+4D81C:  btsti r7,4
+4D81E:  bf 0x4d834
+4D820:  lrw r7,[0x4d9d4] ; = 0x00400978
+4D822:  ld.w r7,(r7,0)
+4D824:  btsti r7,7
+4D826:  bt 0x4d834
+4D828:  lrw r7,[0x4dad8] ; = 0x00408da8
+4D82A:  lrw r6,[0x4dadc] ; = 0x000005dc
+4D82C:  ld.h r7,(r7,0)
+4D82E:  sexth r7
+4D830:  cmplt r7,r6
+4D832:  bt 0x4d86a
+4D834:  movi r6,108
+4D836:  addu r6,r0
+4D838:  lrw r11,[0x4d9d4] ; = 0x00400978
+4D83A:  ld.h r6,(r6,0)
+4D83C:  ld.w r11,(r11,0)
+4D83E:  sexth r6
+4D840:  ixh r6,r6
+4D842:  ld.h r7,(r11,6)
+4D844:  btsti r6,31
+4D846:  inct r6
+4D848:  sexth r7
+4D84A:  asri r6,1
+4D84C:  cmplt r7,r6
+4D84E:  bf 0x4d88c
+4D850:  movi r7,112
+4D852:  addu r7,r0
+4D854:  ld.h r7,(r7,0)
+4D856:  ld.w r6,(r0,40)
+4D858:  sexth r7
+4D85A:  btsti r7,31
+4D85C:  inct r7
+4D85E:  asri r7,1
+4D860:  cmplt r7,r6
+4D862:  bf 0x4d88c
+4D864:  ld.b r7,(r11,0)
+4D866:  btsti r7,0
+4D868:  bf 0x4d88c
+4D86A:  movi r7,84
+4D86C:  addu r7,r0
+4D86E:  movi r6,1
+4D870:  lrw r11,[0x4d9d4] ; = 0x00400978
+4D872:  st.w r6,(r7,0)
+4D874:  ld.w r11,(r11,0)
+4D876:  ld.b r7,(r11,0)
+4D878:  btsti r7,5
+4D87A:  bt 0x4d896
+4D87C:  movi r5,42
+4D87E:  addu r5,r11
+4D880:  lrw r1,[0x4d8a8] ; = 0x00409056
+4D882:  ld.h r5,(r5,0)
+4D884:  ixh r1,r5
+4D886:  ld.b r6,(r1,0)
+4D888:  bclri r6,1
+4D88A:  st.b r6,(r1,0)
+4D88C:  movi r7,84
+4D88E:  addu r7,r0
+4D890:  ld.w r7,(r7,0)
+4D892:  cmpnei r7,0
+4D894:  bf 0x4d8d8
+4D896:  ld.b r7,(r8,4)
+4D898:  andi r7,6
+4D89A:  cmpnei r7,6
+4D89C:  bt 0x4d8d8
+4D89E:  br 0x4d8b0
+4D8A0:  ldq r4-r7,(r0)
+4D8A2:  ld.w r14,(r7,60)
+4D8A4:  ldq r4-r7,(r0)
+4D8A6:  ld.w r15,(r0,60)
+4D8A8:  ldq r4-r7,(r0)
+4D8AA:  st.w r0,(r6,20)
+4D8AC:  ldq r4-r7,(r0)
+4D8AE:  st.w r0,(r6,8)
+4D8B0:  lrw r14,[0x4d9d4] ; = 0x00400978
+4D8B2:  ld.w r14,(r14,0)
+4D8B4:  ld.b r7,(r14,0)
+4D8B6:  btsti r7,5
+4D8B8:  bt 0x4d8d8
+4D8BA:  mov r11,r14
+4D8BC:  addi r11,32
+4D8BE:  ld.h r14,(r11,10)
+4D8C0:  lrw r1,[0x4d9cc] ; = 0x0040902e
+4D8C2:  ixh r14,r14
+4D8C4:  addu r14,r1
+4D8C6:  ld.b r7,(r14,0)
+4D8C8:  bseti r7,3
+4D8CA:  st.b r7,(r14,0)
+4D8CC:  ld.h r14,(r11,10)
+4D8CE:  ixh r14,r14
+4D8D0:  addu r14,r1
+4D8D2:  ld.b r7,(r14,0)
+4D8D4:  bseti r7,2
+4D8D6:  st.b r7,(r14,0)
+4D8D8:  movi r7,29
+4D8DA:  addu r7,r0
+4D8DC:  ld.b r11,(r7,0)
+4D8DE:  lrw r14,[0x4d9d4] ; = 0x00400978
+4D8E0:  bclri r11,3
+4D8E2:  st.b r11,(r7,0)
+4D8E4:  ld.w r14,(r14,0)
+4D8E6:  btsti r14,7
+4D8E8:  bf 0x4d908
+4D8EA:  lrw r13,[0x4dbd0] ; = 0x00409046
+4D8EC:  ld.b r2,(r13,15)
+4D8EE:  btsti r2,3
+4D8F0:  bt 0x4d992
+4D8F2:  ld.b r1,(r13,11)
+4D8F4:  btsti r1,3
+4D8F6:  bt 0x4d992
+4D8F8:  btsti r2,2
+4D8FA:  bt 0x4d992
+4D8FC:  btsti r1,2
+4D8FE:  bt 0x4d992
+4D900:  lrw r7,[0x4dbd4] ; = 0x00408da2
+4D902:  ld.b r7,(r7,0)
+4D904:  btsti r7,5
+4D906:  bt 0x4d992
+4D908:  ld.b r7,(r14,0)
+4D90A:  btsti r7,6
+4D90C:  bf 0x4d992
+4D90E:  lrw r7,[0x4dbd8] ; = 0x00408e1a
+4D910:  ld.b r7,(r7,2)
+4D912:  btsti r7,7
+4D914:  bf 0x4d992
+4D916:  movi r6,42
+4D918:  addu r6,r14
+4D91A:  ld.h r1,(r6,0)
+4D91C:  lrw r7,[0x4dbdc] ; = 0x00409014
+4D91E:  addu r7,r1
+4D920:  ld.b r7,(r7,0)
+4D922:  cmpnei r7,0
+4D924:  bf 0x4d992
+4D926:  ld.h r13,(r14,6)
+4D928:  sexth r13
+4D92A:  btsti r13,31
+4D92C:  bt 0x4d94e
+4D92E:  lrw r7,[0x4dbe0] ; = 0x00408e7b
+4D930:  ld.b r7,(r7,0)
+4D932:  movi r6,52
+4D934:  cmplt r6,r7
+4D936:  bf 0x4d992
+4D938:  cmpnei r13,0
+4D93A:  bt 0x4d992
+4D93C:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4D93E:  ld.b r7,(r7,0)
+4D940:  movi r6,100
+4D942:  cmplt r7,r6
+4D944:  bf 0x4d992
+4D946:  lrw r7,[0x4dbe8] ; = 0x004031aa
+4D948:  ld.b r7,(r7,1)
+4D94A:  cmpnei r7,10
+4D94C:  bt 0x4d992
+4D94E:  lrw r13,[0x4dbec] ; = 0x00408e80
+4D950:  movi r7,50
+4D952:  ld.h r13,(r13,0)
+4D954:  rsubi r7,0
+4D956:  sexth r13
+4D958:  cmplt r13,r7
+4D95A:  bt 0x4d96a
+4D95C:  addi r7,20
+4D95E:  cmplt r13,r7
+4D960:  bf 0x4d992
+4D962:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4D964:  ld.b r7,(r7,0)
+4D966:  cmplti r7,20
+4D968:  bf 0x4d992
+4D96A:  lrw r13,[0x4d9cc] ; = 0x0040902e
+4D96C:  ixh r1,r1
+4D96E:  addu r13,r1
+4D970:  ld.b r7,(r13,0)
+4D972:  andi r7,18
+4D974:  cmpnei r7,0
+4D976:  bt 0x4d98a
+4D978:  lrw r7,[0x4dbf0] ; = 0x00408dea
+4D97A:  ld.b r7,(r7,1)
+4D97C:  btsti r7,0
+4D97E:  bf 0x4d992
+4D980:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4D982:  ld.b r7,(r7,0)
+4D984:  movi r6,50
+4D986:  cmplt r7,r6
+4D988:  bf 0x4d992
+4D98A:  ld.b r7,(r13,1)
+4D98C:  movi r1,1
+4D98E:  btsti r7,7
+4D990:  bf 0x4da12
+4D992:  lrw r1,[0x4dbec] ; = 0x00408e80
+4D994:  movi r6,50
+4D996:  ld.h r1,(r1,0)
+4D998:  rsubi r6,0
+4D99A:  sexth r1
+4D99C:  cmplt r6,r1
+4D99E:  bt 0x4d9a8
+4D9A0:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4D9A2:  ld.b r7,(r7,0)
+4D9A4:  cmplti r7,20
+4D9A6:  bf 0x4d9ba
+4D9A8:  movi r6,42
+4D9AA:  addu r6,r14
+4D9AC:  ld.h r6,(r6,0)
+4D9AE:  lrw r7,[0x4dbf4] ; = 0x0040902f
+4D9B0:  ixh r6,r6
+4D9B2:  addu r7,r6
+4D9B4:  ld.b r7,(r7,0)
+4D9B6:  btsti r7,7
+4D9B8:  bt 0x4da10
+4D9BA:  ld.b r7,(r14,0)
+4D9BC:  btsti r7,0
+4D9BE:  bt 0x4da10
+4D9C0:  lrw r7,[0x4dbd8] ; = 0x00408e1a
+4D9C2:  ld.b r7,(r7,2)
+4D9C4:  btsti r7,7
+4D9C6:  bf 0x4da10
+4D9C8:  movi r5,42
+4D9CA:  br 0x4d9dc
+4D9CC:  ldq r4-r7,(r0)
+4D9CE:  st.w r0,(r14,8)
+4D9D0:  stop
+4D9D2:  br 0x4d404
+4D9D4:  ldq r4-r7,(r0)
+4D9D6:  .short 0x0978
+4D9D8:  bsr 0x4d9d8
+4D9DA:  bsr 0x4d7d4
+4D9DC:  addu r5,r14
+4D9DE:  lrw r6,[0x4dcc8] ; = 0x00408f2a
+4D9E0:  ld.h r5,(r5,0)
+4D9E2:  lrw r7,[0x4dccc] ; = 0x00408eb2
+4D9E4:  ixh r6,r5
+4D9E6:  ld.h r7,(r7,0)
+4D9E8:  ld.h r6,(r6,0)
+4D9EA:  sexth r7
+4D9EC:  sexth r6
+4D9EE:  subu r7,r6
+4D9F0:  bmaski r6,10
+4D9F2:  subi r6,23
+4D9F4:  cmplt r7,r6
+4D9F6:  bt 0x4da10
+4D9F8:  mov r7,r14
+4D9FA:  addi r7,16
+4D9FC:  ld.b r7,(r7,0)
+4D9FE:  lsri r7,5
+4DA00:  andi r7,7
+4DA02:  cmplti r7,2
+4DA04:  bt 0x4da2a
+4DA06:  lrw r7,[0x4dbe0] ; = 0x00408e7b
+4DA08:  ld.b r7,(r7,0)
+4DA0A:  movi r6,52
+4DA0C:  cmplt r7,r6
+4DA0E:  bf 0x4da2a
+4DA10:  movi r1,0
+4DA12:  movi r6,42
+4DA14:  addu r6,r14
+4DA16:  ld.h r6,(r6,0)
+4DA18:  lrw r13,[0x4dcd0] ; = 0x0040902e
+4DA1A:  ixh r6,r6
+4DA1C:  addu r13,r6
+4DA1E:  ld.b r7,(r13,1)
+4DA20:  andi r1,1
+4DA22:  bclri r7,7
+4DA24:  lsli r1,7
+4DA26:  or r7,r1
+4DA28:  st.b r7,(r13,1)
+4DA2A:  lrw r7,[0x4dbd8] ; = 0x00408e1a
+4DA2C:  ld.b r7,(r7,1)
+4DA2E:  btsti r7,5
+4DA30:  bf 0x4da44
+4DA32:  movi r5,42
+4DA34:  addu r5,r14
+4DA36:  ld.h r5,(r5,0)
+4DA38:  lrw r1,[0x4dcd0] ; = 0x0040902e
+4DA3A:  ixh r5,r5
+4DA3C:  addu r1,r5
+4DA3E:  ld.b r6,(r1,1)
+4DA40:  bclri r6,7
+4DA42:  st.b r6,(r1,1)
+4DA44:  ld.h r1,(r14,6)
+4DA46:  sexth r1
+4DA48:  btsti r1,31
+4DA4A:  bt 0x4db7a
+4DA4C:  mov r13,r14
+4DA4E:  movi r6,126
+4DA50:  addi r13,32
+4DA52:  addu r6,r0
+4DA54:  ld.h r4,(r6,0)
+4DA56:  ld.h r3,(r13,4)
+4DA58:  sexth r4
+4DA5A:  sexth r3
+4DA5C:  cmplt r3,r4
+4DA5E:  bt 0x4db7a
+4DA60:  lrw r7,[0x4dbec] ; = 0x00408e80
+4DA62:  movi r6,100
+4DA64:  ld.h r7,(r7,0)
+4DA66:  rsubi r6,0
+4DA68:  sexth r7
+4DA6A:  cmplt r7,r6
+4DA6C:  bf 0x4da84
+4DA6E:  lrw r7,[0x4dbd8] ; = 0x00408e1a
+4DA70:  ld.b r7,(r7,2)
+4DA72:  btsti r7,7
+4DA74:  bf 0x4da84
+4DA76:  lrw r7,[0x4dbd4] ; = 0x00408da2
+4DA78:  movi r2,32
+4DA7A:  ld.b r7,(r7,0)
+4DA7C:  bseti r2,7
+4DA7E:  and r7,r2
+4DA80:  cmpne r7,r2
+4DA82:  bf 0x4db7a
+4DA84:  ld.h r2,(r13,10)
+4DA86:  lrw r12,[0x4dcd0] ; = 0x0040902e
+4DA88:  mov r6,r2
+4DA8A:  ixh r6,r6
+4DA8C:  addu r12,r6
+4DA8E:  ld.b r7,(r12,0)
+4DA90:  andi r7,18
+4DA92:  cmpnei r7,0
+4DA94:  bf 0x4daee
+4DA96:  lrw r5,[0x4dcd4] ; = 0x00408daf
+4DA98:  movi r6,10
+4DA9A:  ld.b r5,(r5,0)
+4DA9C:  rsubi r6,0
+4DA9E:  sextb r5
+4DAA0:  cmplt r5,r6
+4DAA2:  bf 0x4dab4
+4DAA4:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4DAA6:  ld.b r7,(r7,0)
+4DAA8:  cmplti r7,24
+4DAAA:  bf 0x4dab4
+4DAAC:  lrw r7,[0x4dbf0] ; = 0x00408dea
+4DAAE:  ld.b r7,(r7,1)
+4DAB0:  btsti r7,0
+4DAB2:  bt 0x4dae4
+4DAB4:  movi r6,50
+4DAB6:  rsubi r6,0
+4DAB8:  cmplt r5,r6
+4DABA:  bf 0x4daee
+4DABC:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4DABE:  ld.b r7,(r7,0)
+4DAC0:  movi r6,60
+4DAC2:  cmplt r7,r6
+4DAC4:  bf 0x4daee
+4DAC6:  lrw r7,[0x4dbf0] ; = 0x00408dea
+4DAC8:  ld.b r7,(r7,1)
+4DACA:  br 0x4dae0
+4DACC:  ldq r4-r7,(r0)
+4DACE:  ld.w r13,(r1,40)
+4DAD0:  ldq r4-r7,(r0)
+4DAD2:  andn r2,r15
+4DAD4:  ldq r4-r7,(r0)
+4DAD6:  ld.w r13,(r5,44)
+4DAD8:  ldq r4-r7,(r0)
+4DADA:  ld.w r13,(r8,40)
+4DADC:  bkpt
+4DADE:  subu r12,r13
+4DAE0:  btsti r7,0
+4DAE2:  bf 0x4daee
+4DAE4:  lrw r7,[0x4dbe0] ; = 0x00408e7b
+4DAE6:  ld.b r7,(r7,0)
+4DAE8:  movi r6,45
+4DAEA:  cmplt r6,r7
+4DAEC:  bt 0x4db7a
+4DAEE:  movi r6,50
+4DAF0:  cmplt r1,r6
+4DAF2:  bf 0x4db32
+4DAF4:  btsti r1,31
+4DAF6:  bt 0x4db18
+4DAF8:  lrw r7,[0x4dcd4] ; = 0x00408daf
+4DAFA:  rsubi r6,0
+4DAFC:  ld.b r7,(r7,0)
+4DAFE:  sextb r7
+4DB00:  cmplt r7,r6
+4DB02:  bt 0x4db18
+4DB04:  bgeni r7,7
+4DB06:  addu r7,r0
+4DB08:  ld.h r7,(r7,2)
+4DB0A:  ld.w r6,(r0,40)
+4DB0C:  sexth r7
+4DB0E:  btsti r7,31
+4DB10:  inct r7
+4DB12:  asri r7,1
+4DB14:  cmplt r7,r6
+4DB16:  bf 0x4db32
+4DB18:  lrw r7,[0x4dbe0] ; = 0x00408e7b
+4DB1A:  ld.b r7,(r7,0)
+4DB1C:  movi r6,50
+4DB1E:  cmplt r6,r7
+4DB20:  bt 0x4db7a
+4DB22:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4DB24:  ld.b r7,(r7,0)
+4DB26:  cmplti r7,20
+4DB28:  bf 0x4db32
+4DB2A:  lrw r7,[0x4dbf0] ; = 0x00408dea
+4DB2C:  ld.b r7,(r7,1)
+4DB2E:  btsti r7,0
+4DB30:  bt 0x4db7a
+4DB32:  btsti r14,7
+4DB34:  bf 0x4db74
+4DB36:  lrw r7,[0x4dcd4] ; = 0x00408daf
+4DB38:  movi r6,50
+4DB3A:  ld.b r7,(r7,0)
+4DB3C:  rsubi r6,0
+4DB3E:  sextb r7
+4DB40:  cmplt r7,r6
+4DB42:  bf 0x4db68
+4DB44:  lrw r7,[0x4ddd4] ; = 0x00408dde
+4DB46:  ld.h r7,(r7,0)
+4DB48:  cmpnei r7,1
+4DB4A:  bt 0x4db68
+4DB4C:  cmplti r1,1
+4DB4E:  bt 0x4db7a
+4DB50:  cmplt r3,r4
+4DB52:  bt 0x4db7a
+4DB54:  movi r6,100
+4DB56:  ld.h r7,(r13,0)
+4DB58:  rsubi r6,0
+4DB5A:  sexth r7
+4DB5C:  cmplt r7,r6
+4DB5E:  bt 0x4db7a
+4DB60:  lrw r7,[0x4dbd4] ; = 0x00408da2
+4DB62:  ld.b r7,(r7,0)
+4DB64:  btsti r7,7
+4DB66:  bt 0x4db7a
+4DB68:  lrw r7,[0x4ddd8] ; = 0x00409049
+4DB6A:  ixw r7,r2
+4DB6C:  ld.b r7,(r7,0)
+4DB6E:  andi r7,12
+4DB70:  cmpnei r7,0
+4DB72:  bt 0x4db7a
+4DB74:  ld.b r7,(r12,1)
+4DB76:  btsti r7,7
+4DB78:  bf 0x4db82
+4DB7A:  movi r7,29
+4DB7C:  addu r7,r0
+4DB7E:  bseti r11,3
+4DB80:  st.b r11,(r7,0)
+4DB82:  lrw r11,[0x4dddc] ; = 0x0040493a
+4DB84:  ld.b r11,(r11,0)
+4DB86:  btsti r11,4
+4DB88:  bf 0x4dbf8
+4DB8A:  btsti r14,7
+4DB8C:  bt 0x4dd12
+4DB8E:  lrw r7,[0x4dde0] ; = 0x00408dc4
+4DB90:  ld.b r7,(r7,0)
+4DB92:  btsti r7,4
+4DB94:  bf 0x4dbf8
+4DB96:  movi r6,126
+4DB98:  movi r7,36
+4DB9A:  addu r6,r0
+4DB9C:  addu r7,r14
+4DB9E:  ld.h r6,(r6,0)
+4DBA0:  ld.h r7,(r7,0)
+4DBA2:  sexth r6
+4DBA4:  sexth r7
+4DBA6:  addi r6,30
+4DBA8:  cmplt r7,r6
+4DBAA:  bf 0x4dbf8
+4DBAC:  ld.b r7,(r14,0)
+4DBAE:  btsti r7,0
+4DBB0:  bt 0x4dbf8
+4DBB2:  lrw r7,[0x4dbe4] ; = 0x00408e6a
+4DBB4:  ld.b r7,(r7,0)
+4DBB6:  cmplti r7,18
+4DBB8:  bt 0x4dbf8
+4DBBA:  lrw r7,[0x4dbf0] ; = 0x00408dea
+4DBBC:  ld.b r7,(r7,1)
+4DBBE:  btsti r7,0
+4DBC0:  bf 0x4dbf8
+4DBC2:  movi r7,29
+4DBC4:  addu r7,r0
+4DBC6:  ld.b r6,(r7,0)
+4DBC8:  bseti r6,3
+4DBCA:  st.b r6,(r7,0)
+4DBCC:  br 0x4dbf8
+4DBCE:  bkpt
+4DBD0:  ldq r4-r7,(r0)
+4DBD2:  st.w r0,(r6,16)
+4DBD4:  ldq r4-r7,(r0)
+4DBD6:  ld.w r13,(r2,40)
+4DBD8:  ldq r4-r7,(r0)
+4DBDA:  ld.w r14,(r10,4)
+4DBDC:  ldq r4-r7,(r0)
+4DBDE:  st.w r0,(r4,4)
+4DBE0:  ldq r4-r7,(r0)
+4DBE2:  ld.w r14,(r11,28)
+4DBE4:  ldq r4-r7,(r0)
+4DBE6:  ld.w r14,(r10,24)
+4DBE8:  ldq r4-r7,(r0)
+4DBEA:  bclri r10,26
+4DBEC:  ldq r4-r7,(r0)
+4DBEE:  ld.w r14,(r0,32)
+4DBF0:  ldq r4-r7,(r0)
+4DBF2:  ld.w r13,(r10,56)
+4DBF4:  ldq r4-r7,(r0)
+4DBF6:  st.w r0,(r15,8)
+4DBF8:  btsti r14,7
+4DBFA:  bt 0x4dd12
+4DBFC:  lrw r3,[0x4defc] ; = 0x00408da8
+4DBFE:  lrw r6,[0x4df00] ; = 0x00002710
+4DC00:  ld.h r3,(r3,0)
+4DC02:  bmaski r13,9
+4DC04:  sexth r3
+4DC06:  cmplt r3,r6
+4DC08:  subi r13,11
+4DC0A:  bt 0x4dc1e
+4DC0C:  rsub r6,r3
+4DC0E:  movi r1,25
+4DC10:  divs r6,r1
+4DC12:  movi r1,72
+4DC14:  subu r13,r6
+4DC16:  sexth r13
+4DC18:  bseti r1,7
+4DC1A:  cmplt r13,r1
+4DC1C:  movt r13,r1
+4DC1E:  mov r5,r14
+4DC20:  addi r5,16
+4DC22:  ld.b r12,(r5,8)
+4DC24:  btsti r12,3
+4DC26:  bf 0x4dc78
+4DC28:  movi r6,42
+4DC2A:  addu r6,r14
+4DC2C:  ld.h r1,(r6,0)
+4DC2E:  lrw r7,[0x4df04] ; = 0x00408ef7
+4DC30:  addu r7,r1
+4DC32:  ld.b r7,(r7,0)
+4DC34:  cmplti r7,16
+4DC36:  bf 0x4dc78
+4DC38:  movi r4,48
+4DC3A:  addu r4,r14
+4DC3C:  ld.b r2,(r4,9)
+4DC3E:  movi r6,100
+4DC40:  sextb r2
+4DC42:  cmplt r6,r2
+4DC44:  bt 0x4dc62
+4DC46:  movi r6,50
+4DC48:  cmplt r6,r2
+4DC4A:  bf 0x4dc78
+4DC4C:  ld.w r7,(r0,40)
+4DC4E:  movi r6,125
+4DC50:  lsli r6,4
+4DC52:  cmplt r7,r6
+4DC54:  bt 0x4dc62
+4DC56:  ld.b r7,(r4,2)
+4DC58:  movi r6,65
+4DC5A:  cmplt r7,r6
+4DC5C:  bf 0x4dc78
+4DC5E:  btsti r12,5
+4DC60:  bf 0x4dc78
+4DC62:  btsti r12,5
+4DC64:  bf 0x4dc6c
+4DC66:  ld.b r7,(r5,6)
+4DC68:  btsti r7,7
+4DC6A:  bt 0x4dd08
+4DC6C:  lrw r7,[0x4df08] ; = 0x004090b6
+4DC6E:  addu r7,r1
+4DC70:  ld.b r7,(r7,0)
+4DC72:  movi r6,75
+4DC74:  cmplt r6,r7
+4DC76:  bt 0x4dd08
+4DC78:  mov r2,r14
+4DC7A:  addi r2,32
+4DC7C:  ld.h r5,(r2,10)
+4DC7E:  mov r1,r5
+4DC80:  ixh r1,r1
+4DC82:  addu r1,r10
+4DC84:  ld.b r4,(r1,0)
+4DC86:  btsti r4,5
+4DC88:  bt 0x4dc90
+4DC8A:  ld.b r7,(r1,2)
+4DC8C:  btsti r7,6
+4DC8E:  bt 0x4dd08
+4DC90:  ld.b r7,(r1,2)
+4DC92:  btsti r7,6
+4DC94:  bf 0x4dca2
+4DC96:  ld.h r7,(r2,0)
+4DC98:  sexth r7
+4DC9A:  cmplt r7,r13
+4DC9C:  bf 0x4dd08
+4DC9E:  btsti r4,5
+4DCA0:  bf 0x4dd08
+4DCA2:  lrw r7,[0x4df04] ; = 0x00408ef7
+4DCA4:  addu r7,r5
+4DCA6:  ld.b r7,(r7,0)
+4DCA8:  cmplti r7,16
+4DCAA:  bt 0x4dd0e
+4DCAC:  movi r13,48
+4DCAE:  addu r13,r14
+4DCB0:  ld.b r7,(r13,9)
+4DCB2:  movi r6,32
+4DCB4:  sextb r7
+4DCB6:  cmplt r6,r7
+4DCB8:  bf 0x4dd0e
+4DCBA:  bmaski r6,9
+4DCBC:  ld.h r7,(r2,0)
+4DCBE:  subi r6,11
+4DCC0:  sexth r7
+4DCC2:  cmplt r6,r7
+4DCC4:  br 0x4dcd8
+4DCC6:  bkpt
+4DCC8:  ldq r4-r7,(r0)
+4DCCA:  ld.w r15,(r10,8)
+4DCCC:  ldq r4-r7,(r0)
+4DCCE:  ld.w r14,(r2,44)
+4DCD0:  ldq r4-r7,(r0)
+4DCD2:  st.w r0,(r14,8)
+4DCD4:  ldq r4-r7,(r0)
+4DCD6:  ld.w r13,(r15,40)
+4DCD8:  bf 0x4dd0e
+4DCDA:  lrw r7,[0x4df0c] ; = 0x00408e6a
+4DCDC:  ld.b r7,(r7,0)
+4DCDE:  movi r6,50
+4DCE0:  cmplt r7,r6
+4DCE2:  bf 0x4dd0e
+4DCE4:  lrw r7,[0x4df10] ; = 0x00408dea
+4DCE6:  ld.b r7,(r7,1)
+4DCE8:  btsti r7,0
+4DCEA:  bf 0x4dd0e
+4DCEC:  mov r7,r3
+4DCEE:  btsti r3,31
+4DCF0:  bf 0x4dcf4
+4DCF2:  addi r7,3
+4DCF4:  ld.w r6,(r0,40)
+4DCF6:  asri r7,2
+4DCF8:  cmplt r6,r7
+4DCFA:  bf 0x4dd0e
+4DCFC:  ld.b r7,(r13,2)
+4DCFE:  movi r6,24
+4DD00:  mult r7,r6
+4DD02:  ld.w r6,(r0,40)
+4DD04:  cmplt r6,r7
+4DD06:  bf 0x4dd0e
+4DD08:  movi r6,0
+4DD0A:  st.w r6,(r0,60)
+4DD0C:  st.w r6,(r0,44)
+4DD0E:  btsti r14,7
+4DD10:  bf 0x4dd52
+4DD12:  lrw r13,[0x4e004] ; = 0x0040bf00
+4DD14:  movi r1,0
+4DD16:  ld.b r7,(r13,0)
+4DD18:  movi r6,96
+4DD1A:  tst r7,r6
+4DD1C:  bt 0x4dd28
+4DD1E:  movi r7,64
+4DD20:  addu r7,r13
+4DD22:  ld.b r7,(r7,0)
+4DD24:  tst r7,r6
+4DD26:  bf 0x4dd2a
+4DD28:  movi r1,1
+4DD2A:  mov r13,r14
+4DD2C:  addi r13,32
+4DD2E:  ld.h r6,(r13,10)
+4DD30:  lrw r7,[0x4e008] ; = 0x0040902e
+4DD32:  ixh r6,r6
+4DD34:  addu r7,r6
+4DD36:  ld.b r7,(r7,0)
+4DD38:  andi r7,18
+4DD3A:  cmpnei r7,0
+4DD3C:  bf 0x4dd52
+4DD3E:  cmpnei r1,0
+4DD40:  bf 0x4dd52
+4DD42:  ld.h r7,(r13,0)
+4DD44:  movi r6,100
+4DD46:  sexth r7
+4DD48:  cmplt r6,r7
+4DD4A:  bf 0x4dd52
+4DD4C:  movi r6,0
+4DD4E:  st.w r6,(r0,60)
+4DD50:  st.w r6,(r0,44)
+4DD52:  mov r6,r14
+4DD54:  movi r7,72
+4DD56:  lsri r6,7
+4DD58:  addu r7,r0
+4DD5A:  andi r6,1
+4DD5C:  btsti r11,6
+4DD5E:  st.w r6,(r7,0)
+4DD60:  bf 0x4dd6a
+4DD62:  movi r7,72
+4DD64:  addu r7,r0
+4DD66:  movi r6,1
+4DD68:  st.w r6,(r7,0)
+4DD6A:  movi r11,28
+4DD6C:  addu r11,r0
+4DD6E:  ld.b r13,(r11,0)
+4DD70:  movi r7,72
+4DD72:  bclri r13,7
+4DD74:  st.b r13,(r11,0)
+4DD76:  addu r7,r0
+4DD78:  ld.w r7,(r7,0)
+4DD7A:  cmpnei r7,0
+4DD7C:  bf 0x4dd90
+4DD7E:  movi r7,114
+4DD80:  addu r7,r0
+4DD82:  ld.h r7,(r7,0)
+4DD84:  ld.w r6,(r0,56)
+4DD86:  sexth r7
+4DD88:  cmplt r6,r7
+4DD8A:  bf 0x4dd90
+4DD8C:  bseti r13,7
+4DD8E:  st.b r13,(r11,0)
+4DD90:  ld.b r5,(r11,0)
+4DD92:  bclri r5,6
+4DD94:  st.b r5,(r11,0)
+4DD96:  ld.h r7,(r14,6)
+4DD98:  sexth r7
+4DD9A:  btsti r7,31
+4DD9C:  bt 0x4ddaa
+4DD9E:  lrw r7,[0x4df10] ; = 0x00408dea
+4DDA0:  ld.b r7,(r7,7)
+4DDA2:  btsti r7,4
+4DDA4:  bf 0x4dec4
+4DDA6:  btsti r14,7
+4DDA8:  bt 0x4dec4
+4DDAA:  mov r13,r14
+4DDAC:  movi r6,126
+4DDAE:  addi r13,32
+4DDB0:  addu r6,r0
+4DDB2:  ld.h r3,(r6,0)
+4DDB4:  ld.h r2,(r13,4)
+4DDB6:  sexth r3
+4DDB8:  sexth r2
+4DDBA:  cmplt r2,r3
+4DDBC:  bt 0x4de64
+4DDBE:  lrw r7,[0x4df10] ; = 0x00408dea
+4DDC0:  ld.b r7,(r7,7)
+4DDC2:  btsti r7,4
+4DDC4:  bf 0x4dec4
+4DDC6:  ld.h r6,(r13,10)
+4DDC8:  lrw r7,[0x4e008] ; = 0x0040902e
+4DDCA:  ixh r6,r6
+4DDCC:  addu r7,r6
+4DDCE:  ld.b r7,(r7,0)
+4DDD0:  br 0x4dde4
+4DDD2:  bkpt
+4DDD4:  ldq r4-r7,(r0)
+4DDD6:  ld.w r13,(r14,52)
+4DDD8:  ldq r4-r7,(r0)
+4DDDA:  st.w r0,(r9,16)
+4DDDC:  ldq r4-r7,(r0)
+4DDDE:  .short 0x493a
+4DDE0:  ldq r4-r7,(r0)
+4DDE2:  ld.w r13,(r4,48)
+4DDE4:  andi r7,18
+4DDE6:  cmpnei r7,0
+4DDE8:  bf 0x4dec4
+4DDEA:  ld.h r7,(r13,0)
+4DDEC:  movi r1,100
+4DDEE:  rsubi r1,0
+4DDF0:  sexth r7
+4DDF2:  cmplt r7,r1
+4DDF4:  bf 0x4dec4
+4DDF6:  lrw r7,[0x4defc] ; = 0x00408da8
+4DDF8:  ld.h r6,(r14,28)
+4DDFA:  ld.h r7,(r7,0)
+4DDFC:  sexth r6
+4DDFE:  sexth r7
+4DE00:  cmplt r7,r6
+4DE02:  bt 0x4dec4
+4DE04:  btsti r14,7
+4DE06:  bt 0x4de36
+4DE08:  mov r4,r3
+4DE0A:  addi r4,30
+4DE0C:  cmplt r4,r1
+4DE0E:  movf r4,r1
+4DE10:  cmplt r2,r4
+4DE12:  bf 0x4de1e
+4DE14:  lrw r7,[0x4e0f4] ; = 0x00408e7b
+4DE16:  ld.b r7,(r7,0)
+4DE18:  movi r6,50
+4DE1A:  cmplt r7,r6
+4DE1C:  bf 0x4de64
+4DE1E:  mov r12,r3
+4DE20:  addi r12,10
+4DE22:  cmplt r12,r1
+4DE24:  movf r12,r1
+4DE26:  cmplt r2,r12
+4DE28:  bf 0x4de32
+4DE2A:  lrw r7,[0x4e0f4] ; = 0x00408e7b
+4DE2C:  ld.b r7,(r7,0)
+4DE2E:  cmpnei r7,0
+4DE30:  bf 0x4de64
+4DE32:  btsti r14,7
+4DE34:  bf 0x4dec4
+4DE36:  addi r3,30
+4DE38:  cmplt r3,r1
+4DE3A:  movf r3,r1
+4DE3C:  cmplt r2,r3
+4DE3E:  bt 0x4de64
+4DE40:  lrw r2,[0x4e004] ; = 0x0040bf00
+4DE42:  movi r6,100
+4DE44:  lrw r1,[0x4e0f8] ; = 0x00040c56
+4DE46:  bseti r6,7
+4DE48:  addu r6,r2
+4DE4A:  ld.h r1,(r1,0)
+4DE4C:  ld.h r7,(r6,0)
+4DE4E:  sexth r1
+4DE50:  sexth r7
+4DE52:  cmplt r7,r1
+4DE54:  bf 0x4dec4
+4DE56:  movi r6,36
+4DE58:  bseti r6,7
+4DE5A:  addu r6,r2
+4DE5C:  ld.h r7,(r6,0)
+4DE5E:  sexth r7
+4DE60:  cmplt r7,r1
+4DE62:  bf 0x4dec4
+4DE64:  movi r6,100
+4DE66:  ld.h r7,(r13,0)
+4DE68:  rsubi r6,0
+4DE6A:  sexth r7
+4DE6C:  cmplt r7,r6
+4DE6E:  bt 0x4de78
+4DE70:  lrw r7,[0x4e0fc] ; = 0x00408da1
+4DE72:  ld.b r7,(r7,0)
+4DE74:  btsti r7,4
+4DE76:  bt 0x4dec4
+4DE78:  lrw r7,[0x4e100] ; = 0x00408daf
+4DE7A:  ld.b r7,(r7,0)
+4DE7C:  sextb r7
+4DE7E:  btsti r7,31
+4DE80:  bf 0x4dec4
+4DE82:  ld.w r7,(r0,52)
+4DE84:  cmpnei r7,0
+4DE86:  bt 0x4de8c
+4DE88:  btsti r14,7
+4DE8A:  bf 0x4dec4
+4DE8C:  lrw r7,[0x4e104] ; = 0x00408dc6
+4DE8E:  ld.b r7,(r7,0)
+4DE90:  btsti r7,6
+4DE92:  bf 0x4dec4
+4DE94:  btsti r14,7
+4DE96:  bf 0x4dea6
+4DE98:  lrw r7,[0x4e108] ; = 0x00409049
+4DE9A:  ld.h r6,(r13,10)
+4DE9C:  ixw r7,r6
+4DE9E:  ld.b r7,(r7,0)
+4DEA0:  andi r7,12
+4DEA2:  cmpnei r7,0
+4DEA4:  bt 0x4dec4
+4DEA6:  lrw r7,[0x4e0fc] ; = 0x00408da1
+4DEA8:  movi r6,96
+4DEAA:  ld.b r7,(r7,0)
+4DEAC:  bseti r6,7
+4DEAE:  tst r7,r6
+4DEB0:  bf 0x4dec0
+4DEB2:  lrw r6,[0x4e10c] ; = 0x00408ec4
+4DEB4:  ld.h r7,(r14,26)
+4DEB6:  ld.h r6,(r6,0)
+4DEB8:  sexth r7
+4DEBA:  sexth r6
+4DEBC:  cmplt r7,r6
+4DEBE:  bf 0x4dec4
+4DEC0:  bseti r5,6
+4DEC2:  st.b r5,(r11,0)
+4DEC4:  ld.b r13,(r11,0)
+4DEC6:  btsti r14,7
+4DEC8:  bf 0x4dfa4
+4DECA:  lrw r7,[0x4e110] ; = 0x00408e1a
+4DECC:  ld.b r7,(r7,2)
+4DECE:  btsti r7,7
+4DED0:  bf 0x4dfa4
+4DED2:  lrw r1,[0x4e114] ; = 0x00040c94
+4DED4:  lrw r2,[0x4e118] ; = 0x00408e80
+4DED6:  ld.h r1,(r1,0)
+4DED8:  ld.h r2,(r2,0)
+4DEDA:  sexth r1
+4DEDC:  sexth r2
+4DEDE:  rsubi r1,0
+4DEE0:  cmplt r2,r1
+4DEE2:  bf 0x4df14
+4DEE4:  movi r6,42
+4DEE6:  addu r6,r14
+4DEE8:  ld.h r6,(r6,0)
+4DEEA:  lrw r7,[0x4e008] ; = 0x0040902e
+4DEEC:  ixh r6,r6
+4DEEE:  addu r7,r6
+4DEF0:  ld.b r7,(r7,0)
+4DEF2:  andi r7,18
+4DEF4:  cmpnei r7,0
+4DEF6:  bf 0x4df4a
+4DEF8:  br 0x4df14
+4DEFA:  bkpt
+4DEFC:  ldq r4-r7,(r0)
+4DEFE:  ld.w r13,(r8,40)
+4DF00:  bkpt
+4DF02:  .short 0x2710
+4DF04:  ldq r4-r7,(r0)
+4DF06:  ld.w r14,(r7,60)
+4DF08:  ldq r4-r7,(r0)
+4DF0A:  st.w r0,(r6,44)
+4DF0C:  ldq r4-r7,(r0)
+4DF0E:  ld.w r14,(r10,24)
+4DF10:  ldq r4-r7,(r0)
+4DF12:  ld.w r13,(r10,56)
+4DF14:  mov r7,r1
+4DF16:  addi r7,15
+4DF18:  cmplt r2,r7
+4DF1A:  bf 0x4df30
+4DF1C:  movi r6,42
+4DF1E:  addu r6,r14
+4DF20:  ld.h r6,(r6,0)
+4DF22:  lrw r7,[0x4e008] ; = 0x0040902e
+4DF24:  ixh r6,r6
+4DF26:  addu r7,r6
+4DF28:  ld.b r7,(r7,0)
+4DF2A:  andi r7,18
+4DF2C:  cmpnei r7,0
+4DF2E:  bt 0x4df4a
+4DF30:  lrw r7,[0x4e204] ; = 0x00408e94
+4DF32:  movi r5,10
+4DF34:  ld.h r7,(r7,0)
+4DF36:  mult r1,r5
+4DF38:  sexth r7
+4DF3A:  cmplt r7,r1
+4DF3C:  bf 0x4dfa4
+4DF3E:  lrw r7,[0x4e208] ; = 0x00408e6a
+4DF40:  movi r6,22
+4DF42:  ld.b r7,(r7,0)
+4DF44:  subi r7,3
+4DF46:  cmphs r7,r6
+4DF48:  bt 0x4dfa4
+4DF4A:  ld.h r7,(r14,6)
+4DF4C:  sexth r7
+4DF4E:  btsti r7,31
+4DF50:  bf 0x4dfa4
+4DF52:  movi r6,42
+4DF54:  addu r6,r14
+4DF56:  ld.h r1,(r6,0)
+4DF58:  lrw r7,[0x4e20c] ; = 0x00409014
+4DF5A:  addu r7,r1
+4DF5C:  ld.b r7,(r7,0)
+4DF5E:  cmplti r7,2
+4DF60:  bt 0x4dfa4
+4DF62:  lrw r3,[0x4e210] ; = 0x00409046
+4DF64:  ixw r3,r1
+4DF66:  ld.b r2,(r3,3)
+4DF68:  btsti r2,3
+4DF6A:  bt 0x4dfa4
+4DF6C:  ld.b r7,(r14,0)
+4DF6E:  movi r6,65
+4DF70:  tst r7,r6
+4DF72:  bt 0x4dfa4
+4DF74:  btsti r13,6
+4DF76:  bt 0x4dfa4
+4DF78:  lrw r7,[0x4e214] ; = 0x00400952
+4DF7A:  addu r7,r1
+4DF7C:  ld.b r7,(r7,0)
+4DF7E:  btsti r7,0
+4DF80:  bt 0x4dfa4
+4DF82:  lrw r7,[0x4e218] ; = 0x00401ff2
+4DF84:  ld.b r7,(r7,0)
+4DF86:  btsti r7,7
+4DF88:  bf 0x4dfa4
+4DF8A:  lrw r1,[0x4e21c] ; = 0x00408eb2
+4DF8C:  ld.h r1,(r1,0)
+4DF8E:  sexth r1
+4DF90:  cmplti r1,1
+4DF92:  bt 0x4dfa4
+4DF94:  lrw r7,[0x4e220] ; = 0x00408e6d
+4DF96:  ld.b r7,(r7,0)
+4DF98:  btsti r7,6
+4DF9A:  bf 0x4dfa4
+4DF9C:  lrw r7,[0x4e224] ; = 0x00408e72
+4DF9E:  bseti r2,3
+4DFA0:  st.b r2,(r3,3)
+4DFA2:  st.h r1,(r7,0)
+4DFA4:  mov r4,r13
+4DFA6:  bclri r4,5
+4DFA8:  movi r7,110
+4DFAA:  st.b r4,(r11,0)
+4DFAC:  addu r7,r0
+4DFAE:  ld.h r13,(r7,0)
+4DFB0:  addi r7,10
+4DFB2:  ld.h r7,(r7,0)
+4DFB4:  sexth r13
+4DFB6:  sexth r7
+4DFB8:  ld.w r6,(r0,40)
+4DFBA:  addu r7,r13
+4DFBC:  cmplt r6,r7
+4DFBE:  bt 0x4dfcc
+4DFC0:  lrw r7,[0x4e0fc] ; = 0x00408da1
+4DFC2:  movi r6,96
+4DFC4:  ld.b r7,(r7,0)
+4DFC6:  bseti r6,7
+4DFC8:  tst r7,r6
+4DFCA:  bf 0x4e034
+4DFCC:  mov r3,r14
+4DFCE:  addi r3,32
+4DFD0:  ld.h r7,(r3,0)
+4DFD2:  movi r6,100
+4DFD4:  sexth r7
+4DFD6:  rsubi r6,0
+4DFD8:  cmplt r7,r6
+4DFDA:  bf 0x4e068
+4DFDC:  movi r6,126
+4DFDE:  addu r6,r0
+4DFE0:  ld.h r2,(r6,0)
+4DFE2:  ld.h r1,(r3,4)
+4DFE4:  sexth r2
+4DFE6:  sexth r1
+4DFE8:  cmplt r1,r2
+4DFEA:  bt 0x4e010
+4DFEC:  lrw r7,[0x4e228] ; = 0x00408dc4
+4DFEE:  ld.b r7,(r7,0)
+4DFF0:  btsti r7,2
+4DFF2:  bf 0x4e068
+4DFF4:  btsti r14,7
+4DFF6:  bt 0x4e068
+4DFF8:  addi r2,30
+4DFFA:  cmplt r1,r2
+4DFFC:  bf 0x4e068
+4DFFE:  lrw r7,[0x4e208] ; = 0x00408e6a
+4E000:  ld.b r7,(r7,0)
+4E002:  br 0x4e00c
+4E004:  ldq r4-r7,(r0)
+4E006:  st.b r15,(r0,0)
+4E008:  ldq r4-r7,(r0)
+4E00A:  st.w r0,(r14,8)
+4E00C:  cmplti r7,25
+4E00E:  bt 0x4e068
+4E010:  movi r7,84
+4E012:  addu r7,r0
+4E014:  ld.w r7,(r7,0)
+4E016:  cmpnei r7,0
+4E018:  bf 0x4e068
+4E01A:  lrw r7,[0x4e0fc] ; = 0x00408da1
+4E01C:  movi r6,96
+4E01E:  ld.b r7,(r7,0)
+4E020:  bseti r6,7
+4E022:  tst r7,r6
+4E024:  bf 0x4e034
+4E026:  lrw r6,[0x4e10c] ; = 0x00408ec4
+4E028:  ld.h r7,(r14,26)
+4E02A:  ld.h r6,(r6,0)
+4E02C:  sexth r7
+4E02E:  sexth r6
+4E030:  cmplt r7,r6
+4E032:  bf 0x4e068
+4E034:  lrw r7,[0x4e104] ; = 0x00408dc6
+4E036:  ld.b r7,(r7,0)
+4E038:  btsti r7,6
+4E03A:  bt 0x4e050
+4E03C:  btsti r14,7
+4E03E:  bf 0x4e068
+4E040:  movi r6,42
+4E042:  addu r6,r14
+4E044:  lrw r7,[0x4e214] ; = 0x00400952
+4E046:  ld.h r6,(r6,0)
+4E048:  addu r7,r6
+4E04A:  ld.b r7,(r7,0)
+4E04C:  btsti r7,0
+4E04E:  bt 0x4e068
+4E050:  bseti r4,5
+4E052:  st.b r4,(r11,0)
+4E054:  ld.b r7,(r14,0)
+4E056:  btsti r7,5
+4E058:  bt 0x4e068
+4E05A:  movi r6,42
+4E05C:  addu r6,r14
+4E05E:  lrw r7,[0x4e330] ; = 0x00409026
+4E060:  ld.h r6,(r6,0)
+4E062:  ixh r7,r6
+4E064:  ld.h r6,(r14,6)
+4E066:  st.h r6,(r7,0)
+4E068:  ld.b r7,(r14,0)
+4E06A:  btsti r7,7
+4E06C:  bf 0x4e0de
+4E06E:  lrw r7,[0x4e104] ; = 0x00408dc6
+4E070:  ld.b r7,(r7,0)
+4E072:  btsti r7,6
+4E074:  bt 0x4e08a
+4E076:  btsti r14,7
+4E078:  bf 0x4e0de
+4E07A:  movi r6,42
+4E07C:  addu r6,r14
+4E07E:  lrw r7,[0x4e214] ; = 0x00400952
+4E080:  ld.h r6,(r6,0)
+4E082:  addu r7,r6
+4E084:  ld.b r7,(r7,0)
+4E086:  btsti r7,0
+4E088:  bt 0x4e0de
+4E08A:  lrw r7,[0x4e334] ; = 0x00408e98
+4E08C:  movi r6,80
+4E08E:  ld.h r7,(r7,0)
+4E090:  sexth r7
+4E092:  cmplt r6,r7
+4E094:  bf 0x4e0de
+4E096:  ld.b r7,(r8,3)
+4E098:  btsti r7,1
+4E09A:  bt 0x4e0de
+4E09C:  mov r2,r14
+4E09E:  addi r2,32
+4E0A0:  ld.h r1,(r2,10)
+4E0A2:  lrw r7,[0x4e20c] ; = 0x00409014
+4E0A4:  addu r7,r1
+4E0A6:  ld.b r7,(r7,0)
+4E0A8:  cmplti r7,3
+4E0AA:  bt 0x4e0b4
+4E0AC:  ld.h r7,(r14,6)
+4E0AE:  sexth r7
+4E0B0:  btsti r7,31
+4E0B2:  bt 0x4e0bc
+4E0B4:  ld.w r6,(r0,40)
+4E0B6:  asri r13,1
+4E0B8:  cmplt r13,r6
+4E0BA:  bf 0x4e0de
+4E0BC:  lrw r13,[0x4e338] ; = 0x0040902e
+4E0BE:  ixh r1,r1
+4E0C0:  addu r13,r1
+4E0C2:  ld.b r7,(r13,1)
+4E0C4:  bseti r7,4
+4E0C6:  st.b r7,(r13,1)
+4E0C8:  ld.b r7,(r11,0)
+4E0CA:  bseti r7,5
+4E0CC:  st.b r7,(r11,0)
+4E0CE:  ld.b r7,(r14,0)
+4E0D0:  btsti r7,5
+4E0D2:  bt 0x4e0de
+4E0D4:  lrw r7,[0x4e330] ; = 0x00409026
+4E0D6:  ld.h r6,(r2,10)
+4E0D8:  ixh r7,r6
+4E0DA:  ld.h r6,(r14,6)
+4E0DC:  st.h r6,(r7,0)
+4E0DE:  movi r7,68
+4E0E0:  addu r7,r0
+4E0E2:  movi r6,0
+4E0E4:  lrw r14,[0x4e33c] ; = 0x00408dea
+4E0E6:  st.w r6,(r7,0)
+4E0E8:  ld.b r13,(r14,6)
+4E0EA:  btsti r13,7
+4E0EC:  bf 0x4e172
+4E0EE:  lrw r2,[0x4e340] ; = 0x00408eca
+4E0F0:  ld.b r2,(r2,0)
+4E0F2:  br 0x4e11c
+4E0F4:  ldq r4-r7,(r0)
+4E0F6:  ld.w r14,(r11,28)
+4E0F8:  stop
+4E0FA:  cmphs r6,r5
+4E0FC:  ldq r4-r7,(r0)
+4E0FE:  ld.w r13,(r1,40)
+4E100:  ldq r4-r7,(r0)
+4E102:  ld.w r13,(r15,40)
+4E104:  ldq r4-r7,(r0)
+4E106:  ld.w r13,(r6,48)
+4E108:  ldq r4-r7,(r0)
+4E10A:  st.w r0,(r9,16)
+4E10C:  ldq r4-r7,(r0)
+4E10E:  ld.w r14,(r4,48)
+4E110:  ldq r4-r7,(r0)
+4E112:  ld.w r14,(r10,4)
+4E114:  stop
+4E116:  cmphs r4,r9
+4E118:  ldq r4-r7,(r0)
+4E11A:  ld.w r14,(r0,32)
+4E11C:  sextb r2
+4E11E:  jsri [0x4e434] ; -> 0x0006d0cc
+4E120:  movi r7,40
+4E122:  cmplt r2,r7
+4E124:  bt 0x4e1d6
+4E126:  lrw r13,[0x4e438] ; = 0x00408ed8
+4E128:  lrw r7,[0x4e43c] ; = 0xfffffa88
+4E12A:  ld.h r13,(r13,0)
+4E12C:  sexth r13
+4E12E:  cmplt r13,r7
+4E130:  bf 0x4e150
+4E132:  lrw r7,[0x4e440] ; = 0x00408ecc
+4E134:  lrw r6,[0x4e444] ; = 0x00400b1a
+4E136:  ld.h r7,(r7,0)
+4E138:  ld.h r6,(r6,0)
+4E13A:  sexth r7
+4E13C:  sexth r6
+4E13E:  btsti r13,31
+4E140:  subu r7,r6
+4E142:  mov r6,r13
+4E144:  bf 0x4e148
+4E146:  addi r6,3
+4E148:  asri r6,2
+4E14A:  ixh r6,r6
+4E14C:  cmplt r6,r7
+4E14E:  bt 0x4e1ce
+4E150:  lrw r7,[0x4e448] ; = 0xfffffd44
+4E152:  cmplt r13,r7
+4E154:  bf 0x4e1d6
+4E156:  lrw r7,[0x4e440] ; = 0x00408ecc
+4E158:  lrw r6,[0x4e444] ; = 0x00400b1a
+4E15A:  ld.h r7,(r7,0)
+4E15C:  ld.h r6,(r6,0)
+4E15E:  sexth r7
+4E160:  sexth r6
+4E162:  subu r7,r6
+4E164:  mov r6,r13
+4E166:  btsti r13,31
+4E168:  inct r6
+4E16A:  asri r6,1
+4E16C:  cmplt r6,r7
+4E16E:  bf 0x4e1d6
+4E170:  br 0x4e1ce
+4E172:  btsti r13,6
+4E174:  bf 0x4e1d6
+4E176:  lrw r2,[0x4e340] ; = 0x00408eca
+4E178:  ld.b r2,(r2,0)
+4E17A:  sextb r2
+4E17C:  jsri [0x4e434] ; -> 0x0006d0cc
+4E17E:  movi r7,40
+4E180:  cmplt r2,r7
+4E182:  bt 0x4e1d6
+4E184:  lrw r13,[0x4e438] ; = 0x00408ed8
+4E186:  lrw r7,[0x4e44c] ; = 0x00000578
+4E188:  ld.h r13,(r13,0)
+4E18A:  sexth r13
+4E18C:  cmplt r7,r13
+4E18E:  bf 0x4e1ae
+4E190:  lrw r7,[0x4e440] ; = 0x00408ecc
+4E192:  lrw r6,[0x4e444] ; = 0x00400b1a
+4E194:  ld.h r7,(r7,0)
+4E196:  ld.h r6,(r6,0)
+4E198:  sexth r7
+4E19A:  sexth r6
+4E19C:  btsti r13,31
+4E19E:  subu r7,r6
+4E1A0:  mov r6,r13
+4E1A2:  bf 0x4e1a6
+4E1A4:  addi r6,3
+4E1A6:  asri r6,2
+4E1A8:  ixh r6,r6
+4E1AA:  cmplt r7,r6
+4E1AC:  bt 0x4e1ce
+4E1AE:  lrw r7,[0x4e450] ; = 0x000002bc
+4E1B0:  cmplt r7,r13
+4E1B2:  bf 0x4e1d6
+4E1B4:  lrw r7,[0x4e440] ; = 0x00408ecc
+4E1B6:  lrw r6,[0x4e444] ; = 0x00400b1a
+4E1B8:  ld.h r7,(r7,0)
+4E1BA:  ld.h r6,(r6,0)
+4E1BC:  sexth r7
+4E1BE:  sexth r6
+4E1C0:  subu r7,r6
+4E1C2:  mov r6,r13
+4E1C4:  btsti r13,31
+4E1C6:  inct r6
+4E1C8:  asri r6,1
+4E1CA:  cmplt r7,r6
+4E1CC:  bf 0x4e1d6
+4E1CE:  movi r7,68
+4E1D0:  addu r7,r0
+4E1D2:  movi r6,1
+4E1D4:  st.w r6,(r7,0)
+4E1D6:  movi r7,80
+4E1D8:  addu r7,r0
+4E1DA:  movi r6,0
+4E1DC:  subi r7,16
+4E1DE:  st.w r6,(r7,16)
+4E1E0:  lrw r13,[0x4e454] ; = 0x0040bf00
+4E1E2:  movi r6,64
+4E1E4:  bseti r6,7
+4E1E6:  addu r6,r13
+4E1E8:  st.w r6,(r7,0)
+4E1EA:  bgeni r6,7
+4E1EC:  addu r6,r13
+4E1EE:  st.w r6,(r7,24)
+4E1F0:  movi r6,64
+4E1F2:  addi r7,24
+4E1F4:  addu r6,r0
+4E1F6:  ld.w r6,(r6,0)
+4E1F8:  ld.w r7,(r7,0)
+4E1FA:  lrw r12,[0x4e458] ; = 0x00400978
+4E1FC:  ld.h r2,(r6,6)
+4E1FE:  ld.h r7,(r7,6)
+4E200:  ld.w r12,(r12,0)
+4E202:  br 0x4e22c
+4E204:  ldq r4-r7,(r0)
+4E206:  ld.w r14,(r4,36)
+4E208:  ldq r4-r7,(r0)
+4E20A:  ld.w r14,(r10,24)
+4E20C:  ldq r4-r7,(r0)
+4E20E:  st.w r0,(r4,4)
+4E210:  ldq r4-r7,(r0)
+4E212:  st.w r0,(r6,16)
+4E214:  ldq r4-r7,(r0)
+4E216:  .short 0x0952
+4E218:  ldq r4-r7,(r0)
+4E21A:  andn r2,r15
+4E21C:  ldq r4-r7,(r0)
+4E21E:  ld.w r14,(r2,44)
+4E220:  ldq r4-r7,(r0)
+4E222:  ld.w r14,(r13,24)
+4E224:  ldq r4-r7,(r0)
+4E226:  ld.w r14,(r2,28)
+4E228:  ldq r4-r7,(r0)
+4E22A:  ld.w r13,(r4,48)
+4E22C:  addu r2,r7
+4E22E:  btsti r12,7
+4E230:  sexth r2
+4E232:  bf 0x4e59e
+4E234:  movi r9,64
+4E236:  lrw r7,[0x4e458] ; = 0x00400978
+4E238:  xor r9,r12
+4E23A:  movi r5,42
+4E23C:  st.w r9,(r7,0)
+4E23E:  addu r5,r9
+4E240:  lrw r6,[0x4e538] ; = 0x0040907e
+4E242:  ld.h r5,(r5,0)
+4E244:  ld.b r7,(r9,0)
+4E246:  ixh r6,r5
+4E248:  ld.h r4,(r6,0)
+4E24A:  btsti r7,0
+4E24C:  sexth r4
+4E24E:  bf 0x4e258
+4E250:  movi r7,80
+4E252:  addu r7,r0
+4E254:  movi r6,1
+4E256:  st.w r6,(r7,0)
+4E258:  movi r12,64
+4E25A:  lrw r7,[0x4e458] ; = 0x00400978
+4E25C:  xor r12,r9
+4E25E:  st.w r12,(r7,0)
+4E260:  movi r7,108
+4E262:  addu r7,r0
+4E264:  ld.h r9,(r7,0)
+4E266:  movi r7,120
+4E268:  sexth r9
+4E26A:  mult r7,r9
+4E26C:  movi r1,100
+4E26E:  divs r7,r1
+4E270:  cmplt r2,r7
+4E272:  bf 0x4e2ca
+4E274:  bgeni r6,7
+4E276:  addu r6,r0
+4E278:  ld.h r6,(r6,4)
+4E27A:  movi r7,96
+4E27C:  addu r7,r0
+4E27E:  sexth r6
+4E280:  st.w r6,(r7,0)
+4E282:  movi r6,112
+4E284:  addu r6,r0
+4E286:  ld.h r5,(r6,0)
+4E288:  movi r6,70
+4E28A:  sexth r5
+4E28C:  mov r7,r5
+4E28E:  mult r7,r6
+4E290:  divs r7,r1
+4E292:  movi r6,96
+4E294:  addu r6,r0
+4E296:  ld.w r6,(r6,0)
+4E298:  cmplt r7,r6
+4E29A:  bt 0x4e4bc
+4E29C:  lrw r3,[0x4e53c] ; = 0x00409014
+4E29E:  ld.b r7,(r3,2)
+4E2A0:  cmplti r7,9
+4E2A2:  bt 0x4e2ca
+4E2A4:  ld.b r7,(r3,3)
+4E2A6:  cmplti r7,9
+4E2A8:  bt 0x4e2ca
+4E2AA:  movi r1,5
+4E2AC:  divs r5,r1
+4E2AE:  movi r6,96
+4E2B0:  addu r6,r0
+4E2B2:  ld.w r6,(r6,0)
+4E2B4:  cmplt r5,r6
+4E2B6:  bf 0x4e2ca
+4E2B8:  ld.b r7,(r8,3)
+4E2BA:  btsti r7,1
+4E2BC:  bf 0x4e4bc
+4E2BE:  ld.b r7,(r3,0)
+4E2C0:  cmplti r7,2
+4E2C2:  bt 0x4e2ca
+4E2C4:  ld.b r7,(r3,1)
+4E2C6:  cmplti r7,2
+4E2C8:  bf 0x4e4bc
+4E2CA:  movi r7,70
+4E2CC:  mult r7,r9
+4E2CE:  movi r1,100
+4E2D0:  divs r7,r1
+4E2D2:  cmplt r2,r7
+4E2D4:  bf 0x4e344
+4E2D6:  bgeni r6,7
+4E2D8:  addu r6,r0
+4E2DA:  ld.h r6,(r6,4)
+4E2DC:  movi r7,96
+4E2DE:  addu r7,r0
+4E2E0:  sexth r6
+4E2E2:  st.w r6,(r7,0)
+4E2E4:  movi r6,112
+4E2E6:  addu r6,r0
+4E2E8:  ld.h r5,(r6,0)
+4E2EA:  movi r6,120
+4E2EC:  sexth r5
+4E2EE:  mov r7,r5
+4E2F0:  mult r7,r6
+4E2F2:  divs r7,r1
+4E2F4:  movi r6,96
+4E2F6:  addu r6,r0
+4E2F8:  ld.w r6,(r6,0)
+4E2FA:  cmplt r7,r6
+4E2FC:  bt 0x4e4bc
+4E2FE:  lrw r3,[0x4e53c] ; = 0x00409014
+4E300:  ld.b r7,(r3,2)
+4E302:  cmplti r7,11
+4E304:  bt 0x4e344
+4E306:  ld.b r7,(r3,3)
+4E308:  cmplti r7,11
+4E30A:  bt 0x4e344
+4E30C:  movi r1,5
+4E30E:  divs r5,r1
+4E310:  movi r6,96
+4E312:  addu r6,r0
+4E314:  ld.w r6,(r6,0)
+4E316:  cmplt r5,r6
+4E318:  bf 0x4e344
+4E31A:  ld.b r7,(r8,3)
+4E31C:  btsti r7,1
+4E31E:  bf 0x4e4bc
+4E320:  ld.b r7,(r3,0)
+4E322:  cmplti r7,2
+4E324:  bt 0x4e344
+4E326:  ld.b r7,(r3,1)
+4E328:  cmplti r7,2
+4E32A:  bf 0x4e4bc
+4E32C:  br 0x4e344
+4E32E:  bkpt
+4E330:  ldq r4-r7,(r0)
+4E332:  st.w r0,(r6,8)
+4E334:  ldq r4-r7,(r0)
+4E336:  ld.w r14,(r8,36)
+4E338:  ldq r4-r7,(r0)
+4E33A:  st.w r0,(r14,8)
+4E33C:  ldq r4-r7,(r0)
+4E33E:  ld.w r13,(r10,56)
+4E340:  ldq r4-r7,(r0)
+4E342:  ld.w r14,(r10,48)
+4E344:  movi r7,2
+4E346:  bseti r7,7
+4E348:  mult r7,r9
+4E34A:  movi r1,100
+4E34C:  divs r7,r1
+4E34E:  cmplt r2,r7
+4E350:  bf 0x4e3a8
+4E352:  bgeni r6,7
+4E354:  addu r6,r0
+4E356:  ld.h r6,(r6,4)
+4E358:  movi r7,96
+4E35A:  addu r7,r0
+4E35C:  sexth r6
+4E35E:  st.w r6,(r7,0)
+4E360:  movi r6,112
+4E362:  addu r6,r0
+4E364:  ld.h r5,(r6,0)
+4E366:  movi r6,60
+4E368:  sexth r5
+4E36A:  mov r7,r5
+4E36C:  mult r7,r6
+4E36E:  divs r7,r1
+4E370:  movi r6,96
+4E372:  addu r6,r0
+4E374:  ld.w r6,(r6,0)
+4E376:  cmplt r7,r6
+4E378:  bt 0x4e4bc
+4E37A:  lrw r3,[0x4e53c] ; = 0x00409014
+4E37C:  ld.b r7,(r3,2)
+4E37E:  cmplti r7,9
+4E380:  bt 0x4e3a8
+4E382:  ld.b r7,(r3,3)
+4E384:  cmplti r7,9
+4E386:  bt 0x4e3a8
+4E388:  movi r1,5
+4E38A:  divs r5,r1
+4E38C:  movi r6,96
+4E38E:  addu r6,r0
+4E390:  ld.w r6,(r6,0)
+4E392:  cmplt r5,r6
+4E394:  bf 0x4e3a8
+4E396:  ld.b r7,(r8,3)
+4E398:  btsti r7,1
+4E39A:  bf 0x4e4bc
+4E39C:  ld.b r7,(r3,0)
+4E39E:  cmplti r7,2
+4E3A0:  bt 0x4e3a8
+4E3A2:  ld.b r7,(r3,1)
+4E3A4:  cmplti r7,2
+4E3A6:  bf 0x4e4bc
+4E3A8:  movi r7,17
+4E3AA:  bseti r7,7
+4E3AC:  mult r7,r9
+4E3AE:  movi r1,100
+4E3B0:  divs r7,r1
+4E3B2:  cmplt r2,r7
+4E3B4:  bf 0x4e3fa
+4E3B6:  movi r6,4
+4E3B8:  bseti r6,7
+4E3BA:  addu r6,r0
+4E3BC:  subi r6,20
+4E3BE:  ld.h r3,(r6,0)
+4E3C0:  ld.h r5,(r6,20)
+4E3C2:  sexth r3
+4E3C4:  mov r7,r3
+4E3C6:  movi r6,50
+4E3C8:  mult r7,r6
+4E3CA:  divs r7,r1
+4E3CC:  sexth r5
+4E3CE:  cmplt r7,r5
+4E3D0:  bt 0x4e4bc
+4E3D2:  lrw r9,[0x4e53c] ; = 0x00409014
+4E3D4:  ld.b r7,(r9,2)
+4E3D6:  cmplti r7,11
+4E3D8:  bt 0x4e3fa
+4E3DA:  ld.b r7,(r9,3)
+4E3DC:  cmplti r7,11
+4E3DE:  bt 0x4e3fa
+4E3E0:  movi r1,5
+4E3E2:  divs r3,r1
+4E3E4:  cmplt r3,r5
+4E3E6:  bf 0x4e3fa
+4E3E8:  ld.b r7,(r8,3)
+4E3EA:  btsti r7,1
+4E3EC:  bf 0x4e4bc
+4E3EE:  ld.b r7,(r9,0)
+4E3F0:  cmplti r7,2
+4E3F2:  bt 0x4e3fa
+4E3F4:  ld.b r7,(r9,1)
+4E3F6:  cmplti r7,2
+4E3F8:  bf 0x4e4bc
+4E3FA:  btsti r2,31
+4E3FC:  bf 0x4e540
+4E3FE:  movi r6,112
+4E400:  addu r6,r0
+4E402:  ld.h r6,(r6,0)
+4E404:  movi r5,2
+4E406:  sexth r6
+4E408:  bseti r5,7
+4E40A:  bgeni r7,7
+4E40C:  mult r6,r5
+4E40E:  movi r1,100
+4E410:  addu r7,r0
+4E412:  divs r6,r1
+4E414:  ld.h r7,(r7,4)
+4E416:  sexth r7
+4E418:  cmplt r6,r7
+4E41A:  bt 0x4e4a6
+4E41C:  bgeni r6,7
+4E41E:  addu r6,r0
+4E420:  ld.h r1,(r6,0)
+4E422:  movi r9,75
+4E424:  sexth r1
+4E426:  rsub r9,r1
+4E428:  cmplt r4,r9
+4E42A:  bt 0x4e46a
+4E42C:  movi r6,42
+4E42E:  addu r6,r12
+4E430:  br 0x4e45c
+4E432:  bkpt
+4E434:  doze
+4E436:  st.h r0,(r12,24)
+4E438:  ldq r4-r7,(r0)
+4E43A:  ld.w r14,(r8,52)
+4E43C:  bsr 0x4e43c
+4E43E:  bsr 0x4e950
+4E440:  ldq r4-r7,(r0)
+4E442:  ld.w r14,(r12,48)
+4E444:  ldq r4-r7,(r0)
+4E446:  lsr r10,r1
+4E448:  bsr 0x4e448
+4E44A:  bsr 0x4ded4
+4E44C:  bkpt
+4E44E:  subu r8,r7
+4E450:  bkpt
+4E452:  movt r12,r11
+4E454:  ldq r4-r7,(r0)
+4E456:  st.b r15,(r0,0)
+4E458:  ldq r4-r7,(r0)
+4E45A:  .short 0x0978
+4E45C:  lrw r7,[0x4e538] ; = 0x0040907e
+4E45E:  ld.h r6,(r6,0)
+4E460:  ixh r7,r6
+4E462:  ld.h r7,(r7,0)
+4E464:  sexth r7
+4E466:  cmplt r7,r9
+4E468:  bf 0x4e4a6
+4E46A:  mov r9,r1
+4E46C:  btsti r1,31
+4E46E:  inct r9
+4E470:  asri r9,1
+4E472:  cmplt r4,r9
+4E474:  bt 0x4e48c
+4E476:  movi r6,42
+4E478:  addu r6,r12
+4E47A:  lrw r7,[0x4e538] ; = 0x0040907e
+4E47C:  ld.h r6,(r6,0)
+4E47E:  movi r5,75
+4E480:  ixh r7,r6
+4E482:  ld.h r7,(r7,0)
+4E484:  addu r5,r1
+4E486:  sexth r7
+4E488:  cmplt r7,r5
+4E48A:  bf 0x4e4a6
+4E48C:  movi r6,42
+4E48E:  addu r6,r12
+4E490:  lrw r7,[0x4e538] ; = 0x0040907e
+4E492:  ld.h r6,(r6,0)
+4E494:  ixh r7,r6
+4E496:  ld.h r7,(r7,0)
+4E498:  sexth r7
+4E49A:  cmplt r7,r9
+4E49C:  bt 0x4e540
+4E49E:  movi r6,75
+4E4A0:  addu r6,r1
+4E4A2:  cmplt r4,r6
+4E4A4:  bt 0x4e540
+4E4A6:  ld.b r7,(r8,3)
+4E4A8:  btsti r7,1
+4E4AA:  bt 0x4e540
+4E4AC:  movi r6,42
+4E4AE:  addu r6,r12
+4E4B0:  lrw r7,[0x4e7c8] ; = 0x004090b2
+4E4B2:  ld.h r6,(r6,0)
+4E4B4:  addu r7,r6
+4E4B6:  ld.b r7,(r7,0)
+4E4B8:  cmplti r7,25
+4E4BA:  bt 0x4e540
+4E4BC:  mov r7,r13
+4E4BE:  addi r7,16
+4E4C0:  ld.b r7,(r7,0)
+4E4C2:  btsti r7,4
+4E4C4:  bt 0x4e540
+4E4C6:  movi r7,80
+4E4C8:  addu r7,r13
+4E4CA:  ld.b r7,(r7,0)
+4E4CC:  btsti r7,4
+4E4CE:  bt 0x4e540
+4E4D0:  ld.b r7,(r12,0)
+4E4D2:  btsti r7,5
+4E4D4:  bt 0x4e540
+4E4D6:  ld.b r7,(r11,0)
+4E4D8:  btsti r7,5
+4E4DA:  bt 0x4e540
+4E4DC:  movi r7,126
+4E4DE:  addu r7,r0
+4E4E0:  ld.h r9,(r7,0)
+4E4E2:  movi r2,120
+4E4E4:  rsubi r2,0
+4E4E6:  sexth r9
+4E4E8:  cmplt r2,r9
+4E4EA:  movf r9,r2
+4E4EC:  mov r3,r12
+4E4EE:  addi r3,32
+4E4F0:  ld.h r7,(r3,4)
+4E4F2:  sexth r7
+4E4F4:  cmplt r7,r9
+4E4F6:  bf 0x4e540
+4E4F8:  ld.b r7,(r8,3)
+4E4FA:  btsti r7,1
+4E4FC:  bf 0x4e50c
+4E4FE:  lrw r1,[0x4e53c] ; = 0x00409014
+4E500:  ld.b r7,(r1,0)
+4E502:  cmplti r7,2
+4E504:  bt 0x4e540
+4E506:  ld.b r7,(r1,1)
+4E508:  cmplti r7,2
+4E50A:  bt 0x4e540
+4E50C:  ld.h r2,(r3,10)
+4E50E:  lrw r7,[0x4e7cc] ; = 0x00400952
+4E510:  addu r7,r2
+4E512:  ld.b r7,(r7,0)
+4E514:  btsti r7,0
+4E516:  bt 0x4e540
+4E518:  lrw r6,[0x4e7d0] ; = 0x00408da8
+4E51A:  lrw r7,[0x4e7d4] ; = 0x00409057
+4E51C:  ld.h r6,(r6,0)
+4E51E:  bmaski r1,10
+4E520:  sexth r6
+4E522:  subi r1,23
+4E524:  ixh r7,r2
+4E526:  divs r6,r1
+4E528:  ld.b r9,(r7,0)
+4E52A:  movi r1,7
+4E52C:  andi r9,7
+4E52E:  addu r9,r6
+4E530:  cmplti r9,7
+4E532:  bf 0x4e552
+4E534:  mov r2,r9
+4E536:  br 0x4e554
+4E538:  ldq r4-r7,(r0)
+4E53A:  st.w r0,(r14,28)
+4E53C:  ldq r4-r7,(r0)
+4E53E:  st.w r0,(r4,4)
+4E540:  movi r5,42
+4E542:  addu r5,r12
+4E544:  lrw r1,[0x4e7d8] ; = 0x00409056
+4E546:  ld.h r5,(r5,0)
+4E548:  ixh r1,r5
+4E54A:  ld.b r6,(r1,1)
+4E54C:  bclri r6,6
+4E54E:  st.b r6,(r1,1)
+4E550:  movi r1,0
+4E552:  mov r2,r1
+4E554:  mov r3,r12
+4E556:  addi r3,32
+4E558:  lrw r9,[0x4e7d8] ; = 0x00409056
+4E55A:  ld.h r6,(r3,10)
+4E55C:  movi r5,120
+4E55E:  ixh r9,r6
+4E560:  ld.b r1,(r9,1)
+4E562:  bseti r5,7
+4E564:  and r1,r5
+4E566:  andi r2,7
+4E568:  or r1,r2
+4E56A:  st.b r1,(r9,1)
+4E56C:  zextb r1
+4E56E:  andi r1,7
+4E570:  cmplti r1,5
+4E572:  bt 0x4e59e
+4E574:  ld.b r7,(r12,0)
+4E576:  btsti r7,0
+4E578:  bt 0x4e59e
+4E57A:  lrw r7,[0x4e8d0] ; = 0x00408da2
+4E57C:  ld.b r7,(r7,0)
+4E57E:  btsti r7,7
+4E580:  bt 0x4e59e
+4E582:  ld.b r7,(r11,0)
+4E584:  bseti r7,5
+4E586:  st.b r7,(r11,0)
+4E588:  ld.h r1,(r3,10)
+4E58A:  lrw r7,[0x4e8d4] ; = 0x00409026
+4E58C:  lsli r1,1
+4E58E:  ld.h r6,(r12,6)
+4E590:  lrw r12,[0x4e7d8] ; = 0x00409056
+4E592:  addu r7,r1
+4E594:  st.h r6,(r7,0)
+4E596:  addu r12,r1
+4E598:  ld.b r7,(r12,1)
+4E59A:  bseti r7,6
+4E59C:  st.b r7,(r12,1)
+4E59E:  lrw r2,[0x4e8d8] ; = 0x00408eca
+4E5A0:  movi r12,5
+4E5A2:  ld.b r2,(r2,0)
+4E5A4:  sextb r2
+4E5A6:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E5A8:  movi r7,60
+4E5AA:  cmplt r2,r7
+4E5AC:  bt 0x4e5da
+4E5AE:  lrw r2,[0x4e8d8] ; = 0x00408eca
+4E5B0:  ld.b r2,(r2,0)
+4E5B2:  sextb r2
+4E5B4:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E5B6:  movi r7,50
+4E5B8:  rsub r7,r2
+4E5BA:  movi r1,10
+4E5BC:  divs r7,r1
+4E5BE:  movi r12,1
+4E5C0:  rsubi r7,5
+4E5C2:  cmplti r7,2
+4E5C4:  bt 0x4e5da
+4E5C6:  lrw r2,[0x4e8d8] ; = 0x00408eca
+4E5C8:  ld.b r2,(r2,0)
+4E5CA:  sextb r2
+4E5CC:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E5CE:  movi r12,50
+4E5D0:  rsub r12,r2
+4E5D2:  movi r1,10
+4E5D4:  divs r12,r1
+4E5D6:  rsubi r12,5
+4E5D8:  zextb r12
+4E5DA:  lrw r6,[0x4e8e0] ; = 0x00400978
+4E5DC:  movi r5,42
+4E5DE:  ld.w r6,(r6,0)
+4E5E0:  lrw r7,[0x4e8e4] ; = 0x0040912e
+4E5E2:  addu r6,r5
+4E5E4:  ld.h r6,(r6,0)
+4E5E6:  movi r5,10
+4E5E8:  mult r6,r5
+4E5EA:  addu r7,r6
+4E5EC:  movi r6,0
+4E5EE:  movi r1,93
+4E5F0:  st.h r6,(r7,0)
+4E5F2:  bseti r1,8
+4E5F4:  lrw r9,[0x4e7d0] ; = 0x00408da8
+4E5F6:  st.w r1,(r0,48)
+4E5F8:  ld.h r9,(r9,0)
+4E5FA:  lrw r7,[0x4e8e8] ; = 0x00001770
+4E5FC:  sexth r9
+4E5FE:  cmplt r9,r7
+4E600:  bf 0x4e624
+4E602:  mov r2,r7
+4E604:  subu r2,r9
+4E606:  btsti r2,31
+4E608:  bf 0x4e60c
+4E60A:  addi r2,7
+4E60C:  asri r2,3
+4E60E:  mov r7,r2
+4E610:  lrw r6,[0x4e8ec] ; = 0x0000036b
+4E612:  movi r5,93
+4E614:  addu r7,r1
+4E616:  bseti r5,8
+4E618:  cmplt r6,r7
+4E61A:  addu r2,r5
+4E61C:  movt r2,r6
+4E61E:  addu r5,r2
+4E620:  sexth r5
+4E622:  st.w r5,(r0,48)
+4E624:  movi r2,125
+4E626:  movi r7,76
+4E628:  lsli r2,5
+4E62A:  addu r7,r0
+4E62C:  movi r6,0
+4E62E:  cmplt r9,r2
+4E630:  st.w r6,(r7,0)
+4E632:  bf 0x4e644
+4E634:  movi r1,12
+4E636:  subu r2,r9
+4E638:  bseti r1,7
+4E63A:  divs r2,r1
+4E63C:  movi r7,76
+4E63E:  addu r7,r0
+4E640:  sexth r2
+4E642:  st.w r2,(r7,0)
+4E644:  lrw r7,[0x4e8f0] ; = 0x00408e1a
+4E646:  ld.b r7,(r7,1)
+4E648:  btsti r7,1
+4E64A:  bf 0x4e752
+4E64C:  lrw r9,[0x4e8f4] ; = 0x00408ecc
+4E64E:  lrw r1,[0x4e8f8] ; = 0x00408ece
+4E650:  ld.h r9,(r9,0)
+4E652:  ld.h r1,(r1,0)
+4E654:  sexth r9
+4E656:  sexth r1
+4E658:  mov r2,r9
+4E65A:  asri r1,31
+4E65C:  asri r2,31
+4E65E:  bseti r1,0
+4E660:  bseti r2,0
+4E662:  cmpne r1,r2
+4E664:  bt 0x4e752
+4E666:  mov r2,r9
+4E668:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E66A:  movi r7,92
+4E66C:  addu r7,r0
+4E66E:  st.w r2,(r7,0)
+4E670:  lrw r2,[0x4e8fc] ; = 0x00408ea0
+4E672:  ld.h r2,(r2,0)
+4E674:  sexth r2
+4E676:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E678:  movi r7,76
+4E67A:  addu r7,r0
+4E67C:  ld.w r7,(r7,0)
+4E67E:  movi r1,10
+4E680:  addi r7,12
+4E682:  br 0x4e684
+4E684:  mult r7,r2
+4E686:  divs r7,r1
+4E688:  movi r6,92
+4E68A:  addu r6,r0
+4E68C:  ld.w r6,(r6,0)
+4E68E:  cmplt r7,r6
+4E690:  bf 0x4e6da
+4E692:  ld.b r1,(r14,6)
+4E694:  btsti r1,7
+4E696:  bf 0x4e6b6
+4E698:  lrw r9,[0x4e8f4] ; = 0x00408ecc
+4E69A:  lrw r6,[0x4e900] ; = 0x00400b1a
+4E69C:  ld.h r9,(r9,0)
+4E69E:  ld.h r6,(r6,0)
+4E6A0:  sexth r9
+4E6A2:  sexth r6
+4E6A4:  ld.w r7,(r0,48)
+4E6A6:  subu r9,r6
+4E6A8:  cmplt r7,r9
+4E6AA:  bf 0x4e6b6
+4E6AC:  lrw r7,[0x4e904] ; = 0x00408ea2
+4E6AE:  ld.h r7,(r7,0)
+4E6B0:  sexth r7
+4E6B2:  cmplt r7,r9
+4E6B4:  bt 0x4e736
+4E6B6:  btsti r1,6
+4E6B8:  bf 0x4e6da
+4E6BA:  lrw r9,[0x4e8f4] ; = 0x00408ecc
+4E6BC:  lrw r6,[0x4e900] ; = 0x00400b1a
+4E6BE:  ld.h r9,(r9,0)
+4E6C0:  ld.h r6,(r6,0)
+4E6C2:  ld.w r7,(r0,48)
+4E6C4:  sexth r9
+4E6C6:  sexth r6
+4E6C8:  subu r9,r6
+4E6CA:  rsubi r7,0
+4E6CC:  cmplt r9,r7
+4E6CE:  bf 0x4e6da
+4E6D0:  lrw r7,[0x4e904] ; = 0x00408ea2
+4E6D2:  ld.h r7,(r7,0)
+4E6D4:  sexth r7
+4E6D6:  cmplt r9,r7
+4E6D8:  bt 0x4e736
+4E6DA:  lrw r2,[0x4e8f4] ; = 0x00408ecc
+4E6DC:  ld.h r2,(r2,0)
+4E6DE:  sexth r2
+4E6E0:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E6E2:  mov r9,r2
+4E6E4:  lrw r2,[0x4e8fc] ; = 0x00408ea0
+4E6E6:  ld.h r2,(r2,0)
+4E6E8:  sexth r2
+4E6EA:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E6EC:  movi r7,76
+4E6EE:  addu r7,r0
+4E6F0:  ld.w r7,(r7,0)
+4E6F2:  movi r1,10
+4E6F4:  addi r7,15
+4E6F6:  mult r7,r2
+4E6F8:  divs r7,r1
+4E6FA:  cmplt r7,r9
+4E6FC:  bf 0x4e752
+4E6FE:  lrw r9,[0x4e8f4] ; = 0x00408ecc
+4E700:  lrw r1,[0x4e900] ; = 0x00400b1a
+4E702:  ld.h r9,(r9,0)
+4E704:  ld.h r1,(r1,0)
+4E706:  sexth r9
+4E708:  ld.w r6,(r0,48)
+4E70A:  mov r7,r9
+4E70C:  sexth r1
+4E70E:  subu r7,r6
+4E710:  cmplt r1,r7
+4E712:  bf 0x4e71a
+4E714:  ld.b r7,(r14,6)
+4E716:  btsti r7,7
+4E718:  bt 0x4e728
+4E71A:  ld.w r6,(r0,48)
+4E71C:  addu r9,r6
+4E71E:  cmplt r9,r1
+4E720:  bf 0x4e752
+4E722:  ld.b r7,(r14,6)
+4E724:  btsti r7,6
+4E726:  bf 0x4e752
+4E728:  lrw r1,[0x4ea24] ; = 0x00409046
+4E72A:  ld.b r7,(r1,15)
+4E72C:  btsti r7,2
+4E72E:  bt 0x4e752
+4E730:  ld.b r7,(r1,11)
+4E732:  btsti r7,2
+4E734:  bt 0x4e752
+4E736:  ld.b r7,(r8,5)
+4E738:  lrw r6,[0x4e8e0] ; = 0x00400978
+4E73A:  bseti r7,7
+4E73C:  st.b r7,(r8,5)
+4E73E:  ld.w r6,(r6,0)
+4E740:  movi r5,42
+4E742:  addu r6,r5
+4E744:  ld.h r6,(r6,0)
+4E746:  lrw r7,[0x4e8e4] ; = 0x0040912e
+4E748:  movi r5,10
+4E74A:  mult r6,r5
+4E74C:  addu r7,r6
+4E74E:  movi r6,100
+4E750:  st.h r6,(r7,0)
+4E752:  lrw r7,[0x4ea28] ; = 0x00040b06
+4E754:  lrw r3,[0x4e7d0] ; = 0x00408da8
+4E756:  ld.h r7,(r7,0)
+4E758:  movi r1,10
+4E75A:  sexth r7
+4E75C:  st.w r7,(r0,48)
+4E75E:  ld.h r3,(r3,0)
+4E760:  lrw r2,[0x4ea2c] ; = 0x000d6ca8
+4E762:  sexth r3
+4E764:  divs r3,r1
+4E766:  jsri [0x4ea30] ; -> 0x000710fc
+4E768:  movi r7,76
+4E76A:  sexth r2
+4E76C:  addu r7,r0
+4E76E:  lrw r6,[0x4e8e0] ; = 0x00400978
+4E770:  st.w r2,(r7,0)
+4E772:  ld.w r6,(r6,0)
+4E774:  movi r5,42
+4E776:  addu r6,r5
+4E778:  ld.h r6,(r6,0)
+4E77A:  lrw r7,[0x4ea34] ; = 0x00409134
+4E77C:  movi r5,10
+4E77E:  mult r6,r5
+4E780:  addu r7,r6
+4E782:  movi r6,76
+4E784:  addu r6,r0
+4E786:  ld.w r6,(r6,0)
+4E788:  lrw r9,[0x4e8f8] ; = 0x00408ece
+4E78A:  st.h r6,(r7,0)
+4E78C:  lrw r2,[0x4e8f4] ; = 0x00408ecc
+4E78E:  ld.h r9,(r9,0)
+4E790:  ld.h r2,(r2,0)
+4E792:  sexth r9
+4E794:  mov r1,r9
+4E796:  sexth r2
+4E798:  asri r1,31
+4E79A:  asri r2,31
+4E79C:  bseti r1,0
+4E79E:  bseti r2,0
+4E7A0:  cmpne r1,r2
+4E7A2:  bt 0x4e89e
+4E7A4:  mov r2,r9
+4E7A6:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E7A8:  movi r7,76
+4E7AA:  addu r7,r0
+4E7AC:  ld.w r7,(r7,0)
+4E7AE:  cmplt r7,r2
+4E7B0:  bf 0x4e89e
+4E7B2:  lrw r2,[0x4e900] ; = 0x00400b1a
+4E7B4:  lrw r9,[0x4e8f4] ; = 0x00408ecc
+4E7B6:  ld.h r2,(r2,0)
+4E7B8:  ld.h r9,(r9,0)
+4E7BA:  sexth r2
+4E7BC:  sexth r9
+4E7BE:  mov r1,r2
+4E7C0:  mov r3,r9
+4E7C2:  asri r1,31
+4E7C4:  br 0x4e7dc
+4E7C6:  bkpt
+4E7C8:  ldq r4-r7,(r0)
+4E7CA:  st.w r0,(r2,44)
+4E7CC:  ldq r4-r7,(r0)
+4E7CE:  .short 0x0952
+4E7D0:  ldq r4-r7,(r0)
+4E7D2:  ld.w r13,(r8,40)
+4E7D4:  ldq r4-r7,(r0)
+4E7D6:  st.w r0,(r7,20)
+4E7D8:  ldq r4-r7,(r0)
+4E7DA:  st.w r0,(r6,20)
+4E7DC:  asri r3,31
+4E7DE:  bseti r1,0
+4E7E0:  bseti r3,0
+4E7E2:  cmpne r1,r3
+4E7E4:  bt 0x4e89e
+4E7E6:  lrw r6,[0x4ea38] ; = 0x00408da8
+4E7E8:  movi r7,100
+4E7EA:  ld.h r6,(r6,0)
+4E7EC:  addu r7,r0
+4E7EE:  sexth r6
+4E7F0:  st.w r6,(r7,0)
+4E7F2:  mov r7,r6
+4E7F4:  lrw r6,[0x4e8e8] ; = 0x00001770
+4E7F6:  cmplt r7,r6
+4E7F8:  bf 0x4e80e
+4E7FA:  mov r1,r9
+4E7FC:  subu r1,r2
+4E7FE:  movi r6,105
+4E800:  bseti r6,7
+4E802:  cmplt r6,r1
+4E804:  bt 0x4e80a
+4E806:  lrw r6,[0x4ea3c] ; = 0xffffff17
+4E808:  cmplt r1,r6
+4E80A:  movi r9,6
+4E80C:  bt 0x4e81e
+4E80E:  movi r7,100
+4E810:  addu r7,r0
+4E812:  ld.w r3,(r7,0)
+4E814:  movi r1,100
+4E816:  divs r3,r1
+4E818:  lrw r2,[0x4ea40] ; = 0x00040c9e
+4E81A:  jsri [0x4ea30] ; -> 0x000710fc
+4E81C:  mov r9,r2
+4E81E:  lrw r2,[0x4e8f8] ; = 0x00408ece
+4E820:  ld.h r2,(r2,0)
+4E822:  sexth r2
+4E824:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E826:  movi r6,76
+4E828:  addu r6,r0
+4E82A:  ld.w r6,(r6,0)
+4E82C:  zextb r9
+4E82E:  subu r2,r6
+4E830:  movi r6,76
+4E832:  addu r6,r0
+4E834:  ld.w r1,(r6,0)
+4E836:  ld.w r7,(r0,48)
+4E838:  divs r2,r1
+4E83A:  lrw r6,[0x4eb30] ; = 0x00000bb8
+4E83C:  mult r2,r9
+4E83E:  subu r7,r2
+4E840:  sexth r7
+4E842:  st.w r7,(r0,48)
+4E844:  lrw r7,[0x4ea38] ; = 0x00408da8
+4E846:  ld.h r7,(r7,0)
+4E848:  sexth r7
+4E84A:  cmplt r6,r7
+4E84C:  bf 0x4e890
+4E84E:  lrw r2,[0x4e8f8] ; = 0x00408ece
+4E850:  ld.h r2,(r2,0)
+4E852:  sexth r2
+4E854:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E856:  lrw r7,[0x4eb34] ; = 0x000009c4
+4E858:  cmplt r7,r2
+4E85A:  bf 0x4e890
+4E85C:  lrw r9,[0x4e900] ; = 0x00400b1a
+4E85E:  lrw r1,[0x4e8f4] ; = 0x00408ecc
+4E860:  ld.h r9,(r9,0)
+4E862:  ld.h r1,(r1,0)
+4E864:  sexth r9
+4E866:  sexth r1
+4E868:  asri r9,31
+4E86A:  asri r1,31
+4E86C:  bseti r9,0
+4E86E:  bseti r1,0
+4E870:  cmpne r9,r1
+4E872:  bt 0x4e890
+4E874:  lrw r2,[0x4e8f8] ; = 0x00408ece
+4E876:  ld.h r2,(r2,0)
+4E878:  sexth r2
+4E87A:  jsri [0x4e8dc] ; -> 0x0006d0cc
+4E87C:  lrw r5,[0x4eb34] ; = 0x000009c4
+4E87E:  ld.w r6,(r0,48)
+4E880:  rsub r5,r2
+4E882:  lrw r1,[0x4eb38] ; = 0x00002ee0
+4E884:  mult r6,r5
+4E886:  divs r6,r1
+4E888:  ld.w r7,(r0,48)
+4E88A:  subu r7,r6
+4E88C:  sexth r7
+4E88E:  st.w r7,(r0,48)
+4E890:  lrw r1,[0x4eb3c] ; = 0x000403e4
+4E892:  ld.w r6,(r0,48)
+4E894:  ld.h r1,(r1,0)
+4E896:  sexth r1
+4E898:  cmplt r1,r6
+4E89A:  bt 0x4e89e
+4E89C:  st.w r1,(r0,48)
+4E89E:  lrw r9,[0x4e8e0] ; = 0x00400978
+4E8A0:  movi r6,42
+4E8A2:  ld.w r9,(r9,0)
+4E8A4:  lrw r7,[0x4eb40] ; = 0x00409132
+4E8A6:  addu r6,r9
+4E8A8:  ld.h r6,(r6,0)
+4E8AA:  movi r5,10
+4E8AC:  mult r6,r5
+4E8AE:  addu r7,r6
+4E8B0:  ld.w r6,(r0,48)
+4E8B2:  movi r1,112
+4E8B4:  st.h r6,(r7,0)
+4E8B6:  lrw r7,[0x4eb44] ; = 0x00408e6d
+4E8B8:  bseti r1,7
+4E8BA:  ld.b r7,(r7,0)
+4E8BC:  and r7,r1
+4E8BE:  cmpne r7,r1
+4E8C0:  bt 0x4e8cc
+4E8C2:  lrw r7,[0x4eb48] ; = 0x00408dc6
+4E8C4:  movi r6,1
+4E8C6:  ld.b r7,(r7,0)
+4E8C8:  btsti r7,2
+4E8CA:  bt 0x4e908
+4E8CC:  movi r6,0
+4E8CE:  br 0x4e908
+4E8D0:  ldq r4-r7,(r0)
+4E8D2:  ld.w r13,(r2,40)
+4E8D4:  ldq r4-r7,(r0)
+4E8D6:  st.w r0,(r6,8)
+4E8D8:  ldq r4-r7,(r0)
+4E8DA:  ld.w r14,(r10,48)
+4E8DC:  doze
+4E8DE:  st.h r0,(r12,24)
+4E8E0:  ldq r4-r7,(r0)
+4E8E2:  .short 0x0978
+4E8E4:  ldq r4-r7,(r0)
+4E8E6:  st.w r1,(r14,8)
+4E8E8:  bkpt
+4E8EA:  xor r0,r7
+4E8EC:  bkpt
+4E8EE:  mult r11,r6
+4E8F0:  ldq r4-r7,(r0)
+4E8F2:  ld.w r14,(r10,4)
+4E8F4:  ldq r4-r7,(r0)
+4E8F6:  ld.w r14,(r12,48)
+4E8F8:  ldq r4-r7,(r0)
+4E8FA:  ld.w r14,(r14,48)
+4E8FC:  ldq r4-r7,(r0)
+4E8FE:  ld.w r14,(r0,40)
+4E900:  ldq r4-r7,(r0)
+4E902:  lsr r10,r1
+4E904:  ldq r4-r7,(r0)
+4E906:  ld.w r14,(r2,40)
+4E908:  movi r7,76
+4E90A:  addu r7,r0
+4E90C:  st.w r6,(r7,0)
+4E90E:  btsti r9,7
+4E910:  bf 0x4eb60
+4E912:  lrw r7,[0x4eb4c] ; = 0x00408ea6
+4E914:  ld.b r7,(r7,0)
+4E916:  cmplt r12,r7
+4E918:  bt 0x4e94c
+4E91A:  lrw r2,[0x4eb50] ; = 0x00408eca
+4E91C:  ld.b r2,(r2,0)
+4E91E:  sextb r2
+4E920:  jsri [0x4eb54] ; -> 0x0006d0cc
+4E922:  ld.w r7,(r0,48)
+4E924:  cmplt r7,r2
+4E926:  bt 0x4e94c
+4E928:  ld.b r7,(r8,5)
+4E92A:  btsti r7,7
+4E92C:  bt 0x4e94c
+4E92E:  movi r7,68
+4E930:  addu r7,r0
+4E932:  ld.w r7,(r7,0)
+4E934:  cmpnei r7,0
+4E936:  bt 0x4e94c
+4E938:  lrw r6,[0x4ec40] ; = 0x00400978
+4E93A:  movi r5,42
+4E93C:  ld.w r6,(r6,0)
+4E93E:  lrw r7,[0x4ec44] ; = 0x00409049
+4E940:  addu r6,r5
+4E942:  ld.h r6,(r6,0)
+4E944:  ixw r7,r6
+4E946:  ld.b r7,(r7,0)
+4E948:  btsti r7,0
+4E94A:  bf 0x4eb60
+4E94C:  lrw r12,[0x4ec40] ; = 0x00400978
+4E94E:  ld.w r12,(r12,0)
+4E950:  ld.b r7,(r12,0)
+4E952:  btsti r7,0
+4E954:  bt 0x4eb60
+4E956:  ld.b r7,(r11,0)
+4E958:  btsti r7,5
+4E95A:  bt 0x4eb60
+4E95C:  movi r6,42
+4E95E:  addu r6,r12
+4E960:  lrw r7,[0x4ec44] ; = 0x00409049
+4E962:  ld.h r6,(r6,0)
+4E964:  ixw r7,r6
+4E966:  ld.b r7,(r7,0)
+4E968:  andi r7,12
+4E96A:  cmpnei r7,0
+4E96C:  bt 0x4eb60
+4E96E:  lrw r7,[0x4ec48] ; = 0x00401ff2
+4E970:  ld.b r7,(r7,0)
+4E972:  btsti r7,7
+4E974:  bf 0x4eb60
+4E976:  lrw r7,[0x4ec4c] ; = 0x00408e6a
+4E978:  ld.b r7,(r7,0)
+4E97A:  cmplti r7,3
+4E97C:  bt 0x4eb60
+4E97E:  ld.b r7,(r14,1)
+4E980:  btsti r7,0
+4E982:  bf 0x4eb60
+4E984:  movi r7,68
+4E986:  addu r7,r0
+4E988:  ld.w r7,(r7,0)
+4E98A:  cmpnei r7,0
+4E98C:  bt 0x4e9b4
+4E98E:  lrw r7,[0x4ec50] ; = 0x00408eb2
+4E990:  ld.h r7,(r7,0)
+4E992:  sexth r7
+4E994:  cmplti r7,1
+4E996:  bf 0x4e9b4
+4E998:  lrw r12,[0x4ec54] ; = 0x00408f2a
+4E99A:  movi r6,100
+4E99C:  ld.h r7,(r12,0)
+4E99E:  sexth r7
+4E9A0:  cmplt r6,r7
+4E9A2:  bf 0x4eb60
+4E9A4:  ld.h r7,(r12,2)
+4E9A6:  sexth r7
+4E9A8:  cmplt r6,r7
+4E9AA:  bf 0x4eb60
+4E9AC:  lrw r7,[0x4eb48] ; = 0x00408dc6
+4E9AE:  ld.b r7,(r7,0)
+4E9B0:  btsti r7,2
+4E9B2:  bf 0x4eb60
+4E9B4:  movi r7,76
+4E9B6:  addu r7,r0
+4E9B8:  ld.w r7,(r7,0)
+4E9BA:  cmpnei r7,0
+4E9BC:  bf 0x4eb60
+4E9BE:  lrw r7,[0x4ec58] ; = 0x00408db5
+4E9C0:  ld.b r7,(r7,0)
+4E9C2:  btsti r7,4
+4E9C4:  bt 0x4eb60
+4E9C6:  lrw r2,[0x4eb50] ; = 0x00408eca
+4E9C8:  ld.b r2,(r2,0)
+4E9CA:  sextb r2
+4E9CC:  jsri [0x4eb54] ; -> 0x0006d0cc
+4E9CE:  movi r7,40
+4E9D0:  cmplt r2,r7
+4E9D2:  bt 0x4e9fc
+4E9D4:  lrw r3,[0x4ea38] ; = 0x00408da8
+4E9D6:  movi r1,100
+4E9D8:  ld.h r3,(r3,0)
+4E9DA:  lrw r2,[0x4ec5c] ; = 0x00040cc8
+4E9DC:  sexth r3
+4E9DE:  divs r3,r1
+4E9E0:  jsri [0x4ea30] ; -> 0x000710fc
+4E9E2:  movi r6,100
+4E9E4:  mult r2,r6
+4E9E6:  lrw r6,[0x4ec40] ; = 0x00400978
+4E9E8:  movi r5,42
+4E9EA:  ld.w r6,(r6,0)
+4E9EC:  lrw r7,[0x4ec54] ; = 0x00408f2a
+4E9EE:  addu r6,r5
+4E9F0:  ld.h r6,(r6,0)
+4E9F2:  ixh r7,r6
+4E9F4:  ld.h r7,(r7,0)
+4E9F6:  sexth r7
+4E9F8:  cmplt r2,r7
+4E9FA:  bt 0x4ea14
+4E9FC:  lrw r2,[0x4eb50] ; = 0x00408eca
+4E9FE:  ld.b r2,(r2,0)
+4EA00:  sextb r2
+4EA02:  jsri [0x4eb54] ; -> 0x0006d0cc
+4EA04:  movi r7,40
+4EA06:  cmplt r2,r7
+4EA08:  bt 0x4ea14
+4EA0A:  movi r7,68
+4EA0C:  addu r7,r0
+4EA0E:  ld.w r7,(r7,0)
+4EA10:  cmpnei r7,0
+4EA12:  bf 0x4eb60
+4EA14:  lrw r7,[0x4ec40] ; = 0x00400978
+4EA16:  movi r6,88
+4EA18:  addu r6,r0
+4EA1A:  ld.w r7,(r7,0)
+4EA1C:  ld.w r6,(r6,0)
+4EA1E:  cmpne r7,r6
+4EA20:  bt 0x4ea7c
+4EA22:  br 0x4ea44
+4EA24:  ldq r4-r7,(r0)
+4EA26:  st.w r0,(r6,16)
+4EA28:  stop
+4EA2A:  lsr r6,r0
+4EA2C:  .short 0x000d
+4EA2E:  .short 0x6ca8
+4EA30:  idly4
+4EA32:  mfcr r12,cr15
+4EA34:  ldq r4-r7,(r0)
+4EA36:  st.w r1,(r4,12)
+4EA38:  ldq r4-r7,(r0)
+4EA3A:  ld.w r13,(r8,40)
+4EA3C:  bsr 0x4ea3c
+4EA3E:  bsr 0x4e86e
+4EA40:  stop
+4EA42:  cmphs r14,r9
+4EA44:  lrw r12,[0x4eb50] ; = 0x00408eca
+4EA46:  ld.b r12,(r12,0)
+4EA48:  sextb r12
+4EA4A:  cmplti r12,1
+4EA4C:  bt 0x4ea7c
+4EA4E:  lrw r7,[0x4ed5c] ; = 0x00408ecc
+4EA50:  lrw r6,[0x4ed60] ; = 0x00400b1a
+4EA52:  ld.h r7,(r7,0)
+4EA54:  ld.h r6,(r6,0)
+4EA56:  sexth r7
+4EA58:  sexth r6
+4EA5A:  subu r7,r6
+4EA5C:  cmplti r7,1
+4EA5E:  bf 0x4eac2
+4EA60:  ld.b r7,(r8,5)
+4EA62:  btsti r7,7
+4EA64:  bt 0x4eac2
+4EA66:  mov r2,r12
+4EA68:  sextb r2
+4EA6A:  jsri [0x4eb54] ; -> 0x0006d0cc
+4EA6C:  ld.w r7,(r0,48)
+4EA6E:  cmplt r7,r2
+4EA70:  bt 0x4eac2
+4EA72:  movi r7,68
+4EA74:  addu r7,r0
+4EA76:  ld.w r7,(r7,0)
+4EA78:  cmpnei r7,0
+4EA7A:  bt 0x4eac2
+4EA7C:  lrw r7,[0x4ec40] ; = 0x00400978
+4EA7E:  movi r6,64
+4EA80:  addu r6,r0
+4EA82:  ld.w r7,(r7,0)
+4EA84:  ld.w r6,(r6,0)
+4EA86:  cmpne r7,r6
+4EA88:  bt 0x4eb60
+4EA8A:  lrw r12,[0x4eb50] ; = 0x00408eca
+4EA8C:  ld.b r12,(r12,0)
+4EA8E:  sextb r12
+4EA90:  btsti r12,31
+4EA92:  bf 0x4eb60
+4EA94:  lrw r7,[0x4ed5c] ; = 0x00408ecc
+4EA96:  lrw r6,[0x4ed60] ; = 0x00400b1a
+4EA98:  ld.h r7,(r7,0)
+4EA9A:  ld.h r6,(r6,0)
+4EA9C:  sexth r7
+4EA9E:  sexth r6
+4EAA0:  subu r7,r6
+4EAA2:  btsti r7,31
+4EAA4:  bt 0x4eac2
+4EAA6:  ld.b r7,(r8,5)
+4EAA8:  btsti r7,7
+4EAAA:  bt 0x4eac2
+4EAAC:  mov r2,r12
+4EAAE:  sextb r2
+4EAB0:  jsri [0x4eb54] ; -> 0x0006d0cc
+4EAB2:  ld.w r7,(r0,48)
+4EAB4:  cmplt r7,r2
+4EAB6:  bt 0x4eac2
+4EAB8:  movi r7,68
+4EABA:  addu r7,r0
+4EABC:  ld.w r7,(r7,0)
+4EABE:  cmpnei r7,0
+4EAC0:  bf 0x4eb60
+4EAC2:  lrw r1,[0x4ec40] ; = 0x00400978
+4EAC4:  ld.w r1,(r1,0)
+4EAC6:  ld.b r7,(r1,0)
+4EAC8:  btsti r7,0
+4EACA:  bt 0x4eb60
+4EACC:  lrw r7,[0x4ed64] ; = 0x00408da2
+4EACE:  ld.b r7,(r7,0)
+4EAD0:  btsti r7,5
+4EAD2:  bt 0x4eb60
+4EAD4:  movi r5,42
+4EAD6:  addu r5,r1
+4EAD8:  lrw r7,[0x4ed68] ; = 0x00400952
+4EADA:  ld.h r6,(r5,0)
+4EADC:  addu r7,r6
+4EADE:  ld.b r7,(r7,0)
+4EAE0:  btsti r7,0
+4EAE2:  bt 0x4eb60
+4EAE4:  jsri [0x4ed6c] ; -> 0x000cfc18
+4EAE6:  cmpnei r2,0
+4EAE8:  bt 0x4eb60
+4EAEA:  jsri [0x4ed70] ; -> 0x000cfc56
+4EAEC:  cmpnei r2,0
+4EAEE:  bf 0x4eb60
+4EAF0:  lrw r6,[0x4ec40] ; = 0x00400978
+4EAF2:  movi r5,42
+4EAF4:  ld.w r6,(r6,0)
+4EAF6:  lrw r12,[0x4ed74] ; = 0x00409046
+4EAF8:  addu r6,r5
+4EAFA:  ld.h r6,(r6,0)
+4EAFC:  lrw r7,[0x4ed78] ; = 0x00408eda
+4EAFE:  ixw r12,r6
+4EB00:  ld.b r1,(r12,3)
+4EB02:  lrw r6,[0x4eb50] ; = 0x00408eca
+4EB04:  bseti r1,2
+4EB06:  bseti r1,5
+4EB08:  st.b r1,(r12,3)
+4EB0A:  ld.b r6,(r6,0)
+4EB0C:  lrw r2,[0x4ed5c] ; = 0x00408ecc
+4EB0E:  st.b r6,(r7,0)
+4EB10:  lrw r6,[0x4ec50] ; = 0x00408eb2
+4EB12:  lrw r7,[0x4ed7c] ; = 0x00408ed6
+4EB14:  ld.h r6,(r6,0)
+4EB16:  lrw r5,[0x4ed60] ; = 0x00400b1a
+4EB18:  st.h r6,(r7,0)
+4EB1A:  lrw r7,[0x4ed80] ; = 0x00408e1a
+4EB1C:  bclri r1,0
+4EB1E:  ld.b r6,(r7,1)
+4EB20:  bseti r6,1
+4EB22:  st.b r6,(r7,1)
+4EB24:  ld.h r2,(r2,0)
+4EB26:  lrw r7,[0x4ed84] ; = 0x00408ea0
+4EB28:  st.h r2,(r7,0)
+4EB2A:  ld.h r5,(r5,0)
+4EB2C:  br 0x4eb58
+4EB2E:  bkpt
+4EB30:  bkpt
+4EB32:  lsr r8,r11
+4EB34:  bkpt
+4EB36:  .short 0x09c4
+4EB38:  bkpt
+4EB3A:  andi r0,14
+4EB3C:  stop
+4EB3E:  mult r4,r14
+4EB40:  ldq r4-r7,(r0)
+4EB42:  st.w r1,(r2,12)
+4EB44:  ldq r4-r7,(r0)
+4EB46:  ld.w r14,(r13,24)
+4EB48:  ldq r4-r7,(r0)
+4EB4A:  ld.w r13,(r6,48)
+4EB4C:  ldq r4-r7,(r0)
+4EB4E:  ld.w r14,(r6,40)
+4EB50:  ldq r4-r7,(r0)
+4EB52:  ld.w r14,(r10,48)
+4EB54:  doze
+4EB56:  st.h r0,(r12,24)
+4EB58:  lrw r7,[0x4ee84] ; = 0x00408ea2
+4EB5A:  rsub r5,r2
+4EB5C:  st.h r5,(r7,0)
+4EB5E:  st.b r1,(r12,3)
+4EB60:  lrw r12,[0x4ec40] ; = 0x00400978
+4EB62:  movi r6,42
+4EB64:  ld.w r12,(r12,0)
+4EB66:  lrw r7,[0x4ec44] ; = 0x00409049
+4EB68:  addu r6,r12
+4EB6A:  ld.h r1,(r6,0)
+4EB6C:  ixw r7,r1
+4EB6E:  ld.b r7,(r7,0)
+4EB70:  btsti r7,2
+4EB72:  bf 0x4ec20
+4EB74:  lrw r7,[0x4ec48] ; = 0x00401ff2
+4EB76:  ld.b r7,(r7,0)
+4EB78:  btsti r7,7
+4EB7A:  bf 0x4ebec
+4EB7C:  movi r7,76
+4EB7E:  addu r7,r0
+4EB80:  ld.w r7,(r7,0)
+4EB82:  cmpnei r7,0
+4EB84:  bf 0x4ebec
+4EB86:  lrw r6,[0x4ec50] ; = 0x00408eb2
+4EB88:  ld.h r6,(r6,0)
+4EB8A:  sexth r6
+4EB8C:  st.w r6,(r0,48)
+4EB8E:  cmpnei r6,0
+4EB90:  bf 0x4ebec
+4EB92:  ld.b r7,(r11,0)
+4EB94:  btsti r7,5
+4EB96:  bt 0x4ebec
+4EB98:  ixh r1,r1
+4EB9A:  addu r1,r10
+4EB9C:  ld.b r1,(r1,0)
+4EB9E:  btsti r1,5
+4EBA0:  bt 0x4ebec
+4EBA2:  movi r7,88
+4EBA4:  addu r7,r0
+4EBA6:  ld.w r7,(r7,0)
+4EBA8:  cmpne r12,r7
+4EBAA:  bt 0x4ebb6
+4EBAC:  lrw r7,[0x4ee88] ; = 0x00408eca
+4EBAE:  ld.b r7,(r7,0)
+4EBB0:  sextb r7
+4EBB2:  btsti r7,31
+4EBB4:  bt 0x4ebec
+4EBB6:  movi r7,64
+4EBB8:  addu r7,r0
+4EBBA:  ld.w r7,(r7,0)
+4EBBC:  cmpne r12,r7
+4EBBE:  bt 0x4ebca
+4EBC0:  lrw r7,[0x4ee88] ; = 0x00408eca
+4EBC2:  ld.b r7,(r7,0)
+4EBC4:  sextb r7
+4EBC6:  cmplti r7,1
+4EBC8:  bf 0x4ebec
+4EBCA:  movi r7,80
+4EBCC:  addu r7,r0
+4EBCE:  ld.w r7,(r7,0)
+4EBD0:  cmpnei r7,0
+4EBD2:  bf 0x4ec20
+4EBD4:  lrw r2,[0x4ee88] ; = 0x00408eca
+4EBD6:  ld.b r2,(r2,0)
+4EBD8:  sextb r2
+4EBDA:  jsri [0x4ee8c] ; -> 0x0006d0cc
+4EBDC:  mov r3,r2
+4EBDE:  lrw r2,[0x4ee94] ; = 0x00040e26
+4EBE0:  jsri [0x4ee90] ; -> 0x000710fc
+4EBE2:  movi r7,100
+4EBE4:  mult r2,r7
+4EBE6:  ld.w r7,(r0,48)
+4EBE8:  cmplt r7,r2
+4EBEA:  bf 0x4ec20
+4EBEC:  lrw r7,[0x4ec40] ; = 0x00400978
+4EBEE:  movi r6,42
+4EBF0:  ld.w r7,(r7,0)
+4EBF2:  lrw r1,[0x4ed74] ; = 0x00409046
+4EBF4:  addu r7,r6
+4EBF6:  ld.h r12,(r7,0)
+4EBF8:  lrw r7,[0x4ed78] ; = 0x00408eda
+4EBFA:  ixw r1,r12
+4EBFC:  ld.b r2,(r1,3)
+4EBFE:  movi r6,0
+4EC00:  bclri r2,2
+4EC02:  st.b r2,(r1,3)
+4EC04:  st.b r6,(r7,0)
+4EC06:  lrw r7,[0x4ed7c] ; = 0x00408ed6
+4EC08:  st.h r6,(r7,0)
+4EC0A:  ld.b r7,(r11,0)
+4EC0C:  btsti r7,5
+4EC0E:  bt 0x4ec20
+4EC10:  ixh r12,r12
+4EC12:  addu r12,r10
+4EC14:  ld.b r12,(r12,0)
+4EC16:  btsti r12,5
+4EC18:  bt 0x4ec20
+4EC1A:  bclri r2,5
+4EC1C:  bclri r2,0
+4EC1E:  st.b r2,(r1,3)
+4EC20:  lrw r3,[0x4ec40] ; = 0x00400978
+4EC22:  lrw r12,[0x4ed74] ; = 0x00409046
+4EC24:  ld.w r3,(r3,0)
+4EC26:  mov r2,r3
+4EC28:  addi r2,32
+4EC2A:  ld.h r6,(r2,10)
+4EC2C:  ixw r12,r6
+4EC2E:  ld.b r4,(r12,3)
+4EC30:  btsti r4,3
+4EC32:  bf 0x4eca4
+4EC34:  lrw r6,[0x4ee98] ; = 0x00040c94
+4EC36:  lrw r7,[0x4ee9c] ; = 0x00408e80
+4EC38:  ld.h r6,(r6,0)
+4EC3A:  ld.h r7,(r7,0)
+4EC3C:  sexth r6
+4EC3E:  br 0x4ec60
+4EC40:  ldq r4-r7,(r0)
+4EC42:  .short 0x0978
+4EC44:  ldq r4-r7,(r0)
+4EC46:  st.w r0,(r9,16)
+4EC48:  ldq r4-r7,(r0)
+4EC4A:  andn r2,r15
+4EC4C:  ldq r4-r7,(r0)
+4EC4E:  ld.w r14,(r10,24)
+4EC50:  ldq r4-r7,(r0)
+4EC52:  ld.w r14,(r2,44)
+4EC54:  ldq r4-r7,(r0)
+4EC56:  ld.w r15,(r10,8)
+4EC58:  ldq r4-r7,(r0)
+4EC5A:  ld.w r13,(r5,44)
+4EC5C:  stop
+4EC5E:  cmphs r8,r12
+4EC60:  rsubi r6,0
+4EC62:  sexth r7
+4EC64:  addi r6,15
+4EC66:  cmplt r6,r7
+4EC68:  bf 0x4ec72
+4EC6A:  lrw r7,[0x4ed80] ; = 0x00408e1a
+4EC6C:  ld.b r7,(r7,2)
+4EC6E:  btsti r7,7
+4EC70:  bt 0x4eca0
+4EC72:  lrw r7,[0x4ef48] ; = 0x00408e6d
+4EC74:  ld.b r7,(r7,0)
+4EC76:  btsti r7,6
+4EC78:  bf 0x4ec9a
+4EC7A:  lrw r5,[0x4ef4c] ; = 0x00408e72
+4EC7C:  lrw r9,[0x4ef50] ; = 0x00408eb2
+4EC7E:  ld.h r5,(r5,0)
+4EC80:  ld.h r9,(r9,0)
+4EC82:  movi r6,25
+4EC84:  sexth r5
+4EC86:  lsli r6,4
+4EC88:  sexth r9
+4EC8A:  rsub r6,r5
+4EC8C:  cmplt r9,r6
+4EC8E:  bf 0x4ec9a
+4EC90:  lsli r5,3
+4EC92:  movi r1,10
+4EC94:  divs r5,r1
+4EC96:  cmplt r9,r5
+4EC98:  bt 0x4eca0
+4EC9A:  ld.b r7,(r11,0)
+4EC9C:  btsti r7,5
+4EC9E:  bf 0x4eca4
+4ECA0:  bclri r4,3
+4ECA2:  st.b r4,(r12,3)
+4ECA4:  ld.b r7,(r12,3)
+4ECA6:  andi r7,12
+4ECA8:  cmpnei r7,0
+4ECAA:  bf 0x4ecbe
+4ECAC:  ld.b r12,(r11,0)
+4ECAE:  btsti r12,6
+4ECB0:  bt 0x4ecbe
+4ECB2:  lrw r7,[0x4ef54] ; = 0x00408dc6
+4ECB4:  ld.b r7,(r7,0)
+4ECB6:  btsti r7,6
+4ECB8:  bf 0x4ecbe
+4ECBA:  bseti r12,6
+4ECBC:  st.b r12,(r11,0)
+4ECBE:  ld.b r12,(r11,0)
+4ECC0:  bclri r12,4
+4ECC2:  st.b r12,(r11,0)
+4ECC4:  ld.h r7,(r3,6)
+4ECC6:  sexth r7
+4ECC8:  btsti r7,31
+4ECCA:  bf 0x4ece8
+4ECCC:  btsti r3,7
+4ECCE:  bt 0x4ecec
+4ECD0:  ld.h r7,(r2,0)
+4ECD2:  movi r6,100
+4ECD4:  sexth r7
+4ECD6:  cmplt r6,r7
+4ECD8:  bf 0x4ecec
+4ECDA:  ld.w r7,(r0,52)
+4ECDC:  cmpnei r7,0
+4ECDE:  bt 0x4ecec
+4ECE0:  lrw r7,[0x4ef58] ; = 0x00408dc4
+4ECE2:  ld.b r7,(r7,0)
+4ECE4:  btsti r7,2
+4ECE6:  bt 0x4ecec
+4ECE8:  bseti r12,4
+4ECEA:  st.b r12,(r11,0)
+4ECEC:  ld.b r1,(r11,0)
+4ECEE:  bclri r1,3
+4ECF0:  bclri r1,2
+4ECF2:  st.b r1,(r11,0)
+4ECF4:  ld.w r7,(r0,44)
+4ECF6:  cmpnei r7,0
+4ECF8:  bt 0x4ed4c
+4ECFA:  movi r6,108
+4ECFC:  addu r6,r0
+4ECFE:  ld.h r6,(r6,0)
+4ED00:  ld.h r7,(r3,6)
+4ED02:  sexth r6
+4ED04:  btsti r6,31
+4ED06:  inct r6
+4ED08:  sexth r7
+4ED0A:  asri r6,1
+4ED0C:  cmplt r7,r6
+4ED0E:  bt 0x4ed2c
+4ED10:  ld.b r7,(r8,4)
+4ED12:  btsti r7,0
+4ED14:  bt 0x4ed24
+4ED16:  ld.h r6,(r2,10)
+4ED18:  lrw r7,[0x4ef5c] ; = 0x0040902f
+4ED1A:  ixh r6,r6
+4ED1C:  addu r7,r6
+4ED1E:  ld.b r7,(r7,0)
+4ED20:  btsti r7,4
+4ED22:  bf 0x4ed3a
+4ED24:  addi r3,24
+4ED26:  ld.b r3,(r3,0)
+4ED28:  btsti r3,3
+4ED2A:  bt 0x4ed3a
+4ED2C:  lrw r7,[0x4ef60] ; = 0x00408daf
+4ED2E:  movi r6,60
+4ED30:  ld.b r7,(r7,0)
+4ED32:  rsubi r6,0
+4ED34:  sextb r7
+4ED36:  cmplt r7,r6
+4ED38:  bf 0x4ed4c
+4ED3A:  lrw r7,[0x4ef64] ; = 0x00408da1
+4ED3C:  movi r6,96
+4ED3E:  ld.b r7,(r7,0)
+4ED40:  bseti r6,7
+4ED42:  tst r7,r6
+4ED44:  bt 0x4ed88
+4ED46:  ld.w r7,(r0,60)
+4ED48:  cmpnei r7,0
+4ED4A:  bf 0x4ed88
+4ED4C:  ld.h r7,(r2,10)
+4ED4E:  ixh r7,r7
+4ED50:  addu r7,r10
+4ED52:  ld.b r7,(r7,2)
+4ED54:  btsti r7,5
+4ED56:  bf 0x4ed98
+4ED58:  br 0x4ed88
+4ED5A:  bkpt
+4ED5C:  ldq r4-r7,(r0)
+4ED5E:  ld.w r14,(r12,48)
+4ED60:  ldq r4-r7,(r0)
+4ED62:  lsr r10,r1
+4ED64:  ldq r4-r7,(r0)
+4ED66:  ld.w r13,(r2,40)
+4ED68:  ldq r4-r7,(r0)
+4ED6A:  .short 0x0952
+4ED6C:  .short 0x000c
+4ED6E:  bsr 0x4e5a0
+4ED70:  .short 0x000c
+4ED72:  bsr 0x4e620
+4ED74:  ldq r4-r7,(r0)
+4ED76:  st.w r0,(r6,16)
+4ED78:  ldq r4-r7,(r0)
+4ED7A:  ld.w r14,(r10,52)
+4ED7C:  ldq r4-r7,(r0)
+4ED7E:  ld.w r14,(r6,52)
+4ED80:  ldq r4-r7,(r0)
+4ED82:  ld.w r14,(r10,4)
+4ED84:  ldq r4-r7,(r0)
+4ED86:  ld.w r14,(r0,40)
+4ED88:  ld.h r7,(r2,10)
+4ED8A:  ixh r7,r7
+4ED8C:  addu r7,r10
+4ED8E:  ld.b r7,(r7,0)
+4ED90:  btsti r7,5
+4ED92:  bt 0x4ed98
+4ED94:  bseti r1,3
+4ED96:  st.b r1,(r11,0)
+4ED98:  ld.b r7,(r11,0)
+4ED9A:  bclri r7,1
+4ED9C:  st.b r7,(r11,0)
+4ED9E:  movi r7,114
+4EDA0:  addu r7,r0
+4EDA2:  ld.h r7,(r7,0)
+4EDA4:  ld.w r6,(r0,56)
+4EDA6:  sexth r7
+4EDA8:  cmplt r6,r7
+4EDAA:  bf 0x4edee
+4EDAC:  movi r7,72
+4EDAE:  addu r7,r0
+4EDB0:  ld.w r7,(r7,0)
+4EDB2:  cmpnei r7,0
+4EDB4:  bt 0x4edc4
+4EDB6:  lrw r7,[0x4f06c] ; = 0x00408da8
+4EDB8:  bmaski r6,10
+4EDBA:  ld.h r7,(r7,0)
+4EDBC:  subi r6,23
+4EDBE:  sexth r7
+4EDC0:  cmplt r7,r6
+4EDC2:  bf 0x4edee
+4EDC4:  lrw r7,[0x4ef54] ; = 0x00408dc6
+4EDC6:  ld.b r7,(r7,0)
+4EDC8:  btsti r7,6
+4EDCA:  bt 0x4eddc
+4EDCC:  lrw r7,[0x4f070] ; = 0x00401150
+4EDCE:  ld.b r7,(r7,0)
+4EDD0:  btsti r7,4
+4EDD2:  bt 0x4edee
+4EDD4:  movi r2,13
+4EDD6:  jsri [0x4f074] ; -> 0x0007d16a
+4EDD8:  cmpnei r2,0
+4EDDA:  bt 0x4edee
+4EDDC:  lrw r7,[0x4ef64] ; = 0x00408da1
+4EDDE:  movi r6,96
+4EDE0:  ld.b r7,(r7,0)
+4EDE2:  bseti r6,7
+4EDE4:  tst r7,r6
+4EDE6:  bt 0x4edee
+4EDE8:  ld.b r7,(r11,0)
+4EDEA:  bseti r7,1
+4EDEC:  st.b r7,(r11,0)
+4EDEE:  ld.b r3,(r11,0)
+4EDF0:  movi r6,110
+4EDF2:  bclri r3,0
+4EDF4:  st.b r3,(r11,0)
+4EDF6:  addu r6,r0
+4EDF8:  ld.h r1,(r6,0)
+4EDFA:  ld.h r5,(r6,10)
+4EDFC:  sexth r1
+4EDFE:  sexth r5
+4EE00:  addu r1,r5
+4EE02:  movi r5,122
+4EE04:  addu r5,r0
+4EE06:  ld.h r5,(r5,0)
+4EE08:  ld.w r7,(r0,40)
+4EE0A:  sexth r5
+4EE0C:  addu r1,r5
+4EE0E:  cmplt r7,r1
+4EE10:  bt 0x4ee24
+4EE12:  lrw r2,[0x4f078] ; = 0x00400978
+4EE14:  ld.w r2,(r2,0)
+4EE16:  ld.b r7,(r2,0)
+4EE18:  btsti r7,3
+4EE1A:  bf 0x4ee2e
+4EE1C:  ld.h r7,(r2,6)
+4EE1E:  sexth r7
+4EE20:  btsti r7,31
+4EE22:  bt 0x4ee2e
+4EE24:  ld.w r7,(r0,40)
+4EE26:  movi r6,100
+4EE28:  addu r6,r1
+4EE2A:  cmplt r7,r6
+4EE2C:  bt 0x4ee3a
+4EE2E:  lrw r7,[0x4ef64] ; = 0x00408da1
+4EE30:  movi r6,96
+4EE32:  ld.b r7,(r7,0)
+4EE34:  bseti r6,7
+4EE36:  tst r7,r6
+4EE38:  bf 0x4ee74
+4EE3A:  lrw r1,[0x4f078] ; = 0x00400978
+4EE3C:  movi r6,100
+4EE3E:  ld.w r1,(r1,0)
+4EE40:  rsubi r6,0
+4EE42:  addi r1,32
+4EE44:  ld.h r7,(r1,0)
+4EE46:  sexth r7
+4EE48:  cmplt r7,r6
+4EE4A:  bf 0x4ee66
+4EE4C:  movi r6,126
+4EE4E:  addu r6,r0
+4EE50:  ld.h r7,(r1,4)
+4EE52:  ld.h r6,(r6,0)
+4EE54:  sexth r7
+4EE56:  sexth r6
+4EE58:  cmplt r7,r6
+4EE5A:  bf 0x4ee66
+4EE5C:  movi r7,84
+4EE5E:  addu r7,r0
+4EE60:  ld.w r7,(r7,0)
+4EE62:  cmpnei r7,0
+4EE64:  bt 0x4ee74
+4EE66:  ld.h r6,(r1,10)
+4EE68:  lrw r7,[0x4f07c] ; = 0x0040902e
+4EE6A:  ixh r6,r6
+4EE6C:  addu r7,r6
+4EE6E:  ld.b r7,(r7,0)
+4EE70:  btsti r7,3
+4EE72:  bf 0x4eeae
+4EE74:  bseti r3,0
+4EE76:  lrw r1,[0x4f078] ; = 0x00400978
+4EE78:  st.b r3,(r11,0)
+4EE7A:  ld.w r1,(r1,0)
+4EE7C:  ld.b r7,(r1,0)
+4EE7E:  btsti r7,5
+4EE80:  bt 0x4eeae
+4EE82:  br 0x4eea0
+4EE84:  ldq r4-r7,(r0)
+4EE86:  ld.w r14,(r2,40)
+4EE88:  ldq r4-r7,(r0)
+4EE8A:  ld.w r14,(r10,48)
+4EE8C:  doze
+4EE8E:  st.h r0,(r12,24)
+4EE90:  idly4
+4EE92:  mfcr r12,cr15
+4EE94:  stop
+4EE96:  tst r6,r2
+4EE98:  stop
+4EE9A:  cmphs r4,r9
+4EE9C:  ldq r4-r7,(r0)
+4EE9E:  ld.w r14,(r0,32)
+4EEA0:  movi r5,42
+4EEA2:  addu r5,r1
+4EEA4:  lrw r7,[0x4f12c] ; = 0x00409026
+4EEA6:  ld.h r6,(r5,0)
+4EEA8:  ixh r7,r6
+4EEAA:  ld.h r6,(r1,6)
+4EEAC:  st.h r6,(r7,0)
+4EEAE:  lrw r1,[0x4f078] ; = 0x00400978
+4EEB0:  lrw r7,[0x4f130] ; = 0x00409057
+4EEB2:  ld.w r1,(r1,0)
+4EEB4:  mov r2,r1
+4EEB6:  addi r2,32
+4EEB8:  ld.h r6,(r2,10)
+4EEBA:  ixh r7,r6
+4EEBC:  ld.b r7,(r7,0)
+4EEBE:  andi r7,7
+4EEC0:  cmplti r7,5
+4EEC2:  bt 0x4eeee
+4EEC4:  lrw r7,[0x4f134] ; = 0x00408da2
+4EEC6:  ld.b r7,(r7,0)
+4EEC8:  btsti r7,7
+4EECA:  bt 0x4eeee
+4EECC:  ld.b r7,(r1,0)
+4EECE:  btsti r7,0
+4EED0:  bf 0x4eeee
+4EED2:  ld.b r7,(r11,0)
+4EED4:  lrw r3,[0x4f138] ; = 0x00409056
+4EED6:  bseti r7,0
+4EED8:  st.b r7,(r11,0)
+4EEDA:  ld.h r4,(r2,10)
+4EEDC:  lrw r7,[0x4f12c] ; = 0x00409026
+4EEDE:  lsli r4,1
+4EEE0:  ld.h r6,(r1,6)
+4EEE2:  addu r7,r4
+4EEE4:  st.h r6,(r7,0)
+4EEE6:  addu r3,r4
+4EEE8:  ld.b r6,(r3,1)
+4EEEA:  bseti r6,6
+4EEEC:  st.b r6,(r3,1)
+4EEEE:  btsti r1,7
+4EEF0:  bf 0x4ef7e
+4EEF2:  lrw r7,[0x4f13c] ; = 0x00408e5e
+4EEF4:  ld.b r7,(r7,1)
+4EEF6:  btsti r7,1
+4EEF8:  bt 0x4ef02
+4EEFA:  lrw r7,[0x4f140] ; = 0x00400b09
+4EEFC:  ld.b r7,(r7,0)
+4EEFE:  btsti r7,6
+4EF00:  bf 0x4ef7e
+4EF02:  movi r6,64
+4EF04:  addu r6,r0
+4EF06:  ld.w r6,(r6,0)
+4EF08:  cmpne r1,r6
+4EF0A:  bt 0x4ef1e
+4EF0C:  ld.h r7,(r1,6)
+4EF0E:  sexth r7
+4EF10:  btsti r7,31
+4EF12:  bf 0x4ef1e
+4EF14:  lrw r7,[0x4f144] ; = 0x00408eca
+4EF16:  ld.b r7,(r7,0)
+4EF18:  sextb r7
+4EF1A:  cmplti r7,6
+4EF1C:  bf 0x4ef3e
+4EF1E:  movi r6,88
+4EF20:  addu r6,r0
+4EF22:  ld.w r6,(r6,0)
+4EF24:  cmpne r1,r6
+4EF26:  bt 0x4ef7e
+4EF28:  ld.h r7,(r1,6)
+4EF2A:  sexth r7
+4EF2C:  btsti r7,31
+4EF2E:  bf 0x4ef7e
+4EF30:  lrw r7,[0x4f144] ; = 0x00408eca
+4EF32:  movi r6,5
+4EF34:  ld.b r7,(r7,0)
+4EF36:  rsubi r6,0
+4EF38:  sextb r7
+4EF3A:  cmplt r7,r6
+4EF3C:  bf 0x4ef7e
+4EF3E:  ld.b r3,(r1,0)
+4EF40:  btsti r3,0
+4EF42:  bt 0x4ef68
+4EF44:  movi r3,32
+4EF46:  br 0x4ef6e
+4EF48:  ldq r4-r7,(r0)
+4EF4A:  ld.w r14,(r13,24)
+4EF4C:  ldq r4-r7,(r0)
+4EF4E:  ld.w r14,(r2,28)
+4EF50:  ldq r4-r7,(r0)
+4EF52:  ld.w r14,(r2,44)
+4EF54:  ldq r4-r7,(r0)
+4EF56:  ld.w r13,(r6,48)
+4EF58:  ldq r4-r7,(r0)
+4EF5A:  ld.w r13,(r4,48)
+4EF5C:  ldq r4-r7,(r0)
+4EF5E:  st.w r0,(r15,8)
+4EF60:  ldq r4-r7,(r0)
+4EF62:  ld.w r13,(r15,40)
+4EF64:  ldq r4-r7,(r0)
+4EF66:  ld.w r13,(r1,40)
+4EF68:  btsti r3,5
+4EF6A:  bt 0x4ef7e
+4EF6C:  movi r3,1
+4EF6E:  ld.b r7,(r11,0)
+4EF70:  or r7,r3
+4EF72:  st.b r7,(r11,0)
+4EF74:  lrw r7,[0x4f12c] ; = 0x00409026
+4EF76:  ld.h r6,(r2,10)
+4EF78:  ixh r7,r6
+4EF7A:  ld.h r6,(r1,6)
+4EF7C:  st.h r6,(r7,0)
+4EF7E:  movi r7,29
+4EF80:  addu r7,r0
+4EF82:  ld.b r6,(r7,0)
+4EF84:  bclri r6,7
+4EF86:  st.b r6,(r7,0)
+4EF88:  jsri [0x4f238] ; -> 0x0004d21c
+4EF8A:  lrw r1,[0x4f078] ; = 0x00400978
+4EF8C:  ld.w r1,(r1,0)
+4EF8E:  mov r7,r1
+4EF90:  addi r7,23
+4EF92:  ld.b r7,(r7,0)
+4EF94:  andi r7,7
+4EF96:  cmplti r7,3
+4EF98:  bt 0x4efa4
+4EF9A:  movi r7,29
+4EF9C:  addu r7,r0
+4EF9E:  ld.b r6,(r7,0)
+4EFA0:  bseti r6,7
+4EFA2:  st.b r6,(r7,0)
+4EFA4:  movi r6,29
+4EFA6:  addu r6,r0
+4EFA8:  ld.b r3,(r6,0)
+4EFAA:  movi r7,72
+4EFAC:  bclri r3,6
+4EFAE:  st.b r3,(r6,0)
+4EFB0:  movi r6,114
+4EFB2:  addu r7,r0
+4EFB4:  addu r6,r0
+4EFB6:  ld.w r7,(r7,0)
+4EFB8:  ld.h r2,(r6,0)
+4EFBA:  cmpnei r7,0
+4EFBC:  sexth r2
+4EFBE:  bf 0x4efec
+4EFC0:  ld.w r7,(r0,56)
+4EFC2:  cmplt r7,r2
+4EFC4:  bf 0x4efec
+4EFC6:  lrw r7,[0x4f23c] ; = 0x00408da1
+4EFC8:  movi r6,96
+4EFCA:  ld.b r7,(r7,0)
+4EFCC:  bseti r6,7
+4EFCE:  tst r7,r6
+4EFD0:  bt 0x4efec
+4EFD2:  movi r5,42
+4EFD4:  addu r5,r1
+4EFD6:  ld.h r6,(r5,0)
+4EFD8:  lrw r7,[0x4f240] ; = 0x0040905e
+4EFDA:  ixh r6,r6
+4EFDC:  addu r7,r6
+4EFDE:  ld.b r7,(r7,0)
+4EFE0:  btsti r7,6
+4EFE2:  bt 0x4efec
+4EFE4:  movi r7,29
+4EFE6:  addu r7,r0
+4EFE8:  bseti r3,6
+4EFEA:  st.b r3,(r7,0)
+4EFEC:  movi r6,29
+4EFEE:  addu r6,r0
+4EFF0:  ld.b r3,(r6,0)
+4EFF2:  bclri r3,5
+4EFF4:  st.b r3,(r6,0)
+4EFF6:  ld.w r7,(r0,56)
+4EFF8:  cmplt r7,r2
+4EFFA:  bf 0x4f00e
+4EFFC:  movi r7,72
+4EFFE:  addu r7,r0
+4F000:  ld.w r7,(r7,0)
+4F002:  cmpnei r7,0
+4F004:  bt 0x4f016
+4F006:  lrw r7,[0x4f23c] ; = 0x00408da1
+4F008:  ld.b r7,(r7,0)
+4F00A:  btsti r7,4
+4F00C:  bf 0x4f016
+4F00E:  movi r7,29
+4F010:  addu r7,r0
+4F012:  bseti r3,5
+4F014:  st.b r3,(r7,0)
+4F016:  movi r6,29
+4F018:  addu r6,r0
+4F01A:  ld.b r3,(r6,0)
+4F01C:  bclri r3,4
+4F01E:  st.b r3,(r6,0)
+4F020:  ld.w r7,(r0,56)
+4F022:  cmplt r7,r2
+4F024:  bt 0x4f02e
+4F026:  movi r7,29
+4F028:  addu r7,r0
+4F02A:  bseti r3,4
+4F02C:  st.b r3,(r7,0)
+4F02E:  ld.b r7,(r11,0)
+4F030:  btsti r7,0
+4F032:  bf 0x4f09e
+4F034:  ld.b r7,(r8,4)
+4F036:  btsti r7,4
+4F038:  bf 0x4f080
+4F03A:  movi r4,42
+4F03C:  addu r4,r1
+4F03E:  lrw r2,[0x4f138] ; = 0x00409056
+4F040:  ld.h r5,(r4,0)
+4F042:  btsti r1,7
+4F044:  ixh r2,r5
+4F046:  ld.b r6,(r2,0)
+4F048:  bseti r6,1
+4F04A:  st.b r6,(r2,0)
+4F04C:  bt 0x4f09e
+4F04E:  cmpne r1,r13
+4F050:  bt 0x4f058
+4F052:  ld.b r7,(r14,6)
+4F054:  btsti r7,7
+4F056:  bt 0x4f066
+4F058:  movi r7,64
+4F05A:  addu r7,r13
+4F05C:  cmpne r7,r1
+4F05E:  bt 0x4f09e
+4F060:  ld.b r7,(r14,6)
+4F062:  btsti r7,6
+4F064:  bf 0x4f09e
+4F066:  movi r2,1
+4F068:  br 0x4f08a
+4F06A:  bkpt
+4F06C:  ldq r4-r7,(r0)
+4F06E:  ld.w r13,(r8,40)
+4F070:  ldq r4-r7,(r0)
+4F072:  mfcr r0,cr21
+4F074:  idly4
+4F076:  st.h r1,(r10,12)
+4F078:  ldq r4-r7,(r0)
+4F07A:  .short 0x0978
+4F07C:  ldq r4-r7,(r0)
+4F07E:  st.w r0,(r14,8)
+4F080:  ld.b r7,(r1,0)
+4F082:  movi r6,40
+4F084:  tst r7,r6
+4F086:  bt 0x4f09e
+4F088:  movi r2,0
+4F08A:  movi r5,42
+4F08C:  addu r5,r1
+4F08E:  ld.h r3,(r5,0)
+4F090:  andi r2,1
+4F092:  ixh r3,r3
+4F094:  addu r3,r10
+4F096:  ld.b r6,(r3,1)
+4F098:  bclri r6,0
+4F09A:  or r6,r2
+4F09C:  st.b r6,(r3,1)
+4F09E:  lrw r3,[0x4f244] ; = 0x00408da8
+4F0A0:  lrw r2,[0x4f248] ; = 0x000d6ce2
+4F0A2:  ld.h r3,(r3,0)
+4F0A4:  sexth r3
+4F0A6:  jsri [0x4f24c] ; -> 0x000710fc
+4F0A8:  movi r7,32
+4F0AA:  addu r7,r0
+4F0AC:  st.h r2,(r7,0)
+4F0AE:  lrw r1,[0x4f250] ; = 0x00400978
+4F0B0:  lrw r7,[0x4f254] ; = 0x00400980
+4F0B2:  ld.w r1,(r1,0)
+4F0B4:  ld.w r7,(r7,0)
+4F0B6:  cmpne r7,r1
+4F0B8:  bt 0x4f0d6
+4F0BA:  movi r7,32
+4F0BC:  addu r7,r0
+4F0BE:  ld.h r7,(r7,0)
+4F0C0:  ld.w r6,(r0,40)
+4F0C2:  sexth r7
+4F0C4:  lrw r2,[0x4f258] ; = 0x00408db5
+4F0C6:  asri r7,2
+4F0C8:  cmplt r6,r7
+4F0CA:  ld.b r6,(r2,0)
+4F0CC:  mvcv r10
+4F0CE:  bclri r6,6
+4F0D0:  lsli r10,6
+4F0D2:  or r6,r10
+4F0D4:  st.b r6,(r2,0)
+4F0D6:  btsti r1,7
+4F0D8:  bt 0x4f154
+4F0DA:  ld.b r7,(r1,0)
+4F0DC:  movi r6,40
+4F0DE:  tst r7,r6
+4F0E0:  bt 0x4f154
+4F0E2:  movi r7,110
+4F0E4:  movi r6,120
+4F0E6:  addu r7,r0
+4F0E8:  addu r6,r0
+4F0EA:  ld.h r7,(r7,0)
+4F0EC:  ld.h r6,(r6,0)
+4F0EE:  sexth r7
+4F0F0:  sexth r6
+4F0F2:  addu r7,r6
+4F0F4:  movi r6,122
+4F0F6:  addu r6,r0
+4F0F8:  ld.h r6,(r6,0)
+4F0FA:  sexth r6
+4F0FC:  addu r7,r6
+4F0FE:  ixh r7,r7
+4F100:  ld.w r6,(r0,40)
+4F102:  asri r7,2
+4F104:  cmplt r6,r7
+4F106:  bt 0x4f11c
+4F108:  movi r6,100
+4F10A:  ld.h r7,(r1,6)
+4F10C:  rsubi r6,0
+4F10E:  sexth r7
+4F110:  cmplt r6,r7
+4F112:  bf 0x4f11c
+4F114:  cmpne r1,r13
+4F116:  movi r2,1
+4F118:  bf 0x4f122
+4F11A:  br 0x4f148
+4F11C:  cmpne r1,r13
+4F11E:  movi r2,0
+4F120:  bt 0x4f148
+4F122:  andi r2,1
+4F124:  ld.b r10,(r14,3)
+4F126:  lsli r2,4
+4F128:  bclri r10,4
+4F12A:  br 0x4f150
+4F12C:  ldq r4-r7,(r0)
+4F12E:  st.w r0,(r6,8)
+4F130:  ldq r4-r7,(r0)
+4F132:  st.w r0,(r7,20)
+4F134:  ldq r4-r7,(r0)
+4F136:  ld.w r13,(r2,40)
+4F138:  ldq r4-r7,(r0)
+4F13A:  st.w r0,(r6,20)
+4F13C:  ldq r4-r7,(r0)
+4F13E:  ld.w r14,(r14,20)
+4F140:  ldq r4-r7,(r0)
+4F142:  lsr r9,r0
+4F144:  ldq r4-r7,(r0)
+4F146:  ld.w r14,(r10,48)
+4F148:  andi r2,1
+4F14A:  ld.b r10,(r14,3)
+4F14C:  lsli r2,3
+4F14E:  bclri r10,3
+4F150:  or r10,r2
+4F152:  st.b r10,(r14,3)
+4F154:  ld.b r10,(r1,0)
+4F156:  btsti r10,4
+4F158:  bf 0x4f160
+4F15A:  ld.b r7,(r11,0)
+4F15C:  btsti r7,0
+4F15E:  bt 0x4f16a
+4F160:  btsti r10,7
+4F162:  bf 0x4f180
+4F164:  ld.b r7,(r11,0)
+4F166:  btsti r7,5
+4F168:  bf 0x4f180
+4F16A:  ld.b r7,(r8,2)
+4F16C:  btsti r7,4
+4F16E:  bt 0x4f180
+4F170:  movi r5,42
+4F172:  addu r5,r1
+4F174:  lrw r8,[0x4f25c] ; = 0x00409056
+4F176:  ld.h r6,(r5,0)
+4F178:  ixh r8,r6
+4F17A:  ld.b r7,(r8,0)
+4F17C:  bclri r7,2
+4F17E:  st.b r7,(r8,0)
+4F180:  movi r5,42
+4F182:  movi r3,10
+4F184:  addu r5,r1
+4F186:  bseti r3,7
+4F188:  lrw r2,[0x4f260] ; = 0x0040911e
+4F18A:  ld.h r6,(r5,0)
+4F18C:  addu r3,r0
+4F18E:  ld.b r4,(r3,0)
+4F190:  ld.b r5,(r3,1)
+4F192:  ixw r2,r6
+4F194:  st.b r4,(r2,0)
+4F196:  st.b r5,(r2,1)
+4F198:  ld.b r4,(r3,2)
+4F19A:  ld.b r5,(r3,3)
+4F19C:  movi r7,28
+4F19E:  st.b r4,(r2,2)
+4F1A0:  st.b r5,(r2,3)
+4F1A2:  addu r7,r0
+4F1A4:  ld.b r2,(r7,0)
+4F1A6:  ld.b r6,(r7,1)
+4F1A8:  lsli r2,8
+4F1AA:  or r2,r6
+4F1AC:  lsli r2,16
+4F1AE:  jsri [0x4f264] ; -> 0x0004fc3c
+4F1B0:  lrw r8,[0x4f250] ; = 0x00400978
+4F1B2:  ld.w r8,(r8,0)
+4F1B4:  ld.b r7,(r8,1)
+4F1B6:  btsti r7,7
+4F1B8:  bf 0x4f1d6
+4F1BA:  ld.b r7,(r8,0)
+4F1BC:  btsti r7,6
+4F1BE:  bf 0x4f1d6
+4F1C0:  lrw r7,[0x4f268] ; = 0x00408da2
+4F1C2:  ld.b r7,(r7,0)
+4F1C4:  btsti r7,6
+4F1C6:  bt 0x4f1d6
+4F1C8:  lrw r7,[0x4f26c] ; = 0x00401ff2
+4F1CA:  ld.b r7,(r7,0)
+4F1CC:  btsti r7,7
+4F1CE:  bt 0x4f1d6
+4F1D0:  ld.b r7,(r14,4)
+4F1D2:  bseti r7,4
+4F1D4:  st.b r7,(r14,4)
+4F1D6:  ld.h r7,(r8,26)
+4F1D8:  movi r1,25
+4F1DA:  lsli r1,4
+4F1DC:  sexth r7
+4F1DE:  cmplt r7,r1
+4F1E0:  bt 0x4f1f4
+4F1E2:  movi r6,42
+4F1E4:  addu r6,r8
+4F1E6:  lrw r7,[0x4f270] ; = 0x0040094a
+4F1E8:  ld.h r6,(r6,0)
+4F1EA:  ixh r7,r6
+4F1EC:  ld.h r7,(r7,0)
+4F1EE:  sexth r7
+4F1F0:  cmplt r7,r1
+4F1F2:  bf 0x4f20c
+4F1F4:  lrw r7,[0x4f274] ; = 0x00408ec0
+4F1F6:  ld.b r7,(r7,0)
+4F1F8:  cmplti r7,30
+4F1FA:  bt 0x4f20c
+4F1FC:  movi r5,42
+4F1FE:  addu r5,r8
+4F200:  lrw r1,[0x4f25c] ; = 0x00409056
+4F202:  ld.h r5,(r5,0)
+4F204:  ixh r1,r5
+4F206:  ld.b r6,(r1,0)
+4F208:  bseti r6,0
+4F20A:  st.b r6,(r1,0)
+4F20C:  ld.b r7,(r8,0)
+4F20E:  btsti r7,3
+4F210:  bf 0x4f22c
+4F212:  movi r6,110
+4F214:  addu r6,r0
+4F216:  ld.h r6,(r6,0)
+4F218:  ld.w r5,(r0,40)
+4F21A:  sexth r6
+4F21C:  asri r6,1
+4F21E:  cmplt r5,r6
+4F220:  ld.b r7,(r8,12)
+4F222:  mvc r1
+4F224:  bclri r7,1
+4F226:  lsli r1,1
+4F228:  or r7,r1
+4F22A:  st.b r7,(r8,12)
+4F22C:  movi r1,16
+4F22E:  bseti r1,7
+4F230:  addu r0,r1
+4F232:  ldm r8-r15,(r0)
+4F234:  addi r0,32
+4F236:  jmp r15 ; return
+4F238:  stop
+4F23A:  st.h r2,(r12,2)
+4F23C:  ldq r4-r7,(r0)
+4F23E:  ld.w r13,(r1,40)
+4F240:  ldq r4-r7,(r0)
+4F242:  st.w r0,(r14,20)
+4F244:  ldq r4-r7,(r0)
+4F246:  ld.w r13,(r8,40)
+4F248:  .short 0x000d
+4F24A:  .short 0x6ce2
+4F24C:  idly4
+4F24E:  mfcr r12,cr15
+4F250:  ldq r4-r7,(r0)
+4F252:  .short 0x0978
+4F254:  ldq r4-r7,(r0)
+4F256:  .short 0x0980
+4F258:  ldq r4-r7,(r0)
+4F25A:  ld.w r13,(r5,44)
+4F25C:  ldq r4-r7,(r0)
+4F25E:  st.w r0,(r6,20)
+4F260:  ldq r4-r7,(r0)
+4F262:  st.w r1,(r14,4)
+4F264:  stop
+4F266:  bsr 0x4eae0
+4F268:  ldq r4-r7,(r0)
+4F26A:  ld.w r13,(r2,40)
+4F26C:  ldq r4-r7,(r0)
+4F26E:  andn r2,r15
+4F270:  ldq r4-r7,(r0)
+4F272:  .short 0x094a
+4F274:  ldq r4-r7,(r0)
+4F276:  ld.w r14,(r0,48)

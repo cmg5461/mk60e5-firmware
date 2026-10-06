@@ -1,0 +1,123 @@
+tx 14 rx 18 sig 0xf5fc5
+TX 0x080 dlc 5 per 255 mbox 0
+   sig 0 byte.bit 0.0 len 16 fl 0 var 0x00C type 0 cb 0xc67fc raw 08000000000c67fc
+   sig 1 byte.bit 2.0 len 1 fl 0 var 0x00D type 0 cb 0xc6800 raw 08000000000c6800
+TX 0x0CE dlc 8 per 1 mbox 1
+   sig 2 byte.bit 0.0 len 16 fl 0 var 0x008 type 0 cb 0xc6804 raw 08000000000c6804
+   sig 3 byte.bit 2.0 len 16 fl 0 var 0x009 type 0 cb 0xc6860 raw 08000000000c6860
+   sig 4 byte.bit 4.0 len 16 fl 0 var 0x00A type 0 cb 0xc68e8 raw 08000000000c68e8
+   sig 5 byte.bit 6.0 len 16 fl 0 var 0x00B type 0 cb 0xc6944 raw 08000000000c6944
+TX 0x11E dlc 8 per 1 mbox 2
+   sig 6 byte.bit 0.0 len 5 fl 0 var 0x013 type 0 cb 0xc6a88 raw 08000000000c6a88
+   sig 7 byte.bit 1.0 len 5 fl 0 var 0x014 type 0 cb 0xc6b18 raw 08000000000c6b18
+   sig 8 byte.bit 0.6 len 2 fl 0 var 0x007 type 0 cb 0xc6b42 raw 08000000000c6b42
+   sig 9 byte.bit 2.0 len 2 fl 0 var 0x01C type 0 cb 0xc6b50 raw 08000000000c6b50
+   sig 10 byte.bit 2.2 len 2 fl 0 var 0x01B type 0 cb 0xc6b54 raw 08000000000c6b54
+   sig 11 byte.bit 2.4 len 2 fl 0 var 0x01A type 0 cb 0xc6b58 raw 08000000000c6b58
+   sig 12 byte.bit 2.6 len 2 fl 0 var 0x019 type 0 cb 0xc6b5c raw 08000000000c6b5c
+   sig 13 byte.bit 3.0 len 4 fl 0 var 0x016 type 0 cb 0xc6b46 raw 08000000000c6b46
+   sig 14 byte.bit 4.0 len 16 fl 0 var 0x017 type 0 cb 0xc6b4a raw 08000000000c6b4a
+   sig 15 byte.bit 0.15 len 0 fl 0 var 0x018 type 2 cb 0xc6b4e raw 0a000000000c6b4e
+TX 0x130 dlc 5 per 255 mbox 3
+   sig 16 byte.bit 0.15 len 0 fl 0 var 0x015 type 2 cb 0xc554e raw 0a000000000c554e
+TX 0x374 dlc 5 per 100 mbox 4
+   sig 17 byte.bit 0.0 len 8 fl 0 var 0x00E type 0 cb 0xc69a0 raw 08000000000c69a0
+   sig 18 byte.bit 1.0 len 8 fl 0 var 0x00F type 0 cb 0xc69cc raw 08000000000c69cc
+   sig 19 byte.bit 2.0 len 8 fl 0 var 0x010 type 0 cb 0xc69f8 raw 08000000000c69f8
+   sig 20 byte.bit 3.0 len 8 fl 0 var 0x011 type 0 cb 0xc6a44 raw 08000000000c6a44
+   sig 21 byte.bit 4.0 len 2 fl 0 var 0x012 type 0 cb 0xc6a70 raw 08000000000c6a70
+TX 0x797 dlc 8 per 255 mbox 5
+TX 0x798 dlc 8 per 255 mbox 6
+TX 0x790 dlc 8 per 255 mbox 7
+TX 0x791 dlc 8 per 255 mbox 8
+TX 0x7D4 dlc 8 per 255 mbox 9
+TX 0x7D5 dlc 8 per 255 mbox 10
+TX 0x7D6 dlc 8 per 255 mbox 11
+TX 0x7D7 dlc 8 per 255 mbox 12
+TX 0x7D8 dlc 8 per 255 mbox 13
+RX 0x0CD dlc 8 per 1 mbox 14
+   sig 22 byte.bit 0.15 len 0 fl 0 var 0x02D type 2 cb 0xc5730 raw 02000000000c5730
+   sig 23 byte.bit 6.4 len 4 fl 0 var 0x02C type 0 cb 0xc57e6 raw 00000000000c57e6
+   sig 24 byte.bit 6.2 len 2 fl 0 var 0x02B type 0 cb 0xc5846 raw 00000000000c5846
+   sig 25 byte.bit 6.0 len 2 fl 0 var 0x02A type 0 cb 0xc5834 raw 00000000000c5834
+   sig 26 byte.bit 0.0 len 16 fl 0 var 0x027 type 1 cb 0x402f1c raw 010f000000402f1c
+   sig 27 byte.bit 2.0 len 16 fl 0 var 0x028 type 1 cb 0x402f20 raw 010f000000402f20
+   sig 28 byte.bit 4.0 len 16 fl 0 var 0x029 type 1 cb 0x402f24 raw 010f000000402f24
+   sig 29 byte.bit 0.15 len 0 fl 0 var 0x000 type 4 cb 0xc6b76 raw c40a0000000c6b76
+RX 0x0D1 dlc 8 per 1 mbox 15
+   sig 30 byte.bit 0.15 len 0 fl 0 var 0x02D type 2 cb 0xc5730 raw 02000000000c5730
+   sig 31 byte.bit 6.4 len 4 fl 0 var 0x033 type 0 cb 0xc585a raw 00000000000c585a
+   sig 32 byte.bit 6.2 len 2 fl 0 var 0x031 type 0 cb 0xc58b8 raw 00000000000c58b8
+   sig 33 byte.bit 6.0 len 2 fl 0 var 0x032 type 0 cb 0xc58a4 raw 00000000000c58a4
+   sig 34 byte.bit 0.0 len 16 fl 0 var 0x02E type 1 cb 0x402f1e raw 010f000000402f1e
+   sig 35 byte.bit 2.0 len 16 fl 0 var 0x02F type 1 cb 0x402f22 raw 010f000000402f22
+   sig 36 byte.bit 4.0 len 16 fl 0 var 0x030 type 1 cb 0x402f26 raw 010f000000402f26
+   sig 37 byte.bit 0.15 len 0 fl 0 var 0x001 type 4 cb 0xc6ba2 raw c40a0000000c6ba2
+RX 0x0C9 dlc 8 per 1 mbox 16
+   sig 38 byte.bit 2.4 len 4 fl 0 var 0x024 type 0 cb 0xc5984 raw 00000000000c5984
+   sig 39 byte.bit 5.0 len 2 fl 0 var 0x023 type 0 cb 0xc5c32 raw 00000000000c5c32
+   sig 40 byte.bit 5.4 len 4 fl 0 var 0x025 type 0 cb 0xc5c5c raw 00000000000c5c5c
+   sig 41 byte.bit 6.0 len 16 fl 0 var 0x026 type 0 cb 0xc5c62 raw 00000000000c5c62
+   sig 42 byte.bit 3.0 len 16 fl 0 var 0x022 type 0 cb 0xc5a00 raw 00000000000c5a00
+   sig 43 byte.bit 0.0 len 16 fl 0 var 0x020 type 0 cb 0xc5a60 raw 00000000000c5a60
+   sig 44 byte.bit 2.0 len 2 fl 0 var 0x021 type 0 cb 0xc5c08 raw 00000000000c5c08
+   sig 45 byte.bit 2.2 len 2 fl 0 var 0x050 type 0 cb 0xc60d4 raw 00000000000c60d4
+   sig 46 byte.bit 0.15 len 0 fl 0 var 0x002 type 4 cb 0xc6c00 raw c40a0000000c6c00
+RX 0x118 dlc 8 per 1 mbox 17
+   sig 47 byte.bit 0.15 len 0 fl 0 var 0x04C type 2 cb 0xc595e raw 02000000000c595e
+   sig 48 byte.bit 2.4 len 4 fl 0 var 0x04D type 0 cb 0xc5960 raw 00000000000c5960
+   sig 49 byte.bit 0.0 len 16 fl 0 var 0x01D type 0 cb 0xc5962 raw 00000000000c5962
+   sig 50 byte.bit 3.0 len 16 fl 0 var 0x01E type 0 cb 0xc5964 raw 00000000000c5964
+   sig 51 byte.bit 2.0 len 2 fl 0 var 0x01F type 0 cb 0xc5966 raw 00000000000c5966
+   sig 52 byte.bit 5.0 len 16 fl 0 var 0x04B type 0 cb 0xc5968 raw 00000000000c5968
+   sig 53 byte.bit 0.15 len 0 fl 0 var 0x003 type 4 cb 0xc6c9a raw 040a0000000c6c9a
+RX 0x0D4 dlc 8 per 1 mbox 18
+   sig 54 byte.bit 0.15 len 0 fl 0 var 0x02D type 2 cb 0xc5730 raw 02000000000c5730
+   sig 55 byte.bit 6.4 len 4 fl 0 var 0x03D type 0 cb 0xc58ca raw 00000000000c58ca
+   sig 56 byte.bit 0.0 len 4 fl 0 var 0x034 type 1 cb 0x402f2b raw 0103000000402f2b
+   sig 57 byte.bit 0.4 len 4 fl 0 var 0x036 type 1 cb 0x402f2d raw 0103000000402f2d
+   sig 58 byte.bit 1.0 len 4 fl 0 var 0x037 type 1 cb 0x402f2e raw 0103000000402f2e
+   sig 59 byte.bit 1.4 len 4 fl 0 var 0x035 type 1 cb 0x402f2c raw 0103000000402f2c
+   sig 60 byte.bit 2.0 len 8 fl 0 var 0x038 type 1 cb 0x402f30 raw 0107000000402f30
+   sig 61 byte.bit 3.0 len 8 fl 0 var 0x039 type 1 cb 0x402f32 raw 0107000000402f32
+   sig 62 byte.bit 4.0 len 8 fl 0 var 0x03A type 1 cb 0x402f34 raw 0107000000402f34
+   sig 63 byte.bit 5.0 len 8 fl 0 var 0x03B type 1 cb 0x400973 raw 0107000000400973
+   sig 64 byte.bit 6.0 len 4 fl 0 var 0x03C type 0 cb 0xc5918 raw 00000000000c5918
+   sig 65 byte.bit 0.15 len 0 fl 0 var 0x004 type 4 cb 0xc6bd4 raw 040a0000000c6bd4
+RX 0x140 dlc 2 per 1 mbox 19
+   sig 66 byte.bit 0.0 len 16 fl 0 var 0x043 type 0 cb 0xc5948 raw 00000000000c5948
+RX 0x0C8 dlc 8 per 1 mbox 20
+   sig 67 byte.bit 0.15 len 0 fl 0 var 0x045 type 2 cb 0xc596a raw 02000000000c596a
+RX 0x194 dlc 4 per 20 mbox 21
+   sig 68 byte.bit 0.15 len 0 fl 0 var 0x03E type 2 cb 0xc67d2 raw 02000000000c67d2
+   sig 69 byte.bit 1.0 len 4 fl 0 var 0x03F type 0 cb 0xc67d4 raw 00000000000c67d4
+   sig 70 byte.bit 2.0 len 8 fl 0 var 0x040 type 0 cb 0xc67d6 raw 00000000000c67d6
+   sig 71 byte.bit 3.0 len 2 fl 0 var 0x041 type 0 cb 0xc67d8 raw 00000000000c67d8
+   sig 72 byte.bit 3.2 len 2 fl 0 var 0x042 type 0 cb 0xc67da raw 00000000000c67da
+   sig 73 byte.bit 0.15 len 0 fl 0 var 0x005 type 4 cb 0xc67dc raw 043c0000000c67dc
+RX 0x1D6 dlc 2 per 100 mbox 22
+   sig 74 byte.bit 0.15 len 0 fl 0 var 0x044 type 2 cb 0xc54b8 raw 02000000000c54b8
+RX 0x2A6 dlc 2 per 255 mbox 23
+   sig 75 byte.bit 0.15 len 0 fl 0 var 0x044 type 2 cb 0xc54b8 raw 02000000000c54b8
+   sig 76 byte.bit 0.0 len 8 fl 0 var 0x04E type 0 cb 0xc60f2 raw 00000000000c60f2
+RX 0x1D9 dlc 3 per 255 mbox 24
+   sig 77 byte.bit 0.15 len 0 fl 0 var 0x044 type 2 cb 0xc54b8 raw 02000000000c54b8
+RX 0x11F dlc 8 per 255 mbox 25
+   sig 78 byte.bit 0.15 len 0 fl 0 var 0x04A type 2 cb 0xc60e8 raw 02000000000c60e8
+   sig 79 byte.bit 1.0 len 4 fl 0 var 0x049 type 0 cb 0xc60ea raw 00000000000c60ea
+   sig 80 byte.bit 2.0 len 16 fl 0 var 0x047 type 0 cb 0xc60ee raw 00000000000c60ee
+   sig 81 byte.bit 4.0 len 16 fl 0 var 0x046 type 0 cb 0xc60ec raw 00000000000c60ec
+   sig 82 byte.bit 0.0 len 8 fl 0 var 0x048 type 0 cb 0xc60f0 raw 00000000000c60f0
+   sig 83 byte.bit 0.15 len 0 fl 0 var 0x006 type 4 cb 0xc6c9e raw 040a0000000c6c9e
+RX 0x78F dlc 8 per 255 mbox 26
+   sig 84 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60
+RX 0x78E dlc 8 per 255 mbox 27
+   sig 85 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60
+RX 0x7DC dlc 8 per 255 mbox 28
+   sig 86 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60
+RX 0x7DD dlc 8 per 255 mbox 29
+   sig 87 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60
+RX 0x7DE dlc 8 per 255 mbox 30
+   sig 88 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60
+RX 0x7DF dlc 8 per 255 mbox 31
+   sig 89 byte.bit 0.15 len 0 fl 0 var 0x04F type 2 cb 0xc6b60 raw 02000000000c6b60

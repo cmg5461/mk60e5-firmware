@@ -1,0 +1,222 @@
+# CAN map
+
+header 0xf59c3: 14 TX, 18 RX; messages 0xf59dd; signals 0xf5cbd; variables 0xf5ed0
+
+## TX 0x080  dlc 5  flags 0x0  event  mailbox 0
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 0 | 0.0 | 16 | 0x0 | 0x00C | 0 | 0x0c6a14 |
+| 1 | 2.0 | 1 | 0x0 | 0x00D | 0 | 0x0c6a18 |
+
+## TX 0x0CE  dlc 8  flags 0x0  10 ms  mailbox 1
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 2 | 0.0 | 16 | 0x0 | 0x008 | 0 | 0x0c6a1c |
+| 3 | 2.0 | 16 | 0x0 | 0x009 | 0 | 0x0c6a78 |
+| 4 | 4.0 | 16 | 0x0 | 0x00A | 0 | 0x0c6b00 |
+| 5 | 6.0 | 16 | 0x0 | 0x00B | 0 | 0x0c6b5c |
+
+## TX 0x11E  dlc 8  flags 0x0  10 ms  mailbox 2
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 6 | 0.0 | 5 | 0x0 | 0x013 | 0 | 0x0c6ca0 |
+| 7 | 1.0 | 5 | 0x0 | 0x014 | 0 | 0x0c6d30 |
+| 8 | 0.6 | 2 | 0x0 | 0x007 | 0 | 0x0c6d5a |
+| 9 | 2.0 | 2 | 0x0 | 0x01C | 0 | 0x0c6d68 |
+| 10 | 2.2 | 2 | 0x0 | 0x01B | 0 | 0x0c6d6c |
+| 11 | 2.4 | 2 | 0x0 | 0x01A | 0 | 0x0c6d70 |
+| 12 | 2.6 | 2 | 0x0 | 0x019 | 0 | 0x0c6d74 |
+| 13 | 3.0 | 4 | 0x0 | 0x016 | 0 | 0x0c6d5e |
+| 14 | 4.0 | 16 | 0x0 | 0x017 | 0 | 0x0c6d62 |
+| 15 | 0.15 | 0 | 0x0 | 0x018 | 2 | 0x0c6d66 |
+
+## TX 0x130  dlc 5  flags 0x0  event  mailbox 3
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 16 | 0.15 | 0 | 0x0 | 0x015 | 2 | 0x0c5766 |
+
+## TX 0x374  dlc 5  flags 0x0  1000 ms  mailbox 4
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 17 | 0.0 | 8 | 0x0 | 0x00E | 0 | 0x0c6bb8 |
+| 18 | 1.0 | 8 | 0x0 | 0x00F | 0 | 0x0c6be4 |
+| 19 | 2.0 | 8 | 0x0 | 0x010 | 0 | 0x0c6c10 |
+| 20 | 3.0 | 8 | 0x0 | 0x011 | 0 | 0x0c6c5c |
+| 21 | 4.0 | 2 | 0x0 | 0x012 | 0 | 0x0c6c88 |
+
+## TX 0x797  dlc 8  flags 0x0  event  mailbox 5
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x798  dlc 8  flags 0x0  event  mailbox 6
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x790  dlc 8  flags 0x0  event  mailbox 7
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x791  dlc 8  flags 0x0  event  mailbox 8
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x7D4  dlc 8  flags 0x0  event  mailbox 9
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x7D5  dlc 8  flags 0x0  event  mailbox 10
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x7D6  dlc 8  flags 0x0  event  mailbox 11
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x7D7  dlc 8  flags 0x0  event  mailbox 12
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## TX 0x7D8  dlc 8  flags 0x0  event  mailbox 13
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+
+## RX 0x0CD  dlc 8  flags 0x0  10 ms  mailbox 14
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 22 | 0.15 | 0 | 0x0 | 0x02D | 2 | 0x0c5948 |
+| 23 | 6.4 | 4 | 0x0 | 0x02C | 0 | 0x0c59fe |
+| 24 | 6.2 | 2 | 0x0 | 0x02B | 0 | 0x0c5a5e |
+| 25 | 6.0 | 2 | 0x0 | 0x02A | 0 | 0x0c5a4c |
+| 26 | 0.0 | 16 | 0x0 | 0x027 | 1 | 0x402f1c |
+| 27 | 2.0 | 16 | 0x0 | 0x028 | 1 | 0x402f20 |
+| 28 | 4.0 | 16 | 0x0 | 0x029 | 1 | 0x402f24 |
+| 29 | 0.15 | 0 | 0x0 | 0x000 | 4 | 0x0c6d8e |
+
+## RX 0x0D1  dlc 8  flags 0x0  10 ms  mailbox 15
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 30 | 0.15 | 0 | 0x0 | 0x02D | 2 | 0x0c5948 |
+| 31 | 6.4 | 4 | 0x0 | 0x033 | 0 | 0x0c5a72 |
+| 32 | 6.2 | 2 | 0x0 | 0x031 | 0 | 0x0c5ad0 |
+| 33 | 6.0 | 2 | 0x0 | 0x032 | 0 | 0x0c5abc |
+| 34 | 0.0 | 16 | 0x0 | 0x02E | 1 | 0x402f1e |
+| 35 | 2.0 | 16 | 0x0 | 0x02F | 1 | 0x402f22 |
+| 36 | 4.0 | 16 | 0x0 | 0x030 | 1 | 0x402f26 |
+| 37 | 0.15 | 0 | 0x0 | 0x001 | 4 | 0x0c6dba |
+
+## RX 0x0C9  dlc 8  flags 0x0  10 ms  mailbox 16
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 38 | 2.4 | 4 | 0x0 | 0x024 | 0 | 0x0c5b9c |
+| 39 | 5.0 | 2 | 0x0 | 0x023 | 0 | 0x0c5e4a |
+| 40 | 5.4 | 4 | 0x0 | 0x025 | 0 | 0x0c5e74 |
+| 41 | 6.0 | 16 | 0x0 | 0x026 | 0 | 0x0c5e7a |
+| 42 | 3.0 | 16 | 0x0 | 0x022 | 0 | 0x0c5c18 |
+| 43 | 0.0 | 16 | 0x0 | 0x020 | 0 | 0x0c5c78 |
+| 44 | 2.0 | 2 | 0x0 | 0x021 | 0 | 0x0c5e20 |
+| 45 | 2.2 | 2 | 0x0 | 0x050 | 0 | 0x0c62ec |
+| 46 | 0.15 | 0 | 0x0 | 0x002 | 4 | 0x0c6e18 |
+
+## RX 0x118  dlc 8  flags 0x0  10 ms  mailbox 17
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 47 | 0.15 | 0 | 0x0 | 0x04C | 2 | 0x0c5b76 |
+| 48 | 2.4 | 4 | 0x0 | 0x04D | 0 | 0x0c5b78 |
+| 49 | 0.0 | 16 | 0x0 | 0x01D | 0 | 0x0c5b7a |
+| 50 | 3.0 | 16 | 0x0 | 0x01E | 0 | 0x0c5b7c |
+| 51 | 2.0 | 2 | 0x0 | 0x01F | 0 | 0x0c5b7e |
+| 52 | 5.0 | 16 | 0x0 | 0x04B | 0 | 0x0c5b80 |
+| 53 | 0.15 | 0 | 0x0 | 0x003 | 4 | 0x0c6eb2 |
+
+## RX 0x0D4  dlc 8  flags 0x0  10 ms  mailbox 18
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 54 | 0.15 | 0 | 0x0 | 0x02D | 2 | 0x0c5948 |
+| 55 | 6.4 | 4 | 0x0 | 0x03D | 0 | 0x0c5ae2 |
+| 56 | 0.0 | 4 | 0x0 | 0x034 | 1 | 0x402f2b |
+| 57 | 0.4 | 4 | 0x0 | 0x036 | 1 | 0x402f2d |
+| 58 | 1.0 | 4 | 0x0 | 0x037 | 1 | 0x402f2e |
+| 59 | 1.4 | 4 | 0x0 | 0x035 | 1 | 0x402f2c |
+| 60 | 2.0 | 8 | 0x0 | 0x038 | 1 | 0x402f30 |
+| 61 | 3.0 | 8 | 0x0 | 0x039 | 1 | 0x402f32 |
+| 62 | 4.0 | 8 | 0x0 | 0x03A | 1 | 0x402f34 |
+| 63 | 5.0 | 8 | 0x0 | 0x03B | 1 | 0x400973 |
+| 64 | 6.0 | 4 | 0x0 | 0x03C | 0 | 0x0c5b30 |
+| 65 | 0.15 | 0 | 0x0 | 0x004 | 4 | 0x0c6dec |
+
+## RX 0x140  dlc 2  flags 0x0  10 ms  mailbox 19
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 66 | 0.0 | 16 | 0x0 | 0x043 | 0 | 0x0c5b60 |
+
+## RX 0x0C8  dlc 8  flags 0x0  10 ms  mailbox 20
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 67 | 0.15 | 0 | 0x0 | 0x045 | 2 | 0x0c5b82 |
+
+## RX 0x194  dlc 4  flags 0x0  200 ms  mailbox 21
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 68 | 0.15 | 0 | 0x0 | 0x03E | 2 | 0x0c69ea |
+| 69 | 1.0 | 4 | 0x0 | 0x03F | 0 | 0x0c69ec |
+| 70 | 2.0 | 8 | 0x0 | 0x040 | 0 | 0x0c69ee |
+| 71 | 3.0 | 2 | 0x0 | 0x041 | 0 | 0x0c69f0 |
+| 72 | 3.2 | 2 | 0x0 | 0x042 | 0 | 0x0c69f2 |
+| 73 | 0.15 | 0 | 0x0 | 0x005 | 4 | 0x0c69f4 |
+
+## RX 0x1D6  dlc 2  flags 0x0  1000 ms  mailbox 22
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 74 | 0.15 | 0 | 0x0 | 0x044 | 2 | 0x0c56d0 |
+
+## RX 0x2A6  dlc 2  flags 0x0  event  mailbox 23
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 75 | 0.15 | 0 | 0x0 | 0x044 | 2 | 0x0c56d0 |
+| 76 | 0.0 | 8 | 0x0 | 0x04E | 0 | 0x0c630a |
+
+## RX 0x1D9  dlc 3  flags 0x0  event  mailbox 24
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 77 | 0.15 | 0 | 0x0 | 0x044 | 2 | 0x0c56d0 |
+
+## RX 0x11F  dlc 8  flags 0x0  event  mailbox 25
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 78 | 0.15 | 0 | 0x0 | 0x04A | 2 | 0x0c6300 |
+| 79 | 1.0 | 4 | 0x0 | 0x049 | 0 | 0x0c6302 |
+| 80 | 2.0 | 16 | 0x0 | 0x047 | 0 | 0x0c6306 |
+| 81 | 4.0 | 16 | 0x0 | 0x046 | 0 | 0x0c6304 |
+| 82 | 0.0 | 8 | 0x0 | 0x048 | 0 | 0x0c6308 |
+| 83 | 0.15 | 0 | 0x0 | 0x006 | 4 | 0x0c6eb6 |
+
+## RX 0x78F  dlc 8  flags 0x0  event  mailbox 26
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 84 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+
+## RX 0x78E  dlc 8  flags 0x0  event  mailbox 27
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 85 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+
+## RX 0x7DC  dlc 8  flags 0x0  event  mailbox 28
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 86 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+
+## RX 0x7DD  dlc 8  flags 0x0  event  mailbox 29
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 87 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+
+## RX 0x7DE  dlc 8  flags 0x0  event  mailbox 30
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 88 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+
+## RX 0x7DF  dlc 8  flags 0x0  event  mailbox 31
+| sig | byte.bit | bits | flags | var | type | callback |
+|---|---|---|---|---|---|---|
+| 89 | 0.15 | 0 | 0x0 | 0x04F | 2 | 0x0c6d78 |
+

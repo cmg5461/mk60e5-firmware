@@ -1,0 +1,451 @@
+#### C773C 0C7600
+C773E sexth r2
+C7740 ld.w r15,(r0,0)
+C7742 addi r0,8
+C7744 jmp r15
+C7746 subi r0,16
+C7748 stm r13-r15,(r0)
+C774A lrw r14,[0xc79a8] [RAM 4031aa]
+C774C lrw r13,[0xc799c] [RAM 403066]
+C774E ld.b r6,(r14,7)
+C7750 lrw r2,[0xc79ac] [TCS+0ec]
+#### C775C 0C7746
+C775E lrw r7,[0xc79b0] [RAM 402f6c]
+C7760 ld.b r7,(r7,0)
+C7762 btsti r7,4
+C7764 bf 0xc7776
+C7766 ld.b r6,(r14,7)
+C7768 lrw r2,[0xc79b4] [TCS+086]
+C776A movi r5,34
+C776C ld.h r3,(r13,0)
+C776E mult r6,r5
+C7770 addu r2,r6
+#### C7774 0C7746
+C7776 sexth r2
+C7778 ldm r13-r15,(r0)
+C777A addi r0,16
+C777C jmp r15
+C777E subi r0,8
+C7780 st.w r15,(r0,0)
+C7782 bsr 0xc7746
+C7784 lrw r6,[0xc79b8] [RAM 4030b6]
+C7786 ld.h r6,(r6,0)
+C7788 sexth r6
+#### C783E 0C77FC
+C7840 sexth r14
+C7842 sexth r2
+C7844 cmplt r2,r14
+C7846 movt r14,r2
+C7848 sexth r14
+C784A mov r2,r14
+C784C ldm r14-r15,(r0)
+C784E addi r0,8
+C7850 jmp r15
+C7852 subi r0,8
+#### C787C 0C7852
+C787E mov r1,r2
+C7880 sexth r1
+C7882 mov r2,r1
+C7884 ld.w r15,(r0,0)
+C7886 addi r0,8
+C7888 jmp r15
+C788A lrw r7,[0xc79c4] [RAM 400978]
+C788C lrw r1,[0xc79f8] [RAM 403024]
+C788E ld.w r7,(r7,0)
+C7890 ld.h r1,(r1,0)
+#### C7D22 0C7CCA
+C7D24 ld.w r14,(r10,0)
+C7D26 lrw r7,[0xc7dd4] [RAM 402fc4]
+C7D28 addi r14,32
+C7D2A ld.h r6,(r14,10)
+C7D2C movi r5,10
+C7D2E mult r6,r5
+C7D30 addu r7,r6
+C7D32 ld.h r7,(r7,0)
+C7D34 movi r6,125
+C7D36 lsli r6,4
+#### C7DA6 0C7CCA
+C7DA8 ld.w r6,(r10,0)
+C7DAA movi r5,42
+C7DAC addu r6,r5
+C7DAE lrw r7,[0xc7ecc] [RAM 40308e]
+C7DB0 ld.h r6,(r6,0)
+C7DB2 sexth r2
+C7DB4 ixh r7,r6
+C7DB6 ld.h r7,(r7,0)
+C7DB8 sexth r7
+C7DBA cmplt r7,r2
+#### C7DFA 0C7CCA
+C7DFC ld.h r7,(r0,18)
+C7DFE addu r7,r2
+C7E00 st.h r7,(r0,18)
+C7E02 ld.h r3,(r9,0)
+C7E04 mov r2,r14
+C7E06 jsri [0xc7fcc]
+C7E08 addu r12,r2
+C7E0A sexth r12
+C7E0C ld.w r14,(r10,0)
+C7E0E movi r7,42
+#### C7E06 0C7CCA
+C7E08 addu r12,r2
+C7E0A sexth r12
+C7E0C ld.w r14,(r10,0)
+C7E0E movi r7,42
+C7E10 addu r7,r14
+C7E12 ld.h r2,(r7,0)
+C7E14 lrw r6,[0xc7ecc] [RAM 40308e]
+C7E16 lrw r1,[0xc7ebc] [RAM 403086]
+C7E18 lsli r2,1
+C7E1A addu r6,r2
+#### C7F1E 0C7CCA
+C7F20 ld.w r14,(r10,0)
+C7F22 sexth r2
+C7F24 mov r9,r14
+C7F26 addi r9,32
+C7F28 ld.h r3,(r9,10)
+C7F2A mov r12,r2
+C7F2C mov r7,r3
+C7F2E lsli r7,1
+C7F30 st.w r7,(r0,20)
+C7F32 lrw r7,[0xc81f4] [RAM 403086]
+#### C8ED4 0C8E96
+C8ED6 lrw r7,[0xc9114] [RAM 403086]
+C8ED8 lrw r6,[0xc9118] [RAM 403014]
+C8EDA addu r7,r14
+C8EDC addu r6,r14
+C8EDE ld.h r13,(r7,0)
+C8EE0 ld.h r6,(r6,0)
+C8EE2 ld.w r3,(r11,0)
+C8EE4 subu r13,r6
+C8EE6 subu r13,r2
+C8EE8 lrw r4,[0xc90b4] [RAM 40308e]
+#### C8F92 0C8E96
+C8F94 mult r2,r10
+C8F96 movi r1,100
+C8F98 lrw r7,[0xc90e4] [RAM 402ffc]
+C8F9A divs r2,r1
+C8F9C ld.b r7,(r7,0)
+C8F9E mov r12,r2
+C8FA0 btsti r7,1
+C8FA2 bf 0xc8fb4
+C8FA4 lrw r6,[0xc91c4] [TCS+39a]
+C8FA6 ld.h r6,(r6,0)
+#### C9130 0C9124
+C9132 movi r7,10
+C9134 mult r2,r7
+C9136 mov r14,r2
+C9138 zexth r14
+C913A movi r2,2
+C913C jsri [0xc9264]
+C913E cmplt r14,r2
+C9140 bt 0xc9148
+C9142 movi r2,2
+C9144 jsri [0xc9264]
+#### C93A0 0C9380
+C93A2 lrw r6,[0xc9610] [RAM 402fb8]
+C93A4 lrw r7,[0xc95e8] [RAM 403086]
+C93A6 ld.h r6,(r6,0)
+C93A8 ld.h r3,(r7,6)
+C93AA addu r6,r2
+C93AC subu r3,r6
+C93AE sexth r3
+C93B0 br 0xc9406
+C93B2 jsri [0xc960c]
+C93B4 lrw r6,[0xc9614] [RAM 402fb6]
+#### C93B2 0C9380
+C93B4 lrw r6,[0xc9614] [RAM 402fb6]
+C93B6 lrw r7,[0xc95e8] [RAM 403086]
+C93B8 ld.h r6,(r6,0)
+C93BA ld.h r3,(r7,4)
+C93BC addu r6,r2
+C93BE subu r3,r6
+C93C0 sexth r3
+C93C2 br 0xc9406
+C93C4 lrw r6,[0xc9618] [TCS+760]
+C93C6 lrw r7,[0xc961c] [RAM 4030b8]
+#### C93E8 0C9380
+C93EA ld.h r6,(r12,2)
+C93EC ld.h r3,(r12,6)
+C93EE addu r6,r2
+C93F0 subu r3,r6
+C93F2 lrw r6,[0xc9624] [TCS+75e]
+C93F4 sexth r3
+C93F6 ld.h r6,(r6,0)
+C93F8 movi r1,100
+C93FA sexth r6
+C93FC mult r3,r6
+#### C9716 0C9704
+C9718 mov r14,r2
+C971A lrw r2,[0xc9804] [TCS+230]
+C971C lrw r13,[0xc9808] [TCS+226]
+C971E br 0xc972e
+C9720 lrw r3,[0xc97f8] [RAM 401142]
+C9722 lrw r2,[0xc980c] [TCS+240]
+C9724 ld.b r3,(r3,0)
+C9726 jsri [0xc97fc]
+C9728 mov r14,r2
+C972A lrw r2,[0xc9810] [TCS+22e]
+#### C9726 0C9704
+C9728 mov r14,r2
+C972A lrw r2,[0xc9810] [TCS+22e]
+C972C lrw r13,[0xc9814] [TCS+224]
+C972E lrw r3,[0xc9818] [RAM 403026]
+C9730 lrw r4,[0xc981c] [RAM 40113c]
+C9732 ld.h r6,(r3,0)
+C9734 ld.h r4,(r4,0)
+C9736 sexth r6
+C9738 sexth r4
+C973A movi r5,120
+#### C9C46 0C9BF4
+C9C48 mov r14,r2
+C9C4A ld.b r1,(r11,0)
+C9C4C mov r3,r8
+C9C4E btsti r1,6
+C9C50 mov r2,r12
+C9C52 movf r8,r9
+C9C54 movt r3,r12
+C9C56 movt r2,r8
+C9C58 movt r8,r13
+C9C5A lrw r12,[0xc9ea4] [TCS+7a2]
+#### CA082 0CA058
+CA084 lrw r7,[0xca294] [RAM 40309c]
+CA086 mov r14,r2
+CA088 ld.h r7,(r7,0)
+CA08A sexth r14
+CA08C sexth r7
+CA08E subu r7,r14
+CA090 ixh r7,r7
+CA092 mov r1,r7
+CA094 asri r1,7
+CA096 lsri r1,24
+#### CA186 0CA058
+CA188 sexth r14
+CA18A movi r7,100
+CA18C mult r2,r14
+CA18E mov r1,r7
+CA190 divs r2,r1
+CA192 mov r14,r2
+CA194 lrw r13,[0xca2cc] [RAM 402f98]
+CA196 st.h r14,(r13,0)
+CA198 ld.b r14,(r12,0)
+CA19A btsti r14,7
+#### CA1F4 0CA058
+CA1F6 lrw r10,[0xca2ec] [RAM 402f7a]
+CA1F8 lrw r3,[0xca2f0] [TCS+61c]
+CA1FA zexth r2
+CA1FC ld.h r3,(r3,0)
+CA1FE ld.h r12,(r10,0)
+CA200 cmplt r2,r14
+CA202 movt r14,r2
+CA204 sexth r3
+CA206 sexth r12
+CA208 cmplt r12,r3
+#### CA5B6 0CA518
+CA5B8 ld.h r14,(r14,0)
+CA5BA sexth r2
+CA5BC sexth r14
+CA5BE btsti r14,31
+CA5C0 bf 0xca5c4
+CA5C2 addi r14,31
+CA5C4 ld.b r7,(r11,1)
+CA5C6 asri r14,5
+CA5C8 movi r6,50
+CA5CA addu r14,r6
+#### CA80C 0CA7A4
+CA80E sexth r2
+CA810 movi r6,10
+CA812 mult r2,r6
+CA814 addu r14,r2
+CA816 bmaski r7,15
+CA818 cmplt r7,r14
+CA81A movt r14,r7
+CA81C sexth r14
+CA81E mov r2,r14
+CA820 ldm r14-r15,(r0)
+#### CA86C 0CA826
+CA86E sexth r2
+CA870 movi r6,10
+CA872 mult r2,r6
+CA874 addu r14,r2
+CA876 ld.h r7,(r12,0)
+CA878 bmaski r2,9
+CA87A subi r2,11
+CA87C rsub r2,r7
+CA87E sexth r2
+CA880 btsti r2,31
+#### CB420 0CB3E4
+CB422 lrw r6,[0xcb5d8] [RAM 40309c]
+CB424 mov r14,r2
+CB426 ld.h r6,(r6,0)
+CB428 sexth r14
+CB42A sexth r6
+CB42C subu r14,r6
+CB42E movi r6,12
+CB430 mult r14,r6
+CB432 mov r1,r14
+CB434 ld.h r7,(r13,0)
+#### CB522 0CB3E4
+CB524 sexth r14
+CB526 movi r7,100
+CB528 mult r2,r14
+CB52A mov r1,r7
+CB52C divs r2,r1
+CB52E mov r14,r2
+CB530 lrw r7,[0xcb618] [RAM 400b0a]
+CB532 ld.b r7,(r7,0)
+CB534 btsti r7,6
+CB536 bf 0xcb544
+#### CB65A 0CB648
+CB65C rsub r2,r14
+CB65E sexth r2
+CB660 btsti r2,31
+CB662 clrt r2
+CB664 ldm r14-r15,(r0)
+CB666 sexth r2
+CB668 addi r0,8
+CB66A jmp r15
+CB66C subi r0,16
+CB66E stm r12-r15,(r0)
+#### CB682 0CB66C
+CB684 mov r13,r2
+CB686 ld.b r6,(r14,7)
+CB688 lrw r2,[0xcb814] [TCS+83c]
+CB68A movi r5,22
+CB68C ld.h r3,(r12,0)
+CB68E mult r6,r5
+CB690 addu r2,r6
+CB692 sexth r3
+CB694 jsri [0xcb804]
+CB696 lrw r7,[0xcb818] [RAM 402f6c]
+#### CB694 0CB66C
+CB696 lrw r7,[0xcb818] [RAM 402f6c]
+CB698 mov r14,r2
+CB69A ld.b r7,(r7,0)
+CB69C btsti r7,4
+CB69E bf 0xcb6a8
+CB6A0 sexth r14
+CB6A2 mov r2,r14
+CB6A4 bsr 0xcb648
+CB6A6 subu r14,r2
+CB6A8 addu r13,r14
+#### CBAF8 0CBAC6
+CBAFA sexth r2
+CBAFC movi r1,20
+CBAFE divs r2,r1
+CBB00 sexth r2
+CBB02 mov r12,r2
+CBB04 btsti r2,31
+CBB06 clrt r12
+CBB08 sexth r14
+CBB0A cmplt r12,r14
+CBB0C bf 0xcbb14
+#### CBBCE 0CBB72
+CBBD0 sexth r2
+CBBD2 movi r1,20
+CBBD4 divs r2,r1
+CBBD6 sexth r2
+CBBD8 mov r13,r2
+CBBDA btsti r2,31
+CBBDC clrt r13
+CBBDE sexth r14
+CBBE0 cmplt r13,r14
+CBBE2 bf 0xcbbea
+#### CBE56 0CBD98
+CBE58 mov r7,r13
+CBE5A .short 0x6827
+CBE5C btsti r7,31
+CBE5E bf 0xcbe62
+CBE60 addi r7,15
+CBE62 lrw r3,[0xcc02c] [RAM 4030a9]
+CBE64 asri r7,4
+CBE66 ld.b r3,(r3,0)
+CBE68 mov r13,r7
+CBE6A sextb r3
+#### CBF62 0CBD98
+CBF64 sexth r2
+CBF66 mov r14,r2
+CBF68 cmplt r2,r13
+CBF6A movt r12,r2
+CBF6C btsti r12,31
+CBF6E bf 0xcbf9e
+CBF70 movi r12,0
+CBF72 br 0xcbf9e
+CBF74 cmplti r12,1
+CBF76 bt 0xcbf9e
+#### CD4A2 0CD490
+CD4A4 mov r14,r2
+CD4A6 sexth r14
+CD4A8 cmplt r10,r14
+CD4AA bf 0xcd4c4
+CD4AC lrw r7,[0xcd5f4] [RAM 40303c]
+CD4AE ld.b r7,(r7,0)
+CD4B0 btsti r7,7
+CD4B2 bf 0xcd4c2
+CD4B4 mov r6,r14
+CD4B6 sexth r6
+#### CD582 0CD490
+CD584 lrw r7,[0xcd620] [RAM 403046]
+CD586 ld.b r7,(r7,0)
+CD588 btsti r7,3
+CD58A bt 0xcd592
+CD58C mov r9,r13
+CD58E movi r1,20
+CD590 divs r9,r1
+CD592 ld.b r7,(r12,0)
+CD594 btsti r7,7
+CD596 bf 0xcd5ce
+#### CE65A 0CE54E
+CE65C ld.h r12,(r14,0)
+CE65E lrw r6,[0xce6bc] [RAM 4031aa]
+CE660 lrw r3,[0xce828] [RAM 403096]
+CE662 subu r12,r2
+CE664 ld.b r6,(r6,7)
+CE666 lrw r2,[0xce82c] [TCS+534]
+CE668 movi r5,28
+CE66A ld.b r3,(r3,0)
+CE66C mult r6,r5
+CE66E addu r2,r6
+#### CE672 0CE54E
+CE674 movi r7,50
+CE676 mult r2,r7
+CE678 lrw r11,[0xce830] [RAM 402f7a]
+CE67A sexth r12
+CE67C sexth r2
+CE67E cmplt r12,r2
+CE680 ld.h r11,(r11,0)
+CE682 movt r12,r2
+CE684 sexth r11
+CE686 sexth r12
+#### CE71C 0CE54E
+CE71E ld.h r12,(r14,6)
+CE720 mov r7,r2
+CE722 sexth r12
+CE724 sexth r7
+CE726 rsub r7,r12
+CE728 cmplti r7,1
+CE72A movi r13,0
+CE72C bt 0xce732
+CE72E mov r13,r12
+CE730 subu r13,r2
+#### D1F18 0D1A8A
+D1F1A st.h r2,(r0,6)
+D1F1C br 0xd1f4c
+D1F1E bkpt
+D1F20 bkpt
+D1F22 mult r1,r0
+D1F24 ldq r4-r7,(r0)
+D1F26 .short 0x0978
+D1F28 .short 0x000d
+D1F2A cmphs r14,r0
+D1F2C ldq r4-r7,(r0)
+#### D1F48 0D1A8A
+D1F4A st.h r2,(r0,6)
+D1F4C ld.h r13,(r0,6)
+D1F4E movi r6,52
+D1F50 addu r6,r0
+D1F52 ld.h r6,(r6,0)
+D1F54 .short 0x686d
+D1F56 mov r1,r13
+D1F58 asri r1,11
+D1F5A lsri r1,20
+D1F5C addu r13,r1

@@ -1,0 +1,368 @@
+
+sub_05E424:
+  05E424:  25F0   subi r0,32
+  05E426:  0078   stm r8-r15,(r0)
+  05E428:  2470   subi r0,8
+  05E42A:  7C83   lrw r12,[0x5e638]   ; = 0x004031aa
+  05E42C:  7884   lrw r8,[0x5e63c]   ; = 0x000d6f5a
+  05E42E:  A41C   ld.b r4,(r12,1)
+  05E430:  1287   mov r7,r8
+  05E432:  3C14   lsli r4,1
+  05E434:  7A83   lrw r10,[0x5e640]   ; = 0x000d6f42
+  05E436:  1C47   addu r7,r4
+  05E438:  C307   ld.h r3,(r7,0)
+  05E43A:  12A7   mov r7,r10
+  05E43C:  1C47   addu r7,r4
+  05E43E:  CE07   ld.h r14,(r7,0)
+  05E440:  0173   sexth r3
+  05E442:  017E   sexth r14
+  05E444:  1237   mov r7,r3
+  05E446:  1CE7   addu r7,r14
+  05E448:  9700   st.w r7,(r0,0)
+  05E44A:  8600   ld.w r6,(r0,0)
+  05E44C:  757E   lrw r5,[0x5e644]   ; = 0x000002a3
+  05E44E:  777E   lrw r7,[0x5e648]   ; = 0x00400ae8
+  05E450:  0356   mult r6,r5
+  05E452:  1261   mov r1,r6
+  05E454:  3A91   asri r1,9
+  05E456:  3F61   lsri r1,22
+  05E458:  1C16   addu r6,r1
+  05E45A:  3AA6   asri r6,10
+  05E45C:  7973   lrw r9,[0x5e628]   ; = 0x000d6ee2
+  05E45E:  D607   st.h r6,(r7,0)
+  05E460:  1297   mov r7,r9
+  05E462:  7D6C   lrw r13,[0x5e614]   ; = 0x000d6eca
+  05E464:  1C47   addu r7,r4
+  05E466:  CB07   ld.h r11,(r7,0)
+  05E468:  12D7   mov r7,r13
+  05E46A:  7678   lrw r6,[0x5e64c]   ; = 0x000d6f72
+  05E46C:  1C47   addu r7,r4
+  05E46E:  C207   ld.h r2,(r7,0)
+  05E470:  1C46   addu r6,r4
+  05E472:  017B   sexth r11
+  05E474:  C106   ld.h r1,(r6,0)
+  05E476:  0172   sexth r2
+  05E478:  12B7   mov r7,r11
+  05E47A:  0327   mult r7,r2
+  05E47C:  0171   sexth r1
+  05E47E:  2C17   divu r7,r1
+  05E480:  8600   ld.w r6,(r0,0)
+  05E482:  032E   mult r14,r2
+  05E484:  0367   mult r7,r6
+  05E486:  1271   mov r1,r7
+  05E488:  3A61   asri r1,6
+  05E48A:  3F91   lsri r1,25
+  05E48C:  1C17   addu r7,r1
+  05E48E:  3A77   asri r7,7
+  05E490:  1274   mov r4,r7
+  05E492:  12B7   mov r7,r11
+  05E494:  0337   mult r7,r3
+  05E496:  05E7   subu r7,r14
+  05E498:  37F7   btsti r7,31
+  05E49A:  E801   bf 0x5e49e
+  05E49C:  21E7   addi r7,31
+  05E49E:  67F2   movi r2,127
+  05E4A0:  3A57   asri r7,5
+  05E4A2:  3482   bseti r2,8
+  05E4A4:  0342   mult r2,r4
+  05E4A6:  1271   mov r1,r7
+  05E4A8:  2C12   divu r2,r1
+  05E4AA:  7F56   jsri [0x5e604]       ; -> 0x0006d102
+  05E4AC:  7769   lrw r7,[0x5e650]   ; = 0x00400aea
+  05E4AE:  7E69   lrw r14,[0x5e654]   ; = 0x000d6f2a
+  05E4B0:  D207   st.h r2,(r7,0)
+  05E4B2:  A21C   ld.b r2,(r12,1)
+  05E4B4:  12A7   mov r7,r10
+  05E4B6:  3C12   lsli r2,1
+  05E4B8:  12E6   mov r6,r14
+  05E4BA:  1C27   addu r7,r2
+  05E4BC:  1C26   addu r6,r2
+  05E4BE:  C307   ld.h r3,(r7,0)
+  05E4C0:  C606   ld.h r6,(r6,0)
+  05E4C2:  0173   sexth r3
+  05E4C4:  0176   sexth r6
+  05E4C6:  1C63   addu r3,r6
+  05E4C8:  37F3   btsti r3,31
+  05E4CA:  7B63   lrw r11,[0x5e658]   ; = 0xfff26b70
+  05E4CC:  E001   bt 0x5e4d0
+  05E4CE:  7B63   lrw r11,[0x5e65c]   ; = 0x000d9490
+  05E4D0:  7664   lrw r6,[0x5e660]   ; = 0x00002710
+  05E4D2:  7164   lrw r1,[0x5e664]   ; = 0x0000077c
+  05E4D4:  0336   mult r6,r3
+  05E4D6:  1CB6   addu r6,r11
+  05E4D8:  3216   divs r6,r1
+  05E4DA:  7763   lrw r7,[0x5e668]   ; = 0x00400aec
+  05E4DC:  1261   mov r1,r6
+  05E4DE:  3A91   asri r1,9
+  05E4E0:  3F61   lsri r1,22
+  05E4E2:  1C16   addu r6,r1
+  05E4E4:  3AA6   asri r6,10
+  05E4E6:  D607   st.h r6,(r7,0)
+  05E4E8:  7761   lrw r7,[0x5e66c]   ; = 0x000d6f12
+  05E4EA:  1C27   addu r7,r2
+  05E4EC:  C307   ld.h r3,(r7,0)
+  05E4EE:  0173   sexth r3
+  05E4F0:  2A03   cmpnei r3,0
+  05E4F2:  E810   bf 0x5e514
+  05E4F4:  6272   movi r2,39
+  05E4F6:  3472   bseti r2,7
+  05E4F8:  0332   mult r2,r3
+  05E4FA:  37F2   btsti r2,31
+  05E4FC:  00A2   inct r2
+  05E4FE:  765C   lrw r6,[0x5e670]   ; = 0x009c4000
+  05E500:  3A12   asri r2,1
+  05E502:  6271   movi r1,39
+  05E504:  1C62   addu r2,r6
+  05E506:  3471   bseti r1,7
+  05E508:  3212   divs r2,r1
+  05E50A:  1231   mov r1,r3
+  05E50C:  3212   divs r2,r1
+  05E50E:  F003   br 0x5e516
+  05E510:  0040   ldq r4-r7,(r0)
+  05E512:  0ADA   movf r10,r13
+  05E514:  1232   mov r2,r3
+  05E516:  7F3B   jsri [0x5e604]       ; -> 0x0006d102
+  05E518:  7757   lrw r7,[0x5e674]   ; = 0x00400aee
+  05E51A:  D207   st.h r2,(r7,0)
+  05E51C:  AC1C   ld.b r12,(r12,1)
+  05E51E:  3C1C   lsli r12,1
+  05E520:  1CCE   addu r14,r12
+  05E522:  C20E   ld.h r2,(r14,0)
+  05E524:  7E4D   lrw r14,[0x5e658]   ; = 0xfff26b70
+  05E526:  0172   sexth r2
+  05E528:  37F2   btsti r2,31
+  05E52A:  E001   bt 0x5e52e
+  05E52C:  7E4C   lrw r14,[0x5e65c]   ; = 0x000d9490
+  05E52E:  764C   lrw r6,[0x5e660]   ; = 0x00002710
+  05E530:  714D   lrw r1,[0x5e664]   ; = 0x0000077c
+  05E532:  0326   mult r6,r2
+  05E534:  1CE6   addu r6,r14
+  05E536:  3216   divs r6,r1
+  05E538:  7750   lrw r7,[0x5e678]   ; = 0x00400af0
+  05E53A:  1261   mov r1,r6
+  05E53C:  3A91   asri r1,9
+  05E53E:  3F61   lsri r1,22
+  05E540:  1C16   addu r6,r1
+  05E542:  3AA6   asri r6,10
+  05E544:  1CCA   addu r10,r12
+  05E546:  D607   st.h r6,(r7,0)
+  05E548:  1CC8   addu r8,r12
+  05E54A:  CA0A   ld.h r10,(r10,0)
+  05E54C:  C808   ld.h r8,(r8,0)
+  05E54E:  017A   sexth r10
+  05E550:  0178   sexth r8
+  05E552:  12AE   mov r14,r10
+  05E554:  1C8E   addu r14,r8
+  05E556:  1C2E   addu r14,r2
+  05E558:  37FE   btsti r14,31
+  05E55A:  723F   lrw r2,[0x5e658]   ; = 0xfff26b70
+  05E55C:  E001   bt 0x5e560
+  05E55E:  723F   lrw r2,[0x5e65c]   ; = 0x000d9490
+  05E560:  7640   lrw r6,[0x5e660]   ; = 0x00002710
+  05E562:  7140   lrw r1,[0x5e664]   ; = 0x0000077c
+  05E564:  03E6   mult r6,r14
+  05E566:  1C26   addu r6,r2
+  05E568:  3216   divs r6,r1
+  05E56A:  7744   lrw r7,[0x5e67c]   ; = 0x00400af2
+  05E56C:  1261   mov r1,r6
+  05E56E:  3A91   asri r1,9
+  05E570:  3F61   lsri r1,22
+  05E572:  1C16   addu r6,r1
+  05E574:  3AA6   asri r6,10
+  05E576:  D607   st.h r6,(r7,0)
+  05E578:  7742   lrw r7,[0x5e680]   ; = 0x000d6fa2
+  05E57A:  7542   lrw r5,[0x5e684]   ; = 0x0000de38
+  05E57C:  1CC7   addu r7,r12
+  05E57E:  CE07   ld.h r14,(r7,0)
+  05E580:  7742   lrw r7,[0x5e688]   ; = 0x00400af4
+  05E582:  017E   sexth r14
+  05E584:  12E6   mov r6,r14
+  05E586:  37FE   btsti r14,31
+  05E588:  00A6   inct r6
+  05E58A:  3A16   asri r6,1
+  05E58C:  1C56   addu r6,r5
+  05E58E:  12E1   mov r1,r14
+  05E590:  3216   divs r6,r1
+  05E592:  128E   mov r14,r8
+  05E594:  D607   st.h r6,(r7,0)
+  05E596:  763D   lrw r6,[0x5e68c]   ; = 0x000186a0
+  05E598:  1CAE   addu r14,r10
+  05E59A:  6141   movi r1,20
+  05E59C:  03E6   mult r6,r14
+  05E59E:  3471   bseti r1,7
+  05E5A0:  3216   divs r6,r1
+  05E5A2:  773B   lrw r7,[0x5e690]   ; = 0x00400af6
+  05E5A4:  1261   mov r1,r6
+  05E5A6:  3A91   asri r1,9
+  05E5A8:  3F61   lsri r1,22
+  05E5AA:  1C16   addu r6,r1
+  05E5AC:  3AA6   asri r6,10
+  05E5AE:  D607   st.h r6,(r7,0)
+  05E5B0:  1CCD   addu r13,r12
+  05E5B2:  7626   lrw r6,[0x5e64c]   ; = 0x000d6f72
+  05E5B4:  1CC9   addu r9,r12
+  05E5B6:  C20D   ld.h r2,(r13,0)
+  05E5B8:  C909   ld.h r9,(r9,0)
+  05E5BA:  1CC6   addu r6,r12
+  05E5BC:  0172   sexth r2
+  05E5BE:  C106   ld.h r1,(r6,0)
+  05E5C0:  0179   sexth r9
+  05E5C2:  122D   mov r13,r2
+  05E5C4:  039D   mult r13,r9
+  05E5C6:  0171   sexth r1
+  05E5C8:  2C1D   divu r13,r1
+  05E5CA:  0389   mult r9,r8
+  05E5CC:  032A   mult r10,r2
+  05E5CE:  05A9   subu r9,r10
+  05E5D0:  03ED   mult r13,r14
+  05E5D2:  1291   mov r1,r9
+  05E5D4:  3E9D   lsri r13,9
+  05E5D6:  3A91   asri r1,9
+  05E5D8:  3F61   lsri r1,22
+  05E5DA:  12D2   mov r2,r13
+  05E5DC:  1C19   addu r9,r1
+  05E5DE:  3EA2   lsri r2,10
+  05E5E0:  6195   movi r5,25
+  05E5E2:  03E2   mult r2,r14
+  05E5E4:  3C55   lsli r5,5
+  05E5E6:  6211   movi r1,33
+  05E5E8:  0352   mult r2,r5
+  05E5EA:  3491   bseti r1,9
+  05E5EC:  2C12   divu r2,r1
+  05E5EE:  3AA9   asri r9,10
+  05E5F0:  1291   mov r1,r9
+  05E5F2:  2C12   divu r2,r1
+  05E5F4:  7F04   jsri [0x5e604]       ; -> 0x0006d102
+  05E5F6:  7727   lrw r7,[0x5e694]   ; = 0x00400af8
+  05E5F8:  D207   st.h r2,(r7,0)
+  05E5FA:  2070   addi r0,8
+  05E5FC:  0068   ldm r8-r15,(r0)
+  05E5FE:  21F0   addi r0,32
+  05E600:  00CF   jmp r15            ; return
+  05E602:  0000   bkpt
+  05E604:  0006   doze
+  05E606:  D102   st.h r1,(r2,0)
+  05E608:  0040   ldq r4-r7,(r0)
+  05E60A:  0ADC   movf r12,r13
+  05E60C:  000D   .short 0x000d
+  05E60E:  6F8A   .short 0x6f8a
+  05E610:  0040   ldq r4-r7,(r0)
+  05E612:  0ADE   movf r14,r13
+  05E614:  000D   .short 0x000d
+  05E616:  6ECA   .short 0x6eca
+  05E618:  0000   bkpt
+  05E61A:  2FEF   andi r15,30
+  05E61C:  0040   ldq r4-r7,(r0)
+  05E61E:  0AE0   movf r0,r14
+  05E620:  0000   bkpt
+  05E622:  02CF   movt r15,r12
+  05E624:  0040   ldq r4-r7,(r0)
+  05E626:  0AE2   movf r2,r14
+  05E628:  000D   .short 0x000d
+  05E62A:  6EE2   .short 0x6ee2
+  05E62C:  000D   .short 0x000d
+  05E62E:  7002   jmpi [0x5e638]       ; -> 0x004031aa
+  05E630:  0040   ldq r4-r7,(r0)
+  05E632:  0AE4   movf r4,r14
+  05E634:  0000   bkpt
+  05E636:  9C67   st.w r12,(r7,24)
+  05E638:  0040   ldq r4-r7,(r0)
+  05E63A:  31AA   bclri r10,26
+  05E63C:  000D   .short 0x000d
+  05E63E:  6F5A   .short 0x6f5a
+  05E640:  000D   .short 0x000d
+  05E642:  6F42   .short 0x6f42
+  05E644:  0000   bkpt
+  05E646:  02A3   movt r3,r10
+  05E648:  0040   ldq r4-r7,(r0)
+  05E64A:  0AE8   movf r8,r14
+  05E64C:  000D   .short 0x000d
+  05E64E:  6F72   .short 0x6f72
+  05E650:  0040   ldq r4-r7,(r0)
+  05E652:  0AEA   movf r10,r14
+  05E654:  000D   .short 0x000d
+  05E656:  6F2A   .short 0x6f2a
+  05E658:  FFF2   bsr 0x5e63e
+  05E65A:  6B70   .short 0x6b70
+  05E65C:  000D   .short 0x000d
+  05E65E:  9490   st.w r4,(r0,36)
+  05E660:  0000   bkpt
+  05E662:  2710   .short 0x2710
+  05E664:  0000   bkpt
+  05E666:  077C   subc r12,r7
+  05E668:  0040   ldq r4-r7,(r0)
+  05E66A:  0AEC   movf r12,r14
+  05E66C:  000D   .short 0x000d
+  05E66E:  6F12   .short 0x6f12
+  05E670:  009C   decf r12
+  05E672:  4000   .short 0x4000
+  05E674:  0040   ldq r4-r7,(r0)
+  05E676:  0AEE   movf r14,r14
+  05E678:  0040   ldq r4-r7,(r0)
+  05E67A:  0AF0   movf r0,r15
+  05E67C:  0040   ldq r4-r7,(r0)
+  05E67E:  0AF2   movf r2,r15
+  05E680:  000D   .short 0x000d
+  05E682:  6FA2   .short 0x6fa2
+  05E684:  0000   bkpt
+  05E686:  DE38   st.h r14,(r8,6)
+  05E688:  0040   ldq r4-r7,(r0)
+  05E68A:  0AF4   movf r4,r15
+  05E68C:  0001   sync
+  05E68E:  86A0   ld.w r6,(r0,40)
+  05E690:  0040   ldq r4-r7,(r0)
+  05E692:  0AF6   movf r6,r15
+  05E694:  0040   ldq r4-r7,(r0)
+  05E696:  0AF8   movf r8,r15
+  05E698:  2470   subi r0,8
+  05E69A:  9F00   st.w r15,(r0,0)
+  05E69C:  7F1C   jsri [0x5e70c]       ; -> 0x000686e4
+  05E69E:  6182   movi r2,24
+  05E6A0:  6003   movi r3,0
+  05E6A2:  7F1B   jsri [0x5e710]       ; -> 0x0008e066
+  05E6A4:  2222   cmplti r2,3
+  05E6A6:  E814   bf 0x5e6d0
+  05E6A8:  6182   movi r2,24
+  05E6AA:  6013   movi r3,1
+  05E6AC:  7F19   jsri [0x5e710]       ; -> 0x0008e066
+  05E6AE:  2A22   cmpnei r2,2
+  05E6B0:  E80F   bf 0x5e6d0
+  05E6B2:  7718   lrw r7,[0x5e714]   ; = 0x00400df2
+  05E6B4:  A707   ld.b r7,(r7,0)
+  05E6B6:  2EF7   andi r7,15
+  05E6B8:  2A37   cmpnei r7,3
+  05E6BA:  E80A   bf 0x5e6d0
+  05E6BC:  7117   lrw r1,[0x5e718]   ; = 0x00400b37
+  05E6BE:  A701   ld.b r7,(r1,0)
+  05E6C0:  2FF7   andi r7,31
+  05E6C2:  3457   bseti r7,5
+  05E6C4:  B701   st.b r7,(r1,0)
+  05E6C6:  7115   lrw r1,[0x5e71c]   ; = 0x00400b0a
+  05E6C8:  A701   ld.b r7,(r1,0)
+  05E6CA:  3407   bseti r7,0
+  05E6CC:  B701   st.b r7,(r1,0)
+  05E6CE:  F01B   br 0x5e706
+  05E6D0:  7F14   jsri [0x5e720]       ; -> 0x000647d4
+  05E6D2:  7F14   jsri [0x5e724]       ; -> 0x0005eac8
+  05E6D4:  7F15   jsri [0x5e728]       ; -> 0x00064de2
+  05E6D6:  7F15   jsri [0x5e72c]       ; -> 0x0005f50e
+  05E6D8:  7F16   jsri [0x5e730]       ; -> 0x00065968
+  05E6DA:  7F16   jsri [0x5e734]       ; -> 0x00066e4e
+  05E6DC:  7F17   jsri [0x5e738]       ; -> 0x00065020
+  05E6DE:  7F17   jsri [0x5e73c]       ; -> 0x000616a4
+  05E6E0:  7F18   jsri [0x5e740]       ; -> 0x00065494
+  05E6E2:  7F18   jsri [0x5e744]       ; -> 0x00061c64
+  05E6E4:  6002   movi r2,0
+  05E6E6:  7F18   jsri [0x5e748]       ; -> 0x000622ec
+  05E6E8:  6012   movi r2,1
+  05E6EA:  7F17   jsri [0x5e748]       ; -> 0x000622ec
+  05E6EC:  6022   movi r2,2
+  05E6EE:  7F16   jsri [0x5e748]       ; -> 0x000622ec
+  05E6F0:  6032   movi r2,3
+  05E6F2:  7F15   jsri [0x5e748]       ; -> 0x000622ec
+  05E6F4:  7F16   jsri [0x5e74c]       ; -> 0x00062688
+  05E6F6:  7709   lrw r7,[0x5e71c]   ; = 0x00400b0a
+  05E6F8:  A717   ld.b r7,(r7,1)
+  05E6FA:  3657   btsti r7,5
+  05E6FC:  E802   bf 0x5e702
+  05E6FE:  7F14   jsri [0x5e750]       ; -> 0x00066fdc

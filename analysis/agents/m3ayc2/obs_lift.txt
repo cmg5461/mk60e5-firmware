@@ -1,0 +1,832 @@
+  5EBC4  r0 = (r0 - 32)
+  5EBC6  stm r8-r15,(r0)
+  5EBC8  r0 = ((r0 - 32) - 32)
+  5EBCC  r7 = Muh[0x400d5a]
+  5EBCE  r7 = s16(Muh[0x400d5a])
+  5EBD2  if (s16(Muh[0x400d5a]) != 0) goto L5EBDA
+  5EBD8  Mh[0x400d5a] = 1024
+L5EBDA:
+  5EBDE  Mw[r0+12] = 0x400c40
+  5EBE4  r7 = Mub[0x400c40]
+  5EBE6  if (!(bit6(Mub[0x400c40]))) goto L5EC0C
+  5EBEA  r7 = Mub[0x400b8e]
+  5EBEE  if (bit4(Mub[0x400b8e])) goto L5EC0C
+  5EBF2  r7 = Mub[0x400b50]
+  5EBF6  if (bit7(Mub[0x400b50])) goto L5EC0C
+  5EBF8  r7 = Mub[0x400c40]
+  5EBFC  if (bit1(Mub[0x400c40])) goto L5EC06
+  5EC02  r6 = Muh[0x400c4a]
+  5EC04  Mh[0x400c42] = Muh[0x400c4a]
+L5EC06:
+  5EC08  r7 = Muh[0x400c4c]
+  5EC0A  Mh[0x400c44] = Muh[0x400c4c]
+L5EC0C:
+  5EC0C  r7 = Mw[r0+12]
+  5EC0E  r6 = r1
+  5EC10  r6 = (r1 & ~64)
+  5EC14  Mb[Mw[r0+12]+0] = (r1 & ~64)
+  5EC16  r11 = Muh[0x400b42]
+  5EC1A  r11 = s16(Muh[0x400b42])
+  5EC1C  r8 = Muh[0x400aba]
+  5EC1E  r6 = Muh[0x400c44]
+  5EC20  r11 = (s16(Muh[0x400b42]) << 1)
+  5EC22  r8 = (s16(Muh[0x400aba])*s16(Muh[0x400c44]))
+  5EC26  if (!(bit31((s16(Muh[0x400aba])*s16(Muh[0x400c44]))))) goto L5EC2A
+  5EC28  r8 = ((s16(Muh[0x400aba])*s16(Muh[0x400c44])) + 7)
+L5EC2A:
+  5EC2E  r7 = Muh[0x400b2c]
+  5EC30  r8 = (r8 >> 3)
+  5EC32  r7 = s16(Muh[0x400b2c])
+  5EC34  r7 = (s16(Muh[0x400b2c]) * 32767)
+  5EC36  Mw[r0+16] = (s16(Muh[0x400b2c]) * 32767)
+  5EC38  r2 = (r8 >> 3)
+  5EC3A  R1 = call 0x0006d0e0((r8 >> 3), r3, r4, r5)
+  5EC3C  r7 = Mw[r0+16]
+  5EC40  if (R1 < Mw[r0+16]) goto L5EC4E
+  5EC42  r2 = (r8 >> 3)
+  5EC44  R2 = call 0x0006d0fc((r8 >> 3), r3, r4, r5)
+  5EC48  r2 = (R2 * 32767)
+  5EC4A  r14 = (R2 * 32767)
+  5EC4C  goto L5EC5A
+L5EC4E:
+  5EC50  r14 = r8
+  5EC52  r6 = Muh[0x400b2c]
+  5EC54  r6 = s16(Muh[0x400b2c])
+  5EC58  r14 = (r8 / s16(Muh[0x400b2c]))
+L5EC5A:
+  5EC5C  r8 = r11
+  5EC5E  r12 = Muh[0x400c42]
+  5EC60  r14 = s16(r14)
+  5EC62  r12 = s16(Muh[0x400c42])
+  5EC64  r12 = (s16(Muh[0x400c42]) << 1)
+  5EC66  r8 = (r11 + (s16(Muh[0x400c42]) << 1))
+  5EC68  r8 = ((r11 + (s16(Muh[0x400c42]) << 1)) + s16(r14))
+  5EC6A  r2 = ((r11 + (s16(Muh[0x400c42]) << 1)) + s16(r14))
+  5EC6C  R3 = call 0x0006d102(((r11 + (s16(Muh[0x400c42]) << 1)) + s16(r14)), r3, r4, r5)
+  5EC6E  r14 = R3
+  5EC74  r8 = Mub[0x4031ab]
+  5EC7A  r2 = Muh[0x400b2c]
+  5EC7C  r8 = (Mub[0x4031ab] << 3)
+  5EC7E  r3 = (0xd70aa + (Mub[0x4031ab] << 3))
+  5EC80  r4 = (0xd704a + (Mub[0x4031ab] << 3))
+  5EC82  r2 = s16(Muh[0x400b2c])
+  5EC86  R4 = call 0x0007119e(s16(Muh[0x400b2c]), (0xd70aa + (Mub[0x4031ab] << 3)), (0xd704a + (Mub[0x4031ab] << 3)), 4)
+  5EC8A  r13 = R4
+  5EC8C  r11 = Muh[0x400c50]
+  5EC8E  r13 = s16(R4)
+  5EC90  r11 = s16(Muh[0x400c50])
+  5EC92  r11 = (s16(Muh[0x400c50]) * s16(R4))
+  5EC98  r9 = R3
+  5EC9E  r9 = s16(R3)
+  5ECA0  r6 = (8192 - s16(R4))
+  5ECA2  r11 = ((s16(Muh[0x400c50]) * s16(R4)) + (((s16(Muh[0x400c50]) * s16(R4)) >> 12) >>u 19))
+  5ECA4  r9 = (s16(R3) * (8192 - s16(R4)))
+  5ECAC  r9 = ((s16(R3) * (8192 - s16(R4))) + (((s16(R3) * (8192 - s16(R4))) >> 12) >>u 19))
+  5ECAE  r11 = (r11 >> 13)
+  5ECB0  r9 = (r9 >> 13)
+  5ECB2  r9 = ((r9 >> 13) + (r11 >> 13))
+  5ECB4  r9 = s16(((r9 >> 13) + (r11 >> 13)))
+  5ECB6  Mh[0x400c50] = s16(((r9 >> 13) + (r11 >> 13)))
+  5ECBA  r5 = Mub[0x4031ab]
+  5ECBE  r6 = (0x41610 + 2*Mub[0x4031ab])
+  5ECC0  r14 = s16(((r9 >> 13) + (r11 >> 13)))
+  5ECC4  r11 = Muh[0x400ab0]
+  5ECC6  r6 = Muh[(0x41610 + 2*Mub[0x4031ab])+0]
+  5ECC8  r14 = s16(s16(((r9 >> 13) + (r11 >> 13))))
+  5ECCA  r11 = (s16(Muh[0x400ab0])*s16(Muh[(0x41610 + 2*Mub[0x4031ab])+0]))
+  5ECCC  r6 = Mub[0x400b8f]
+  5ECD0  r6 = s16(Mub[0x400b8f])
+  5ECD2  r11 = ((s16(Muh[0x400ab0])*s16(Muh[(0x41610 + 2*Mub[0x4031ab])+0])) * s16(Mub[0x400b8f]))
+  5ECD6  r6 = (25 << 10)
+  5ECDA  r11 = (r11 / (25 << 10))
+  5ECDC  r13 = Muh[0x400aa6]
+  5ECDE  r11 = s16((r11 / (25 << 10)))
+  5ECE0  r13 = s16(Muh[0x400aa6])
+  5ECE2  r13 = (s16(Muh[0x400aa6]) * s16((r11 / (25 << 10))))
+  5ECEA  r13 = ((s16(Muh[0x400aa6]) * s16((r11 / (25 << 10)))) + (((s16(Muh[0x400aa6]) * s16((r11 / (25 << 10)))) >> 11) >>u 20))
+  5ECEC  r13 = (r13 >> 12)
+  5ECEE  r13 = s16((r13 >> 12))
+  5ECF0  r2 = s16(((r9 >> 13) + (r11 >> 13)))
+  5ECF2  R5 = call 0x0006d0cc(s16(((r9 >> 13) + (r11 >> 13))), r3, r4, Mub[0x4031ab])
+  5ECF6  if (R5 < s16((r13 >> 12))) goto L5ED7E
+  5ECF8  r3 = Mub[0x4031ab]
+  5ECFE  r3 = (Mub[0x4031ab] << 1)
+  5ED00  r7 = (0x415f8 + (Mub[0x4031ab] << 1))
+  5ED02  r6 = (0x41628 + (Mub[0x4031ab] << 1))
+  5ED04  r7 = Muh[(0x415f8 + (Mub[0x4031ab] << 1))+0]
+  5ED06  r6 = Muh[(0x41628 + (Mub[0x4031ab] << 1))+0]
+  5ED08  r5 = Mub[0x400b8f]
+  5ED0A  r6 = (s16(Muh[(0x41628 + (Mub[0x4031ab] << 1))+0])*s16(Mub[0x400b8f]))
+  5ED0E  r1 = ((s16(Muh[(0x41628 + (Mub[0x4031ab] << 1))+0])*s16(Mub[0x400b8f])) >> 6)
+  5ED12  r6 = ((s16(Muh[(0x41628 + (Mub[0x4031ab] << 1))+0])*s16(Mub[0x400b8f])) + (r1 >>u 25))
+  5ED14  r6 = (r6 >> 7)
+  5ED16  r7 = (Muh[(0x415f8 + (Mub[0x4031ab] << 1))+0] + (r6 >> 7))
+  5ED18  Mh[r0+0] = (Muh[(0x415f8 + (Mub[0x4031ab] << 1))+0] + (r6 >> 7))
+  5ED1A  r2 = s16(((r9 >> 13) + (r11 >> 13)))
+  5ED1C  R6 = call 0x0006d0cc(s16(((r9 >> 13) + (r11 >> 13))), (Mub[0x4031ab] << 1), r4, Mub[0x400b8f])
+  5ED1E  r7 = Muh[r0+0]
+  5ED20  r7 = s16(Muh[r0+0])
+  5ED26  if (!(s16(Muh[r0+0]) < R6)) goto L5ED36
+  5ED2A  Mb[0x400afe] = 3
+  5ED2E  r9 = Muh[r0+0]
+  5ED30  if (!(s16(((r9 >> 13) + (r11 >> 13))) < 1)) goto L5ED3C
+  5ED32  r9 = (0 - Muh[r0+0])
+  5ED34  goto L5ED3C
+L5ED36:
+  5ED38  Mb[0x400afe] = 2
+  5ED3A  r9 = r14
+L5ED3C:
+  5ED3C  r9 = s16(r9)
+  5ED40  r3 = s16(r9)
+  5ED42  r3 = s16(s16(r9))
+  5ED44  if (s16(r9) < 1) goto L5ED62
+  5ED48  r3 = (s16(s16(r9)) - r13)
+  5ED4A  r6 = Muh[0x400aa8]
+  5ED4C  r6 = s16(Muh[0x400aa8])
+  5ED4E  r3 = ((s16(s16(r9)) - r13) * s16(Muh[0x400aa8]))
+  5ED56  r3 = (((s16(s16(r9)) - r13) * s16(Muh[0x400aa8])) + ((((s16(s16(r9)) - r13) * s16(Muh[0x400aa8])) >> 13) >>u 18))
+  5ED58  r3 = (r3 >> 14)
+  5ED5A  r13 = (r3 >> 14)
+  5ED5C  r13 = s16((r3 >> 14))
+  5ED5E  r13 = (s16((r3 >> 14)) + r11)
+  5ED60  goto L5ED96
+L5ED62:
+  5ED64  r3 = (r3 + r13)
+  5ED66  r6 = Muh[0x400aa8]
+  5ED68  r6 = s16(Muh[0x400aa8])
+  5ED6A  r3 = ((r3 + r13) * s16(Muh[0x400aa8]))
+  5ED72  r3 = (((r3 + r13) * s16(Muh[0x400aa8])) + ((((r3 + r13) * s16(Muh[0x400aa8])) >> 13) >>u 18))
+  5ED74  r3 = (r3 >> 14)
+  5ED76  r13 = (r3 >> 14)
+  5ED78  r13 = s16((r3 >> 14))
+  5ED7A  r13 = (s16((r3 >> 14)) - r11)
+  5ED7C  goto L5ED96
+L5ED7E:
+  5ED82  r13 = Muh[0x400aae]
+  5ED86  r13 = s16(Muh[0x400aae])
+  5ED88  r13 = (s16(Muh[0x400aae]) * r14)
+  5ED90  r13 = ((s16(Muh[0x400aae]) * r14) + (((s16(Muh[0x400aae]) * r14) >> 13) >>u 18))
+  5ED92  r13 = (r13 >> 14)
+  5ED94  Mb[0x400afe] = 1
+L5ED96:
+  5ED96  r2 = r13
+  5ED98  R7 = call 0x0006d102(r13, r3, r4, r5)
+  5ED9A  r9 = R7
+  5EDA0  r6 = Mub[0x4031ab]
+  5EDA2  r2 = Muh[0x400b2c]
+  5EDA6  r3 = (0xd6fd2 + 4*Mub[0x4031ab])
+  5EDA8  r2 = s16(Muh[0x400b2c])
+  5EDAC  R8 = call 0x0007119e(s16(Muh[0x400b2c]), (0xd6fd2 + 4*Mub[0x4031ab]), 0x400ae4, 2)
+  5EDAE  r12 = R8
+  5EDB0  r12 = s16(R8)
+  5EDB4  r12 = (s16(R8) * 10)
+  5EDBE  r12 = ((s16(R8) * 10) + (((s16(R8) * 10) >> 6) >>u 25))
+  5EDC0  r12 = ((s16(R8) * 10) /128)
+  5EDC2  r3 = Muh[0x400c4e]
+  5EDC4  r9 = s16(R7)
+  5EDC6  r12 = u16(((s16(R8) * 10) /128))
+  5EDC8  r13 = R8
+  5EDCA  r2 = s16(R7)
+  5EDCC  r3 = s16(Muh[0x400c4e])
+  5EDCE  r4 = u16(((s16(R8) * 10) /128))
+  5EDD0  R9 = call 0x00091986(s16(R7), s16(Muh[0x400c4e]), u16(((s16(R8) * 10) /128)), r5)
+  5EDD6  Mh[0x400c4e] = R9
+  5EDD8  r9 = Muh[0x400c42]
+  5EDDC  r12 = R9
+  5EDDE  r9 = s16(Muh[0x400c42])
+  5EDE0  r13 = Muh[0x400abc]
+  5EDE2  r6 = Muh[0x400c44]
+  5EDE4  r12 = s16(R9)
+  5EDE6  r9 = (s16(Muh[0x400c42]) << 1)
+  5EDE8  r13 = (s16(Muh[0x400abc])*s16(Muh[0x400c44]))
+  5EDEC  if (!(bit31((s16(Muh[0x400abc])*s16(Muh[0x400c44]))))) goto L5EDF0
+  5EDEE  r13 = ((s16(Muh[0x400abc])*s16(Muh[0x400c44])) + 7)
+L5EDF0:
+  5EDF0  r13 = (r13 >> 3)
+  5EDF2  r2 = (r13 >> 3)
+  5EDF4  R10 = call 0x0006d0e0((r13 >> 3), r3, r4, r5)
+  5EDF6  r7 = Mw[r0+16]
+  5EDFA  if (R10 < Mw[r0+16]) goto L5EE08
+  5EDFC  r2 = (r13 >> 3)
+  5EDFE  R11 = call 0x0006d0fc((r13 >> 3), r3, r4, r5)
+  5EE02  r2 = (R11 * 32767)
+  5EE04  Mh[r0+0] = (R11 * 32767)
+  5EE06  goto L5EE16
+L5EE08:
+  5EE0A  r7 = r13
+  5EE0C  r6 = Muh[0x400b2c]
+  5EE0E  r6 = s16(Muh[0x400b2c])
+  5EE12  r7 = (r13 / s16(Muh[0x400b2c]))
+  5EE14  Mh[r0+0] = (r13 / s16(Muh[0x400b2c]))
+L5EE16:
+  5EE18  r6 = Muh[r0+0]
+  5EE1A  r13 = Muh[0x400ab2]
+  5EE1C  r6 = s16(Muh[r0+0])
+  5EE1E  r9 = (r9 + s16(Muh[r0+0]))
+  5EE20  r13 = s16(Muh[0x400ab2])
+  5EE22  r13 = (s16(Muh[0x400ab2]) * (r9 + s16(Muh[r0+0])))
+  5EE2C  r7 = Mub[0x400bda]
+  5EE2E  r13 = ((s16(Muh[0x400ab2]) * (r9 + s16(Muh[r0+0]))) + (((s16(Muh[0x400ab2]) * (r9 + s16(Muh[r0+0]))) >> 13) >>u 18))
+  5EE30  r13 = (r13 >> 14)
+  5EE34  r13 = s16((r13 >> 14))
+  5EE36  if (!(bit7(Mub[0x400bda]))) goto L5EE4C
+  5EE3A  r6 = Muh[0x400d5a]
+  5EE3C  r6 = s16(Muh[0x400d5a])
+  5EE3E  r13 = (s16((r13 >> 14)) * s16(Muh[0x400d5a]))
+  5EE46  r13 = ((s16((r13 >> 14)) * s16(Muh[0x400d5a])) + (((s16((r13 >> 14)) * s16(Muh[0x400d5a])) >> 9) >>u 22))
+  5EE48  r13 = (r13 >> 10)
+  5EE4A  r13 = s16((r13 >> 10))
+L5EE4C:
+  5EE4E  r6 = r12
+  5EE50  r7 = Muh[0x400aaa]
+  5EE52  r6 = (0 - r12)
+  5EE54  r7 = s16(Muh[0x400aaa])
+  5EE56  r7 = (s16(Muh[0x400aaa]) * (0 - r12))
+  5EE5E  r7 = ((s16(Muh[0x400aaa]) * (0 - r12)) + (((s16(Muh[0x400aaa]) * (0 - r12)) >> 6) >>u 25))
+  5EE60  r7 = (r7 >> 7)
+  5EE62  Mw[r0+20] = (r7 >> 7)
+  5EE64  r2 = (r7 >> 7)
+  5EE66  R12 = call 0x0006d0e0((r7 >> 7), r3, r4, r5)
+  5EE68  r7 = Mw[r0+16]
+  5EE6C  if (R12 < Mw[r0+16]) goto L5EE7A
+  5EE6E  r2 = Mw[r0+20]
+  5EE70  R13 = call 0x0006d0fc(Mw[r0+20], r3, r4, r5)
+  5EE74  r2 = (R13 * 32767)
+  5EE76  Mh[r0+0] = (R13 * 32767)
+  5EE78  goto L5EE88
+L5EE7A:
+  5EE7C  r7 = Mw[r0+20]
+  5EE7E  r6 = Muh[0x400b2c]
+  5EE80  r6 = s16(Muh[0x400b2c])
+  5EE84  r7 = (Mw[r0+20] / s16(Muh[0x400b2c]))
+  5EE86  Mh[r0+0] = (Mw[r0+20] / s16(Muh[0x400b2c]))
+L5EE88:
+  5EE8A  r6 = r13
+  5EE8C  r7 = Muh[0x400ab6]
+  5EE8E  r6 = (0 - r13)
+  5EE90  r7 = s16(Muh[0x400ab6])
+  5EE92  r7 = (s16(Muh[0x400ab6]) * (0 - r13))
+  5EE9A  r7 = ((s16(Muh[0x400ab6]) * (0 - r13)) + (((s16(Muh[0x400ab6]) * (0 - r13)) >> 6) >>u 25))
+  5EE9C  r7 = (r7 >> 7)
+  5EE9E  Mw[r0+24] = (r7 >> 7)
+  5EEA0  r2 = (r7 >> 7)
+  5EEA2  R14 = call 0x0006d0e0((r7 >> 7), r3, r4, r5)
+  5EEA4  r7 = Mw[r0+16]
+  5EEA8  if (R14 < Mw[r0+16]) goto L5EEB6
+  5EEAA  r2 = Mw[r0+24]
+  5EEAC  R15 = call 0x0006d0fc(Mw[r0+24], r3, r4, r5)
+  5EEB0  r2 = (R15 * 32767)
+  5EEB2  Mh[r0+6] = (R15 * 32767)
+  5EEB4  goto L5EEC4
+L5EEB6:
+  5EEB8  r7 = Mw[r0+24]
+  5EEBA  r6 = Muh[0x400b2c]
+  5EEBC  r6 = s16(Muh[0x400b2c])
+  5EEC0  r7 = (Mw[r0+24] / s16(Muh[0x400b2c]))
+  5EEC2  Mh[r0+6] = (Mw[r0+24] / s16(Muh[0x400b2c]))
+L5EEC4:
+  5EEC4  r2 = Muh[0x400c44]
+  5EEC6  r6 = Muh[r0+0]
+  5EEC8  r2 = s16(Muh[0x400c44])
+  5EECE  r5 = Muh[r0+6]
+  5EED2  r6 = s16(Muh[r0+0])
+  5EED4  r2 = (s16(Muh[0x400c44]) + ((s16(Muh[0x400c44]) >> 5) >>u 26))
+  5EED6  r6 = (s16(Muh[r0+0]) << 1)
+  5EED8  r5 = s16(Muh[r0+6])
+  5EEDA  r2 = (s16(Muh[0x400c44]) /64)
+  5EEDC  r6 = ((s16(Muh[r0+0]) << 1) + 2*s16(Muh[r0+6]))
+  5EEDE  r5 = (s16(Muh[0x400c44]) /64)
+  5EEE0  r5 = s16((s16(Muh[0x400c44]) /64))
+  5EEE2  r6 = (((s16(Muh[r0+0]) << 1) + 2*s16(Muh[r0+6])) + s16((s16(Muh[0x400c44]) /64)))
+  5EEE4  Mw[r0+24] = r6
+  5EEE8  r2 = r6
+  5EEEA  r7 = (24 + r0)
+  5EEEC  R16 = call 0x0006d102(r6, r3, r4, s16((s16(Muh[0x400c44]) /64)))
+  5EEEE  r7 = Mw[r0+12]
+  5EEF0  Mh[r0+6] = R16
+  5EEF4  r7 = Mub[Mw[r0+12]+0]
+  5EEF8  if (!(bit7(Mub[Mw[r0+12]+0]))) goto L5EF0C
+  5EEFE  Mh[0x400c46] = 0
+  5EF02  r6 = Mub[Mw[r0+12]+0]
+  5EF04  Mh[0x400c48] = 0
+  5EF06  r7 = Mw[r0+12]
+  5EF08  r6 = (Mub[Mw[r0+12]+0] & ~128)
+  5EF0A  Mb[Mw[r0+12]+0] = (Mub[Mw[r0+12]+0] & ~128)
+L5EF0C:
+  5EF10  r6 = Muh[0x400c46]
+  5EF12  r7 = (28 + r0)
+  5EF14  r6 = s16(Muh[0x400c46])
+  5EF16  r7 = ((28 + r0) - 4)
+  5EF1A  Mw[((28 + r0) - 4)+4] = s16(Muh[0x400c46])
+  5EF1C  r6 = Muh[r0+6]
+  5EF1E  r5 = Muh[0x400c48]
+  5EF20  r6 = s16(Muh[r0+6])
+  5EF22  r5 = s16(Muh[0x400c48])
+  5EF24  r6 = (s16(Muh[r0+6]) + s16(Muh[0x400c48]))
+  5EF28  r6 = ((s16(Muh[r0+6]) + s16(Muh[0x400c48])) * 0x2673)
+  5EF32  r5 = Muh[0x400c42]
+  5EF34  r6 = (((s16(Muh[r0+6]) + s16(Muh[0x400c48])) * 0x2673) + ((((s16(Muh[r0+6]) + s16(Muh[0x400c48])) * 0x2673) >> 13) >>u 18))
+  5EF36  r6 = (r6 >> 14)
+  5EF38  r5 = s16(Muh[0x400c42])
+  5EF3A  r6 = ((r6 >> 14) + s16(Muh[0x400c42]))
+  5EF3C  Mw[r0+24] = ((r6 >> 14) + s16(Muh[0x400c42]))
+  5EF40  r2 = Mw[r0+24]
+  5EF42  r6 = (24 + r0)
+  5EF44  R17 = call 0x0006d102(Mw[r0+24], 0, r4, s16(Muh[0x400c42]))
+  5EF48  Mh[0x400c42] = R17
+  5EF4C  r6 = Muh[r0+6]
+  5EF4E  Mh[0x400c48] = Muh[r0+6]
+  5EF52  r7 = Muh[0x400ab4]
+  5EF54  r7 = s16(Muh[0x400ab4])
+  5EF56  r7 = (s16(Muh[0x400ab4]) * r12)
+  5EF5E  r7 = ((s16(Muh[0x400ab4]) * r12) + (((s16(Muh[0x400ab4]) * r12) >> 13) >>u 18))
+  5EF60  r7 = (r7 >> 14)
+  5EF64  Mw[r0+20] = (r7 >> 14)
+  5EF66  r12 = Muh[0x400aa4]
+  5EF68  r12 = s16(Muh[0x400aa4])
+  5EF6A  r12 = (s16(Muh[0x400aa4]) * r13)
+  5EF72  r12 = ((s16(Muh[0x400aa4]) * r13) + (((s16(Muh[0x400aa4]) * r13) >> 13) >>u 18))
+  5EF74  r12 = (r12 >> 14)
+  5EF76  r7 = ((r7 >> 14) + (r12 >> 14))
+  5EF78  Mw[r0+20] = ((r7 >> 14) + (r12 >> 14))
+  5EF7A  r2 = ((r7 >> 14) + (r12 >> 14))
+  5EF7C  R18 = call 0x0006d102(((r7 >> 14) + (r12 >> 14)), r3, r4, r5)
+  5EF80  r12 = R18
+  5EF82  Mh[0x400c46] = R18
+  5EF84  r6 = Mw[r0+28]
+  5EF86  r2 = s16(R18)
+  5EF88  r2 = (s16(R18) + Mw[r0+28])
+  5EF8C  r2 = ((s16(R18) + Mw[r0+28]) * 10)
+  5EF90  r2 = (((s16(R18) + Mw[r0+28]) * 10) / 14)
+  5EF92  r6 = Muh[0x400c44]
+  5EF94  r6 = s16(Muh[0x400c44])
+  5EF96  r2 = ((((s16(R18) + Mw[r0+28]) * 10) / 14) + s16(Muh[0x400c44]))
+  5EF98  r13 = ((((s16(R18) + Mw[r0+28]) * 10) / 14) + s16(Muh[0x400c44]))
+  5EF9A  R19 = call 0x0006d102(((((s16(R18) + Mw[r0+28]) * 10) / 14) + s16(Muh[0x400c44])), r3, r4, r5)
+  5EF9C  goto L5F024
+  5EF9E  bkpt
+  5EFA0  ldq r4-r7,(r0)
+  5EFA4  ldq r4-r7,(r0)
+  5EFA8  ldq r4-r7,(r0)
+  5EFAC  ldq r4-r7,(r0)
+  5EFAE  r14 = (r14 >>u 0x400b8f)
+  5EFB0  ldq r4-r7,(r0)
+  5EFB2  r0 = (r0 >>u r5)
+  5EFB4  ldq r4-r7,(r0)
+  5EFB8  ldq r4-r7,(r0)
+  5EFBC  ldq r4-r7,(r0)
+  5EFC0  ldq r4-r7,(r0)
+  5EFC2  r2 = (R19 >>u r4)
+  5EFC4  ldq r4-r7,(r0)
+  5EFC6  movf r10,r11
+  5EFC8  ldq r4-r7,(r0)
+  5EFCA  r12 = (R18 >>u (R19 >>u r4))
+  5EFCC  doze
+  5EFCE  Mh[(r0 >>u r5)+28] = (r0 >>u r5)
+  5EFD0  doze
+  5EFD2  Mh[(R18 >>u (R19 >>u r4))+30] = (r0 >>u r5)
+  5EFD4  doze
+  5EFD6  Mh[(R19 >>u r4)+0] = r1
+  5EFD8  ldq r4-r7,(r0)
+  5EFDA  r10 = (0x400c44 & ~67108864)
+  5EFDC  ?? .short 0x000d
+  5EFDE  jmpi [0x5f288]
+  5EFE0  ?? .short 0x000d
+  5EFE2  jmpi [0x5f10c]
+  5EFE4  idly4
+  5EFE6  mfcr r14,cr25
+  5EFE8  ldq r4-r7,(r0)
+  5EFEC  stop
+  5EFEE  r0 = ((r0 >>u r5) & r1)
+  5EFF0  ldq r4-r7,(r0)
+  5EFF2  movf r0,r11
+  5EFF4  ldq r4-r7,(r0)
+  5EFF6  r15 = (r15 >>u 0x400b8f)
+  5EFF8  ldq r4-r7,(r0)
+  5EFFA  movf r6,r10
+  5EFFC  doze
+  5EFFE  Mh[(R18 >>u (R19 >>u r4))+24] = ((r0 >>u r5) & r1)
+  5F000  stop
+  5F002  r8 = (0x400b8f + 4*(r15 >>u 0x400b8f))
+  5F004  stop
+  5F006  r8 = ((0x400b8f + 4*(r15 >>u 0x400b8f)) & (R19 >>u r4))
+  5F008  ldq r4-r7,(r0)
+  5F00A  movf r14,r15
+  5F00C  ldq r4-r7,(r0)
+  5F00E  movf r8,r10
+  5F010  ldq r4-r7,(r0)
+  5F012  movf r14,r10
+  5F014  ?? .short 0x000d
+  5F016  ?? .short 0x6fd2
+  5F018  ldq r4-r7,(r0)
+  5F01A  movf r4,r14
+  5F01C  ldq r4-r7,(r0)
+  5F020  trap 1
+  5F022  mtcr r6,cr24
+L5F024:
+  5F026  Mh[r10+0] = r2
+  5F028  r12 = Muh[0x400abe]
+  5F02A  r6 = Mub[r8+0]
+  5F02C  r12 = (s16(Muh[0x400abe])*s16(Mub[r8+0]))
+  5F030  r6 = Muh[0x400b2c]
+  5F032  r6 = s16(Muh[0x400b2c])
+  5F036  r12 = ((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c]))
+  5F038  r13 = ((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c]))
+  5F03A  r13 = s16(((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c])))
+  5F03C  r13 = (s16(((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c]))) << 5)
+  5F03E  r2 = (s16(((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c]))) << 5)
+  5F040  R20 = call 0x0006d102((s16(((s16(Muh[0x400abe])*s16(Mub[r8+0])) / s16(Muh[0x400b2c]))) << 5), r3, r4, r5)
+  5F044  r12 = R20
+  5F046  r13 = Muh[0x400ac0]
+  5F048  r13 = s16(Muh[0x400ac0])
+  5F04A  r13 = (s16(Muh[0x400ac0]) * R20)
+  5F04E  if (!(bit31((s16(Muh[0x400ac0]) * R20)))) goto L5F052
+  5F050  r13 = ((s16(Muh[0x400ac0]) * R20) + 15)
+L5F052:
+  5F052  r13 = (r13 >> 4)
+  5F054  r2 = (r13 >> 4)
+  5F056  R21 = call 0x0006d0e0((r13 >> 4), r3, r4, r5)
+  5F058  r7 = Mw[r0+16]
+  5F05C  if (R21 < Mw[r0+16]) goto L5F06A
+  5F05E  r2 = (r13 >> 4)
+  5F060  R22 = call 0x0006d0fc((r13 >> 4), r3, r4, r5)
+  5F064  r2 = (R22 * 32767)
+  5F066  Mh[r0+4] = (R22 * 32767)
+  5F068  goto L5F078
+L5F06A:
+  5F06C  r7 = r13
+  5F06E  r6 = Muh[0x400b2c]
+  5F070  r6 = s16(Muh[0x400b2c])
+  5F074  r7 = (r13 / s16(Muh[0x400b2c]))
+  5F076  Mh[r0+4] = (r13 / s16(Muh[0x400b2c]))
+L5F078:
+  5F07A  r6 = Mub[r8+0]
+  5F07C  r13 = Muh[0x400aac]
+  5F07E  r13 = s16(Muh[0x400aac])
+  5F080  r13 = (s16(Muh[0x400aac]) * r11)
+  5F08A  r13 = ((s16(Muh[0x400aac]) * r11) + (((s16(Muh[0x400aac]) * r11) >> 12) >>u 19))
+  5F08C  r11 = Muh[0x400ab8]
+  5F08E  r13 = (r13 >> 13)
+  5F090  r11 = (s16(Muh[0x400ab8])*s16(Mub[r8+0]))
+  5F096  r7 = Mub[0x400bda]
+  5F09A  r11 = ((s16(Muh[0x400ab8])*s16(Mub[r8+0])) + (((s16(Muh[0x400ab8])*s16(Mub[r8+0])) >> 7) >>u 24))
+  5F09E  r11 = (r11 >> 8)
+  5F0A0  if (!(bit7(Mub[0x400bda]))) goto L5F0B4
+  5F0A4  r13 = ((r13 >> 13) << 10)
+  5F0A6  r8 = Muh[0x400d5a]
+  5F0A8  r11 = ((r11 >> 8) << 10)
+  5F0AA  r8 = s16(Muh[0x400d5a])
+  5F0AE  r13 = (((r13 >> 13) << 10) / s16(Muh[0x400d5a]))
+  5F0B2  r11 = (((r11 >> 8) << 10) / s16(Muh[0x400d5a]))
+L5F0B4:
+  5F0B4  r6 = Muh[r0+4]
+  5F0B6  r9 = r13
+  5F0B8  r9 = (r13 + r11)
+  5F0BA  r6 = s16(Muh[r0+4])
+  5F0BC  r9 = ((r13 + r11) - s16(Muh[r0+4]))
+  5F0BE  r2 = ((r13 + r11) - s16(Muh[r0+4]))
+  5F0C0  R23 = call 0x0006d102(((r13 + r11) - s16(Muh[r0+4])), r3, r4, r5)
+  5F0C2  r7 = Muh[r10+0]
+  5F0C4  r8 = R23
+  5F0C6  r7 = s16(Muh[r10+0])
+  5F0CA  if (!(bit31(s16(Muh[r10+0])))) goto L5F0D2
+  5F0CC  r12 = (0 - r12)
+  5F0CE  r12 = s16((0 - r12))
+  5F0D0  r8 = (0 - R23)
+L5F0D2:
+  5F0D4  r2 = r14
+  5F0D6  r7 = Muh[0x400b1a]
+  5F0D8  r7 = s16(Muh[0x400b1a])
+  5F0DA  Mw[r0+16] = s16(Muh[0x400b1a])
+  5F0DC  R24 = call 0x0006d0f4(r14, r3, r4, r5)
+  5F0DE  r9 = R24
+  5F0E0  r2 = Muh[r10+0]
+  5F0E2  r2 = s16(Muh[r10+0])
+  5F0E4  R25 = call 0x0006d0f4(s16(Muh[r10+0]), r3, r4, r5)
+  5F0E8  r7 = Mw[r0+12]
+  5F0EA  mvc r11
+  5F0EC  r14 = Mub[Mw[r0+12]+0]
+  5F0EE  r6 = r11
+  5F0F0  r6 = (r11 & 1)
+  5F0F2  r14 = (Mub[Mw[r0+12]+0] & ~2)
+  5F0F4  r6 = ((r11 & 1) << 1)
+  5F0F6  r14 = ((Mub[Mw[r0+12]+0] & ~2) | ((r11 & 1) << 1))
+  5F0F8  Mb[Mw[r0+12]+0] = ((Mub[Mw[r0+12]+0] & ~2) | ((r11 & 1) << 1))
+  5F0FC  r7 = Muh[0x40200a]
+  5F100  if (Muh[0x40200a] != 0) goto L5F128
+  5F106  Mb[0x400c41] = 0
+  5F108  goto L5F236
+  5F10A  bkpt
+  5F10C  ldq r4-r7,(r0)
+  5F10E  movf r12,r11
+  5F110  ldq r4-r7,(r0)
+  5F112  movf r2,r11
+  5F114  ldq r4-r7,(r0)
+  5F116  r10 = (r10 >>u r13)
+  5F118  ldq r4-r7,(r0)
+  5F11A  movf r10,r10
+  5F11C  ldq r4-r7,(r0)
+  5F11E  movf r6,r11
+  5F120  ldq r4-r7,(r0)
+  5F124  ldq r4-r7,(r0)
+L5F128:
+  5F12A  r11 = Mub[0x400c41]
+  5F12E  if (!(Mub[0x400c41] < 12)) goto L5F142
+  5F134  r14 = Muh[0x4020ec]
+  5F136  Mh[r10+0] = Muh[0x4020ec]
+  5F138  Mh[0x400b1a] = Muh[0x4020ec]
+  5F13A  r7 = Mub[0x400c41]
+  5F13C  r7 = (Mub[0x400c41] + 1)
+  5F13E  Mb[0x400c41] = (Mub[0x400c41] + 1)
+  5F140  goto L5F236
+L5F142:
+  5F144  r11 = Mub[0x400b8e]
+  5F148  if (!(bit7(Mub[0x400b8e]))) goto L5F190
+  5F14C  movf r13,r12
+  5F14E  if (!(bit31(r12))) goto L5F15E
+  5F154  if (-32767 < r12) goto L5F15A
+  5F158  goto L5F15E
+L5F15A:
+  5F15A  r13 = r12
+  5F15C  r13 = (0 - r12)
+L5F15E:
+  5F15E  r11 = Muh[r10+0]
+  5F160  r11 = s16(Muh[r10+0])
+  5F164  movf r9,r11
+  5F166  if (!(bit31(s16(Muh[r10+0])))) goto L5F176
+  5F16C  if (-32767 < s16(Muh[r10+0])) goto L5F172
+  5F170  goto L5F176
+L5F172:
+  5F172  r9 = r11
+  5F174  r9 = (0 - r11)
+L5F176:
+  5F178  if (!(r13 < r9)) goto L5F230
+  5F17E  Mh[0x400c4c] = r11
+  5F182  r6 = Muh[0x400c42]
+  5F184  Mh[0x400c4a] = Muh[0x400c42]
+  5F186  r7 = Mw[r0+12]
+  5F188  r6 = r14
+  5F18A  r6 = (r14 | 64)
+  5F18C  Mb[Mw[r0+12]+0] = (r14 | 64)
+  5F18E  goto L5F1BE
+L5F190:
+  5F192  r7 = Mub[0x400afe]
+  5F196  if (Mub[0x400afe] < 2) goto L5F1EC
+  5F19A  if (!(bit4(r11))) goto L5F1EC
+  5F19C  r2 = Muh[r10+0]
+  5F1A0  r2 = s16(Muh[r10+0])
+  5F1A2  r6 = (68 | 128)
+  5F1A4  r2 = (s16(Muh[r10+0]) * (68 | 128))
+  5F1AC  r2 = ((s16(Muh[r10+0]) * (68 | 128)) + (((s16(Muh[r10+0]) * (68 | 128)) >> 7) >>u 24))
+  5F1AE  r2 = (r2 >> 8)
+  5F1B0  r2 = s16((r2 >> 8))
+  5F1B2  R26 = call 0x0006d0cc(s16((r2 >> 8)), r3, r4, r5)
+  5F1B4  r14 = R26
+  5F1B6  r2 = r12
+  5F1B8  R27 = call 0x0006d0cc(r12, r3, r4, r5)
+  5F1BC  if (!(R27 < R26)) goto L5F1EC
+L5F1BE:
+  5F1C0  Mh[0x400b1a] = r12
+  5F1C2  r7 = r12
+  5F1C4  r7 = s16(r12)
+  5F1C6  Mw[r0+16] = s16(r12)
+  5F1C8  Mh[r10+0] = r12
+  5F1CA  r7 = Mw[r0+12]
+  5F1CC  r10 = Mub[Mw[r0+12]+0]
+  5F1D0  if (bit1(Mub[Mw[r0+12]+0])) goto L5F1D6
+  5F1D4  Mh[0x400c42] = r8
+L5F1D6:
+  5F1D6  r7 = Mw[r0+12]
+  5F1D8  r6 = r10
+  5F1DA  r6 = (r10 | 128)
+  5F1DC  Mb[Mw[r0+12]+0] = (r10 | 128)
+  5F1DE  goto L5F236
+  5F1E0  bkpt
+  5F1E2  ?? .short 0x2673
+  5F1E4  ldq r4-r7,(r0)
+  5F1E6  movf r4,r11
+  5F1E8  ldq r4-r7,(r0)
+  5F1EA  movf r4,r10
+L5F1EC:
+  5F1EE  r7 = Mub[0x400df2]
+  5F1F0  r7 = (Mub[0x400df2] & 15)
+  5F1F4  if (!((Mub[0x400df2] & 15) != 2)) goto L5F230
+  5F1F8  r7 = Mub[0x400afe]
+  5F1FC  if (Mub[0x400afe] < 2) goto L5F230
+  5F200  movf r8,r12
+  5F202  if (!(bit31(r12))) goto L5F212
+  5F208  if (-32767 < r12) goto L5F20E
+  5F20C  goto L5F212
+L5F20E:
+  5F20E  r8 = r12
+  5F210  r8 = (0 - r12)
+L5F212:
+  5F212  r14 = Muh[r10+0]
+  5F214  r14 = s16(Muh[r10+0])
+  5F218  movf r11,r14
+  5F21A  if (!(bit31(s16(Muh[r10+0])))) goto L5F22A
+  5F220  if (-32767 < s16(Muh[r10+0])) goto L5F226
+  5F224  goto L5F22A
+L5F226:
+  5F226  r11 = r14
+  5F228  r11 = (0 - r14)
+L5F22A:
+  5F22C  movt r14,r12
+  5F22E  if (r8 < r11) goto L5F232
+L5F230:
+  5F230  r14 = Muh[r10+0]
+L5F232:
+  5F234  Mh[0x400b1a] = r14
+L5F236:
+  5F238  r7 = Mub[0x400be1]
+  5F23C  if (!(bit6(Mub[0x400be1]))) goto L5F2F8
+  5F242  r7 = Muh[0x400b2c]
+  5F244  r7 = s16(Muh[0x400b2c])
+  5F248  if (s16(Muh[0x400b2c]) < 0x2710) goto L5F252
+  5F24A  r7 = Mw[r0+12]
+  5F24C  r7 = Mub[Mw[r0+12]+0]
+  5F250  if (!(bit5(Mub[Mw[r0+12]+0]))) goto L5F2F8
+L5F252:
+  5F254  r2 = Muh[0x400b44]
+  5F256  r2 = s16(Muh[0x400b44])
+  5F258  R28 = call 0x0006d0f4(s16(Muh[0x400b44]), r3, r4, r5)
+  5F25A  r14 = R28
+  5F25E  r2 = Muh[0x400b42]
+  5F260  r2 = s16(Muh[0x400b42])
+  5F262  R29 = call 0x0006d0f4(s16(Muh[0x400b42]), r3, r4, r5)
+  5F266  if (!(R29 != R28)) goto L5F2F8
+  5F26C  r14 = Muh[0x400b46]
+  5F26E  r8 = Muh[0x400b6c]
+  5F270  r14 = s16(Muh[0x400b46])
+  5F272  r8 = s16(Muh[0x400b6c])
+  5F276  if (!(s16(Muh[0x400b6c]) < s16(Muh[0x400b46]))) goto L5F286
+  5F27C  r7 = Muh[0x400b14]
+  5F27E  r6 = (22 | 128)
+  5F280  r7 = s16(Muh[0x400b14])
+  5F284  if ((22 | 128) < s16(Muh[0x400b14])) goto L5F29A
+L5F286:
+  5F286  r7 = r8
+  5F288  r7 = (0 - r8)
+  5F28C  if (!(r14 < (0 - r8))) goto L5F2F8
+  5F292  r7 = Muh[0x400b14]
+  5F294  r7 = s16(Muh[0x400b14])
+  5F298  if (!(s16(Muh[0x400b14]) < -150)) goto L5F2F8
+L5F29A:
+  5F29A  r7 = Mw[r0+12]
+  5F29C  r6 = Mub[Mw[r0+12]+0]
+  5F29E  r6 = (Mub[Mw[r0+12]+0] | 32)
+  5F2A0  Mb[Mw[r0+12]+0] = (Mub[Mw[r0+12]+0] | 32)
+  5F2A2  r2 = Muh[0x400b44]
+  5F2A4  r2 = s16(Muh[0x400b44])
+  5F2A6  R30 = call 0x0006d0cc(s16(Muh[0x400b44]), r3, r4, r5)
+  5F2AA  r2 = (R30 << 12)
+  5F2AC  r2 = ((R30 << 12) / 0x1b72)
+  5F2B2  r14 = (0x23fa - ((R30 << 12) / 0x1b72))
+  5F2B4  r14 = s16((0x23fa - ((R30 << 12) / 0x1b72)))
+  5F2BA  movf r14,r10
+  5F2BC  Mw[0x400c54] = s16((0x23fa - ((R30 << 12) / 0x1b72)))
+  5F2BE  r14 = (s16((0x23fa - ((R30 << 12) / 0x1b72))) << 6)
+  5F2C2  r7 = Mw[r0+12]
+  5F2C8  r6 = Mub[Mw[r0+12]+0]
+  5F2CA  r1 = ((((s16((0x23fa - ((R30 << 12) / 0x1b72))) << 6) >> 9) >>u 22) + (s16((0x23fa - ((R30 << 12) / 0x1b72))) << 6))
+  5F2D0  r6 = (Mub[Mw[r0+12]+0] | 4)
+  5F2D8  Mb[Mw[r0+12]+0] = (Mub[Mw[r0+12]+0] | 4)
+  5F2DA  r10 = (16777216 / ((r1 >> 10) + 4096))
+  5F2DC  r14 = Muh[0x400b1a]
+  5F2DE  r6 = Mw[r0+16]
+  5F2E0  r14 = s16(Muh[0x400b1a])
+  5F2E2  r10 = s16((16777216 / ((r1 >> 10) + 4096)))
+  5F2E4  r6 = (Mw[r0+16] - s16(Muh[0x400b1a]))
+  5F2E6  r10 = (s16((16777216 / ((r1 >> 10) + 4096))) * (Mw[r0+16] - s16(Muh[0x400b1a])))
+  5F2EE  r10 = (r10 + ((r10 >> 11) >>u 20))
+  5F2F0  r10 = (r10 /4096)
+  5F2F2  r3 = s16(Muh[0x400b1a])
+  5F2F4  r3 = (s16(Muh[0x400b1a]) + (r10 /4096))
+  5F2F6  goto L5F3B2
+L5F2F8:
+  5F2F8  r7 = Mw[r0+12]
+  5F2FA  r14 = Mub[Mw[r0+12]+0]
+  5F2FC  r10 = Mub[Mw[r0+12]+0]
+  5F300  r10 = (Mub[Mw[r0+12]+0] & ~32)
+  5F302  Mb[Mw[r0+12]+0] = (Mub[Mw[r0+12]+0] & ~32)
+  5F304  if (!(bit2(Mub[Mw[r0+12]+0]))) goto L5F390
+  5F30A  r14 = Mw[0x400c54]
+  5F30E  r6 = Mw[0x400c54]
+  5F310  r6 = (Mw[0x400c54] << 6)
+  5F31C  r1 = ((((((Mw[0x400c54] << 6) >> 9) >>u 22) + (Mw[0x400c54] << 6)) >> 10) + 4096)
+  5F31E  r12 = (16777216 / r1)
+  5F322  r6 = Mw[r0+16]
+  5F324  r9 = Muh[0x400b1a]
+  5F326  r11 = (16777216 / r1)
+  5F328  r9 = s16(Muh[0x400b1a])
+  5F32A  r11 = s16((16777216 / r1))
+  5F32C  r6 = (Mw[r0+16] - s16(Muh[0x400b1a]))
+  5F32E  r11 = (s16((16777216 / r1)) * (Mw[r0+16] - s16(Muh[0x400b1a])))
+  5F334  r1 = (((s16((16777216 / r1)) * (Mw[r0+16] - s16(Muh[0x400b1a]))) >> 11) >>u 20)
+  5F336  r11 = ((s16((16777216 / r1)) * (Mw[r0+16] - s16(Muh[0x400b1a]))) + r1)
+  5F338  r11 = (((s16((16777216 / r1)) * (Mw[r0+16] - s16(Muh[0x400b1a]))) + r1) >> 12)
+  5F33C  r6 = s16(Muh[0x400b1a])
+  5F33E  r6 = (s16(Muh[0x400b1a]) + r11)
+  5F340  Mh[0x400b1a] = (s16(Muh[0x400b1a]) + r11)
+  5F34A  Mw[0x400c54] = (2522 + Mw[0x400c54])
+  5F34C  r7 = (2522 + Mw[0x400c54])
+  5F34E  if ((2522 + Mw[0x400c54]) < 0x9be8) goto L5F3B8
+  5F350  r7 = Mw[r0+12]
+  5F352  r6 = (Mub[Mw[r0+12]+0] & ~32)
+  5F354  r6 = ((Mub[Mw[r0+12]+0] & ~32) & ~4)
+  5F356  Mb[Mw[r0+12]+0] = ((Mub[Mw[r0+12]+0] & ~32) & ~4)
+  5F358  goto L5F3B8
+  5F35A  bkpt
+  5F35C  ldq r4-r7,(r0)
+  5F35E  movf r14,r11
+  5F360  ldq r4-r7,(r0)
+  5F362  r12 = ((16777216 / r1) >>u r2)
+  5F364  doze
+  5F366  Mh[r2+0] = (2522 + Mw[0x400c54])
+  5F368  ldq r4-r7,(r0)
+  5F36A  movf r0,r12
+  5F36C  doze
+  5F36E  Mh[r0+28] = r0
+  5F370  doze
+  5F372  Mh[((16777216 / r1) >>u r2)+30] = r0
+  5F374  ldq r4-r7,(r0)
+  5F376  movf r12,r10
+  5F378  ldq r4-r7,(r0)
+  5F37A  movf r8,r11
+  5F37C  ldq r4-r7,(r0)
+  5F380  ldq r4-r7,(r0)
+  5F382  r10 = ((Mub[Mw[r0+12]+0] & ~32) >>u (2522 + Mw[0x400c54]))
+  5F384  doze
+  5F386  Mh[r4+30] = r0
+  5F388  ldq r4-r7,(r0)
+  5F38A  r10 = (((Mub[Mw[r0+12]+0] & ~32) >>u (2522 + Mw[0x400c54])) + 1)
+  5F38C  ldq r4-r7,(r0)
+L5F390:
+  5F390  r7 = Mw[r0+12]
+  5F392  r10 = (r10 & ~4)
+  5F394  Mb[Mw[r0+12]+0] = (r10 & ~4)
+  5F398  r6 = Mw[r0+16]
+  5F39A  r10 = Muh[0x400b1a]
+  5F39E  r10 = s16(Muh[0x400b1a])
+  5F3A0  r6 = (Mw[r0+16] - s16(Muh[0x400b1a]))
+  5F3A2  r6 = ((Mw[r0+16] - s16(Muh[0x400b1a])) * 2541)
+  5F3AA  r6 = (((Mw[r0+16] - s16(Muh[0x400b1a])) * 2541) + ((((Mw[r0+16] - s16(Muh[0x400b1a])) * 2541) >> 11) >>u 20))
+  5F3AC  r3 = s16(Muh[0x400b1a])
+  5F3AE  r6 = (r6 >> 12)
+  5F3B0  r3 = (s16(Muh[0x400b1a]) + (r6 >> 12))
+L5F3B2:
+  5F3B4  r6 = r3
+  5F3B6  Mh[0x400b1a] = r3
+L5F3B8:
+  5F3BA  r6 = Mub[0x400b8e]
+  5F3BE  r6 = (Mub[0x400b8e] & ~128)
+  5F3C0  Mb[0x400b8e] = (Mub[0x400b8e] & ~128)
+  5F3C2  r0 = (r0 + 32)
+  5F3C4  ldm r8-r15,(r0)
+  5F3C6  r0 = ((r0 + 32) + 32)
+  5F3C8  return r2
+  5F3CA  bkpt
+  5F3CC  ldq r4-r7,(r0)
+  5F3CE  r12 = (r12 + 15)
+  5F3D0  ldq r4-r7,(r0)
+  5F3D2  r14 = (r14 >>u 0x400c54)
+  5F3D4  R31 = call 0x5f3d4(r2, r3, r4, 2541)
+  5F3D6  r0 = Mw[r1+0]
+  5F3D8  ldq r4-r7,(r0)
+  5F3DC  ldq r4-r7,(r0)
+  5F3E0  ldq r4-r7,(r0)
+  5F3E4  ldq r4-r7,(r0)
+  5F3E6  movf r14,r15
+  5F3E8  doze
+  5F3EA  Mh[(r12 + 15)+24] = Mw[r1+0]
+  5F3EC  ldq r4-r7,(r0)
+  5F3F0  ldq r4-r7,(r0)
+  5F3F2  r0 = (Mw[r1+0] >>u (r14 >>u 0x400c54))
+  5F3F4  bkpt
+  5F3F6  ?? .short 0x2710
+  5F3F8  ldq r4-r7,(r0)
+  5F3FA  r4 = (r4 >>u r4)
+  5F3FC  ldq r4-r7,(r0)
+  5F3FE  r2 = (R31 >>u (r4 >>u r4))
+  5F400  ldq r4-r7,(r0)
+  5F402  r6 = (r6 >>u (r4 >>u r4))
+  5F404  ldq r4-r7,(r0)
+  5F406  r12 = ((r12 + 15) >>u (r6 >>u (r4 >>u r4)))
+  5F408  ldq r4-r7,(r0)
+  5F40A  r4 = ((r4 >>u r4) >>u r1)
+  5F40C  R32 = call 0x5f40c((R31 >>u (r4 >>u r4)), r3, ((r4 >>u r4) >>u r1), r5)
+  5F40E  R33 = call 0x5f2e4(R32, r3, r4, r5)
+  5F410  bkpt
+  5F412  r2 = (R33 << r7)
+  5F414  bkpt
+  5F418  bkpt
+  5F41C  ldq r4-r7,(r0)
+  5F420  bkpt
+  5F422  ?? .short 0x09da
+  5F424  bkpt
+  5F426  Mw[0x400c8c] = r11
+  5F428  ldq r4-r7,(r0)
+  5F42A  r10 = (r10 >>u r1)
+  5F42C  bkpt
+  5F42E  ?? .short 0x09ed
+  5F430  r0 = ((Mw[r1+0] >>u (r14 >>u 0x400c54)) - 32)

@@ -1,0 +1,286 @@
+07aaa8 n=18 ram=4046a8 ops=
+07aacc n=30 ram= ops=movi r2,0; movi r2,1; movi r2,2; movi r2,3; movi r2,4; movi r2,5; movi r2,6; movi r2,7; movi r2,8; movi r2,9
+07ab08 n=33 ram=401164 ops=subi r0,8; cmpnei r7,0; bmaski r7,16; movi r2,1; movi r3,0; cmpnei r2,4; addi r0,8
+07ab48 n=5 ram=4046d4 ops=lsri r2,5; andi r2,3
+07ab52 n=3 ram=4046e8 ops=
+07ab58 n=3 ram=4046e6 ops=
+07ab5e n=18 ram=4010dd ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07ab82 n=5 ram=408db5 ops=lsri r2,2; andi r2,3
+07ab8c n=47 ram=400952,40288c,ffff8000,40bf00,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+07abe8 n=46 ram=400952,40288c,ffff8000,40bf5a,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+07ac42 n=47 ram=400952,40288c,ffff8000,40bf9a,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+07ac9e n=47 ram=400952,40288c,ffff8000,40bfda,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+07acfa n=24 ram=4046d4,4010de ops=btsti r1,4; andi r7,15; cmpnei r7,15; addi r3,1; andi r7,15; cmpnei r7,15; movi r7,112
+07ad2a n=29 ram= ops=subi r0,8; subi r0,8; movi r2,2; movi r7,96; movi r1,100; sexth r3; divs r3,r1; movi r14,126; btsti r3,31; bmaski r3,8; addi r0,8; addi r0,8
+07ad62 n=2 ram= ops=movi r2,0
+07ad66 n=2 ram= ops=movi r2,3
+07ad6a n=5 ram=402f6e ops=lsri r2,5; andi r2,1
+07ad74 n=24 ram=40288e,402880 ops=subi r0,8; subi r0,8; movi r2,0; btsti r7,6; btsti r7,7; btsti r7,6; movi r2,2; addi r0,8; addi r0,8
+07ada2 n=133 ram= ops=subi r0,24; subi r0,24; movi r2,0; addi r12,4; movi r2,1; addi r11,8; movi r2,2; addi r14,12; movi r2,3; addi r13,16; movi r2,1; movi r3,88; sexth r7; btsti r7,7
+07aeaa n=40 ram=408da2,402fc0,402f6c,400b0a,400df4,408da0 ops=lsri r2,7; btsti r7,4; andi r2,1; btsti r7,7; btsti r7,3; movi r7,64; btsti r7,7; btsti r7,2; btsti r7,1
+07aefa n=41 ram=4046d4 ops=subi r0,8; subi r0,8; andi r14,3; cmpnei r14,2; movi r2,1; btsti r7,7; sexth r14; cmpnei r14,1; cmpnei r14,2; movi r14,1; movi r14,0; movi r14,2; btsti r7,7; movi r14,3
+07af4a n=2 ram= ops=movi r2,14
+07af4e n=2 ram= ops=movi r2,3
+07af52 n=98 ram=40200a,402009,408da8,708,4046d4,40288e,402880,400956,400966 ops=subi r0,24; subi r0,8; movi r13,0; cmpnei r7,0; btsti r7,6; sexth r7; btsti r7,3; lsli r14,3; btsti r7,2; btsti r14,6; btsti r7,2; movi r13,2; btsti r2,6; btsti r7,6
+07b014 n=2 ram= ops=movi r2,3
+07b018 n=28 ram=40288e,402880 ops=subi r0,16; movi r2,5; cmpnei r2,1; btsti r7,5; btsti r7,3; btsti r7,4; movi r1,2; movi r1,0; movi r1,3; addi r0,16
+07b050 n=2 ram= ops=movi r2,3
+07b054 n=2 ram= ops=movi r2,3
+07b058 n=2 ram= ops=movi r2,3
+07b05c n=5 ram=402be8 ops=cmpnei r7,1
+07b066 n=2 ram= ops=movi r2,3
+07b06a n=34 ram=323,fffff801 ops=subi r0,8; subi r0,8; movi r2,1; movi r7,96; sexth r3; mult r3,r6; asri r1,10; lsri r1,21; asri r3,11; bmaski r7,11; bgeni r3,11; addi r0,8; addi r0,8
+07b0ac n=27 ram=fffff801 ops=subi r0,8; subi r0,8; movi r2,1; btsti r7,5; bmaski r7,11; sexth r14; lsli r14,2; bgeni r14,11; addi r0,8; addi r0,8
+07b0e0 n=18 ram=4010dc ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07b104 n=56 ram=3ab,fffff801 ops=subi r0,8; subi r0,8; movi r2,1; movi r7,96; sexth r3; mult r3,r6; asri r1,13; lsri r1,18; asri r3,14; bmaski r7,11; andi r0,28; andi r12,22; addi r10,1; addi r9,1
+07b172 n=65 ram=4046d4,400952,400b09 ops=subi r0,8; movi r2,0; btsti r2,31; movi r14,7; cmpnei r2,1; movi r14,0; btsti r14,3; btsti r7,0; btsti r14,2; btsti r7,0; movi r2,0; cmpnei r2,1; cmpnei r2,1; movi r2,0
+07b1f2 n=98 ram=4015e8,40bf00,400978,400952,40288c,4032d0,7530,bb8,404720 ops=subi r0,32; movi r9,64; movi r5,0; movi r6,42; btsti r7,0; btsti r7,2; sexth r4; sexth r7; addi r3,1; movi r6,64; cmpnei r3,0; cmpnei r3,1; rsubi r0,8; rsubi r14,8
+07b2b4 n=35 ram=4046d4,4046fe,400952,40288c ops=btsti r2,0; btsti r7,6; movi r6,0; btsti r7,0; btsti r7,0; btsti r7,2; bmaski r2,16; bmaski r7,16; btsti r7,6; bmaski r2,16
+07b2fa n=25 ram=400952,40288c,404700 ops=btsti r7,0; btsti r7,2; bmaski r1,16; bmaski r7,16; mult r11,r10
+07b32c n=17 ram=400952,40288c,404702 ops=btsti r7,0; btsti r7,2; bmaski r1,16; bmaski r7,16
+07b34e n=41 ram=4046d4,40288c,404704,404706 ops=bmaski r3,12; btsti r7,2; movi r6,40; bmaski r7,12; mult r3,r6; subi r7,1; addi r7,1; movi r6,15; lsli r6,12; bmaski r7,12; bmaski r3,12; movi r7,0
+07b3a0 n=12 ram= ops=subi r0,16; movi r2,1; movi r3,0; lsri r2,5; andi r2,1; addi r0,16
+07b3b8 n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,0; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+07b3e4 n=43 ram= ops=subi r0,8; subi r0,8; movi r2,1; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8; asri r12,1; ixw r8,r14; rsubi r12,8
+07b438 n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,2; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+07b464 n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,3; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+07b490 n=40 ram=67e7016e ops=subi r0,16; subi r0,8; movi r14,0; btsti r7,7; sexth r3; btsti r3,31; movi r1,100; divs r14,r1; movi r7,126; bgeni r0,13; bmaski r14,8; addi r0,8; addi r0,16
+07b4de n=32 ram= ops=subi r0,16; subi r0,8; movi r14,0; movi r2,1; btsti r7,7; sexth r3; btsti r3,31; movi r1,100; divs r14,r1; movi r7,126; bmaski r14,8; addi r0,8; addi r0,16
+07b51c n=38 ram= ops=subi r0,16; subi r0,8; movi r14,0; movi r2,2; btsti r7,7; sexth r3; btsti r3,31; movi r1,100; divs r14,r1; movi r7,126; bmaski r14,8; addi r0,8; addi r0,16
+07b566 n=32 ram= ops=subi r0,16; subi r0,8; movi r14,0; movi r2,3; btsti r7,7; sexth r3; btsti r3,31; movi r1,100; divs r14,r1; movi r7,126; bmaski r14,8; addi r0,8; addi r0,16
+07b5a4 n=30 ram=40bf00 ops=subi r0,8; cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; movi r1,3; addi r0,8
+07b5e0 n=24 ram=40bfc0 ops=subi r0,8; cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; movi r1,3; addi r0,8
+07b610 n=2 ram= ops=movi r2,0
+07b614 n=21 ram=402cf9,402880 ops=btsti r1,2; btsti r7,6; btsti r1,0; btsti r1,6; movi r1,3; movi r1,5; movi r1,1; movi r1,0
+07b63e n=2 ram= ops=movi r2,0
+07b642 n=19 ram=400e9d,400e9b,400e9a ops=cmpnei r7,0; cmpnei r7,0; movi r1,2; cmpnei r7,0; movi r1,1; movi r1,0
+07b668 n=19 ram=400eea,400ee7,400ee6 ops=cmpnei r7,0; cmpnei r7,0; movi r1,2; cmpnei r7,0; movi r1,1; movi r1,0
+07b68e n=2 ram= ops=movi r2,0
+07b692 n=34 ram=3ab,fffff801 ops=subi r0,8; subi r0,8; movi r2,0; movi r7,96; sexth r3; mult r3,r6; asri r1,15; lsri r1,16; asri r3,16; bmaski r7,11; bgeni r3,11; addi r0,8; addi r0,8
+07b6d4 n=10 ram=40164e,401644 ops=bgeni r1,15; btsti r7,3
+07b6e8 n=22 ram=40164e,40164d,d9fac ops=movi r1,3; btsti r7,1; movi r7,1; lsri r1,6; andi r1,3; movi r1,2
+07b714 n=10 ram=40164e,401646 ops=bgeni r1,15; btsti r7,2
+07b728 n=2 ram= ops=bmaski r2,8
+07b72c n=2 ram= ops=movi r2,1
+07b730 n=2 ram= ops=movi r2,0
+07b734 n=18 ram=4010df ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07b758 n=2 ram= ops=bmaski r2,16
+07b75c n=2 ram= ops=bmaski r2,12
+07b760 n=2 ram= ops=movi r2,3
+07b764 n=2 ram= ops=movi r2,7
+07b768 n=2 ram= ops=movi r2,7
+07b76c n=5 ram=40482e ops=lsri r2,5; andi r2,7
+07b776 n=4 ram=40482e ops=andi r2,31
+07b77e n=5 ram=40482e ops=lsri r2,2; andi r2,3
+07b788 n=18 ram=404854 ops=
+07b7ac n=18 ram=404849 ops=
+07b7d0 n=18 ram=40475c ops=
+07b7f4 n=37 ram= ops=subi r0,8; subi r0,8; movi r2,3; movi r7,96; movi r6,73; sexth r3; mult r3,r6; asri r1,8; lsri r1,23; asri r3,9; bgeni r6,11; bmaski r14,12; subi r14,1; btsti r3,31
+07b83c n=62 ram= ops=subi r0,8; subi r0,8; movi r2,2; movi r7,96; movi r6,73; sexth r3; mult r3,r6; asri r1,7; lsri r1,24; asri r3,8; bgeni r6,11; bmaski r14,12; subi r14,1; btsti r3,31
+07b8b6 n=22 ram= ops=subi r0,16; movi r2,3; btsti r1,5; btsti r1,2; movi r1,1; movi r7,96; movi r1,0; movi r1,2; addi r0,16
+07b8e2 n=18 ram=40471d ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07b906 n=53 ram=fffff801 ops=subi r0,8; subi r0,8; movi r2,3; movi r7,96; movi r6,123; sexth r3; mult r3,r6; asri r1,7; lsri r1,24; asri r3,8; bmaski r7,11; mult r11,r10; bgeni r3,11; addi r0,8
+07b96e n=35 ram=fffff801 ops=subi r0,8; subi r0,8; movi r2,2; movi r7,96; movi r6,123; sexth r3; mult r3,r6; asri r1,6; lsri r1,25; asri r3,7; bmaski r7,11; bgeni r3,11; addi r0,8; addi r0,8
+07b9b2 n=31 ram= ops=subi r0,16; movi r2,3; btsti r1,5; btsti r1,2; movi r1,1; movi r7,96; movi r1,0; movi r1,2; addi r0,16
+07b9f0 n=22 ram= ops=subi r0,16; movi r2,2; btsti r1,5; btsti r1,2; movi r1,1; movi r7,96; movi r1,0; movi r1,2; addi r0,16
+07ba1c n=18 ram=40471e ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07ba40 n=1 ram= ops=
+07ba42 n=100 ram=4046c8,4015e9,401174,401150,401153,401157 ops=subi r0,8; cmpnei r2,15; lsri r14,4; andi r14,15; lsri r5,6; andi r5,3; cmplti r5,3; addi r5,1; movi r6,63; andi r5,3; lsli r5,6; addi r3,15; cmplti r3,4; movi r3,3
+07bb0a n=40 ram=401146,401150,401153,4046ef ops=bgeni r7,11; lsli r2,4; sexth r2; btsti r2,31; addi r2,15; asri r2,4; ixw r2,r2; bmaski r6,8; bmaski r6,8; movi r7,50
+07bb5a n=66 ram=401150,401153,40114f,4046eb ops=cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; cmpnei r2,3; bmaski r6,8; bmaski r6,8; bmaski r6,8; movi r6,50; bmaski r6,8; movi r6,50
+07bbde n=30 ram=401150,401153,40114f ops=cmpnei r2,0; cmpnei r2,1; andi r6,1; lsli r6,4
+07bc1a n=11 ram=4046ec ops=cmpnei r2,0; bmaski r2,8; movi r2,50
+07bc30 n=1 ram= ops=
+07bc32 n=85 ram=4046c8,4015e9,401174,401150,401153,401157 ops=subi r0,8; cmpnei r2,15; andi r14,15; lsri r5,2; andi r5,3; cmplti r5,3; addi r5,1; movi r6,115; andi r5,3; lsli r5,2; ixw r9,r14; addi r7,15; cmplti r14,4; movi r14,3
+07bcdc n=48 ram=401148,401150,401153,4046f0 ops=bgeni r7,11; lsli r2,4; sexth r2; btsti r2,31; addi r2,15; asri r2,4; ixw r2,r2; rsubi r2,0; bmaski r6,8; bmaski r6,8; movi r7,50
+07bd3c n=1 ram= ops=
+07bd3e n=1 ram= ops=
+07bd40 n=1 ram= ops=
+07bd42 n=1 ram= ops=
+07bd44 n=125 ram=4046c8,4015e9,401174,401150,401153,4046e4,401157,40470c ops=subi r0,16; cmpnei r2,15; lsri r14,4; andi r14,15; lsri r2,6; andi r2,3; cmplti r2,3; addi r2,1; movi r6,63; andi r2,3; lsli r2,6; bmaski r6,32; addi r7,15; cmplti r7,4
+07be3c n=42 ram=401144,401150,401153,4046ee ops=bgeni r7,11; lsli r2,4; sexth r2; btsti r2,31; addi r2,15; asri r2,4; ixw r2,r2; bmaski r6,8; bmaski r6,8; movi r7,50
+07be90 n=45 ram=401150,401153,4046d4,4046ea,401142 ops=bmaski r7,8; bmaski r6,8; bmaski r6,8; movi r7,50
+07beea n=9 ram=4046d4 ops=cmpnei r2,0; lsli r2,4
+07befc n=111 ram=4046e2,270fd8f0,4046d4,4046ed,401150,401153,40113e,4046e4,401168,40113c ops=subi r0,16; bmaski r13,16; cmpnei r14,0; bmaski r1,10; subi r1,23; mult r1,r14; divs r13,r1; bmaski r7,16; btsti r7,4; bmaski r6,8; asri r2,1; sexth r1; bmaski r7,32; sexth r2
+07bfd8 n=15 ram=40470c ops=cmpnei r2,15; movi r2,8
+07bff6 n=1 ram= ops=
+07bff8 n=73 ram=4046c8,4015e9,401174,4010fb,4010fc,4046d4 ops=cmpnei r2,15; andi r7,15; lsri r4,2; andi r4,3; cmplti r4,3; addi r4,1; movi r6,115; andi r4,3; lsli r4,2; movi r6,115; subi r6,3; andi r2,15
+07c08a n=33 ram=40114d,401150,4010fa,4010fb,4010fc ops=cmpnei r7,0; btsti r7,7; cmplti r2,2; andi r2,1; lsli r2,7; movi r1,0; movi r1,1; andi r1,1; lsli r1,5
+07c0cc n=170 ram=40114d,401150,7c13c,4010fb,4010fc,4010fa,4010f7,4010f6 ops=cmpnei r7,0; btsti r7,7; movi r1,11; ixw r1,r2; ixw r9,r14; movi r4,0; movi r4,8; movi r4,11; movi r4,1; movi r4,2; movi r4,3; movi r4,4; movi r4,5; movi r4,6
+07c220 n=1 ram= ops=
+07c222 n=1 ram= ops=
+07c224 n=1 ram= ops=
+07c226 n=19 ram=4046d4 ops=cmplti r2,2; movi r1,1; andi r2,1; lsli r2,2; movi r1,0; andi r1,1; lsli r1,1
+07c24c n=27 ram=4015ed ops=subi r0,16; movi r2,48; addi r0,16
+07c282 n=58 ram=4046c8,4015e9,401174,4046d4,401134,401150,401153 ops=cmpnei r2,15; lsri r7,4; andi r7,15; lsri r3,6; andi r3,3; cmplti r3,3; addi r3,1; movi r6,63; andi r3,3; lsli r3,6; andi r2,15; movi r6,63; andi r3,15; lsli r2,4
+07c2f6 n=25 ram=4046d4 ops=cmpnei r2,0; cmpnei r2,1; movi r2,0; movi r2,0; movi r2,1; andi r2,1
+07c328 n=51 ram=4046d4,401130,401134 ops=cmpnei r2,0; cmpnei r2,1; movi r2,0; movi r2,0; movi r2,1; andi r2,1; lsli r2,2; andi r7,5; cmpnei r7,0; btsti r2,3; movi r2,4; btsti r2,1; movi r2,3; movi r2,0
+07c38e n=39 ram=40114f,401150,401153 ops=cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; movi r2,0; movi r2,0; movi r2,1; andi r6,1; lsli r6,3; andi r2,1; lsli r2,3
+07c3dc n=58 ram=40113b,401139,40113a ops=movi r6,63; movi r3,79; cmpnei r2,0; movi r4,1; cmpnei r2,1; cmpnei r2,4; movi r7,2; andi r1,3; lsli r6,6; lsli r1,4; movi r4,0; cmpnei r4,0; movi r4,0; movi r4,1
+07c450 n=75 ram=40113a,401139,40482e,40113b ops=cmpnei r2,0; cmpnei r2,1; movi r6,115; lsri r7,4; andi r7,3; bmaski r6,8; movi r6,79; andi r6,3; lsli r6,4; movi r7,5; cmpnei r2,1; movi r6,115; movi r2,0; ixw r13,r14
+07c4e6 n=28 ram=4046c8,4015e9,401174,40113a ops=cmpnei r2,15; andi r7,15; movi r6,112; andi r2,15
+07c51e n=3 ram=40483b ops=
+07c524 n=137 ram=4046d4,40483b,4046bc,401139,40113a,40113b ops=movi r5,0; andi r7,12; cmpnei r7,8; cmpnei r7,0; cmpnei r7,1; cmpnei r7,2; lsri r2,4; andi r2,3; cmpnei r2,2; movi r6,79; movi r5,1; ixw r9,r14; cmpnei r2,1; movi r6,79
+07c636 n=110 ram=4046d4,404804,4047f6,4047fd,401115,401118,401119 ops=subi r0,8; bmaski r6,8; movi r7,1; bgeni r6,7; bmaski r6,8; movi r14,0; addi r14,1; cmplti r14,7; andi r2,1; lsli r2,3; movi r4,0; movi r6,1; bgeni r6,7; movi r4,1
+07c712 n=38 ram=4046d4,4046fa,401112 ops=btsti r7,7; bmaski r6,9; subi r6,11; cmpnei r2,1; cmpnei r2,2; andi r4,31; movi r4,0; andi r4,31; movi r4,0; andi r4,31; movi r6,96; movi r4,1; andi r4,1; lsli r4,1
+07c75e n=30 ram=401108 ops=cmpnei r2,0; cmpnei r2,1; andi r4,31; andi r4,31; movi r4,0; andi r4,31; movi r6,96; movi r4,1; andi r4,1; lsli r4,1
+07c79a n=15 ram=40482e ops=subi r0,8; movi r6,63; andi r4,3; lsli r4,6; addi r0,8
+07c7b8 n=1 ram= ops=
+07c7ba n=1 ram= ops=
+07c7bc n=1 ram= ops=
+07c7be n=1 ram= ops=
+07c7c0 n=1 ram= ops=
+07c7c2 n=1 ram= ops=
+07c7c4 n=1 ram= ops=
+07c7c6 n=1 ram= ops=
+07c7c8 n=46 ram=401128,40112c,40112d,4046f2 ops=bmaski r7,8; bmaski r6,8; movi r2,1; lsli r6,8; lsli r5,16; lsli r5,24; movi r2,0; andi r2,1; lsli r2,7; movi r6,63; bmaski r6,9; subi r6,11
+07c824 n=27 ram=401138,4046d4,401137,4046e0 ops=bmaski r7,8
+07c85a n=32 ram=401119,401115,401116,401118,9c4,4046f4 ops=cmpnei r2,3; andi r2,1; lsli r2,7; movi r2,0; movi r2,1; andi r2,1; lsli r2,7
+07c89a n=53 ram=401138,4046dc,4046d4,401137,1388,4046f6 ops=lsli r6,8; lsli r6,16; bmaski r7,24; movi r2,0; movi r2,1; andi r2,1; lsli r2,7
+07c904 n=23 ram=401111,404709,4046d4,4046f8 ops=cmpnei r2,15; movi r1,0; movi r1,1; andi r1,1; lsli r1,7; movi r6,125; lsli r6,5
+07c932 n=33 ram=4046d4,404709,401111 ops=movi r1,1; btsti r7,7; cmpnei r2,0; cmpnei r2,0; cmplti r2,5; movi r2,2; movi r2,3; movi r2,0; andi r2,7; lsli r2,5; andi r7,31; movi r1,0; andi r1,1; lsli r1,1
+07c974 n=17 ram=404714 ops=movi r6,63; bmaski r7,8
+07c996 n=1 ram= ops=
+07c998 n=1 ram= ops=
+07c99a n=1 ram= ops=
+07c99c n=95 ram=4046c8,4015e9,401174,404724,40472c,404734,40473c,404744,40474c,404754 ops=cmpnei r2,15; lsri r7,4; andi r7,15; lsri r2,2; andi r2,3; cmplti r2,3; addi r2,1; movi r6,115; andi r2,3; lsli r2,2; movi r6,115; andi r2,15; andi r1,15; lsli r2,4
+07ca5a n=18 ram=404724 ops=cmpnei r2,1; cmpnei r2,2; movi r7,0; movi r7,1
+07ca7e n=24 ram=40472c ops=subi r0,8; cmpnei r2,0; cmpnei r14,0; cmpnei r14,1; cmpnei r14,2; addi r0,8
+07caac n=22 ram=404734 ops=subi r0,8; cmpnei r2,0; cmpnei r14,1; cmpnei r14,2; addi r0,8
+07cad6 n=41 ram=40473c ops=subi r0,8; cmpnei r2,0; cmpnei r14,0; cmpnei r14,1; cmpnei r14,2; addi r0,8
+07cb26 n=22 ram=404744 ops=subi r0,8; cmpnei r2,0; cmpnei r14,1; cmpnei r14,2; addi r0,8
+07cb50 n=24 ram=40474c ops=subi r0,8; cmpnei r2,0; cmpnei r14,0; cmpnei r14,1; cmpnei r14,2; addi r0,8
+07cb7e n=44 ram=404754 ops=subi r0,8; cmpnei r2,0; cmpnei r14,15; ixw r9,r14; addi r0,8
+07cbd4 n=1 ram= ops=
+07cbd6 n=1 ram= ops=
+07cbd8 n=1 ram= ops=
+07cbda n=1 ram= ops=
+07cbdc n=4 ram= ops=
+07cbe4 n=15 ram=4015f0,4a9,404841 ops=subi r0,8; bgeni r5,7; addi r0,8
+07cc02 n=237 ram=4015f0,404844,404848,4046d4,401163,a0020,b0040,b0010,404804,a0002,b0002,401150,401153,4046e4 ops=subi r0,8; movi r7,41; movi r7,111; subi r7,2; subi r7,3; movi r2,0; cmpnei r2,0; movi r6,112; movi r6,48; movi r6,8; addi r0,8; subi r0,8; btsti r7,4; bgeni r2,10
+07cdd8 n=54 ram=4010fb,4010fc,4046d4,4046c8,401163,a0002,a0010 ops=subi r0,8; andi r7,3; cmplti r7,3; bgeni r2,11; lsri r2,2; andi r2,3; cmplti r2,3; btsti r7,4; bgeni r2,10; cmpnei r2,0; bgeni r2,9; btsti r7,4; addi r0,8
+07ce44 n=82 ram=4046d4,401134,401150,401153,4046c8,401163,a0002 ops=subi r0,8; lsri r7,4; andi r7,3; cmplti r7,3; movi r2,1; lsri r2,6; andi r2,3; cmplti r2,3; btsti r7,4; bgeni r2,15; ixw r0,r15; cmpnei r2,0; bgeni r2,14; btsti r7,4
+07cee8 n=43 ram=401150,401153,4046c8,401163,a0002,a0008 ops=subi r0,8; lsri r7,4; andi r7,3; cmplti r7,3; movi r2,4; lsri r2,6; andi r2,3; cmplti r2,3; btsti r7,4; movi r2,2; cmpnei r2,0; movi r2,1; btsti r7,4; addi r0,8
+07cf3e n=43 ram=4046c8,401163,a0002,a0008 ops=subi r0,8; andi r7,3; cmplti r7,3; movi r2,32; lsri r2,2; andi r2,3; cmplti r2,3; btsti r7,4; movi r2,16; cmpnei r2,0; movi r2,8; btsti r7,4; addi r0,8
+07cf94 n=50 ram=40470c,4046d4,4046c8,401163,a0002,a0008 ops=subi r0,8; lsri r7,4; andi r7,3; cmplti r7,3; bgeni r2,8; lsri r2,6; andi r2,3; cmplti r2,3; btsti r7,4; bgeni r2,7; cmpnei r2,0; movi r2,64; btsti r7,4; addi r0,8
+07cff8 n=2 ram= ops=
+07cffc n=5 ram=4046d4 ops=
+07d006 n=256 ram=404724,40472c,404734,40473c,404744,40474c,404754,4046c8,30010,401163,30020,a0002,30008,40112c,4046d4,401137,b0004,401116,401118,401111,404714,401112,a0010,40110f,401142,40470c,4046dc,4046e0 ops=subi r0,8; cmpnei r2,0; andi r7,3; cmplti r7,3; lsri r2,2; andi r2,3; cmplti r2,3; btsti r7,4; cmpnei r2,0; btsti r7,4; movi r3,0; addi r0,8; subi r0,8; cmpnei r2,0
+07d2b4 n=134 ram=404724,40472c,40473c,404744,404734,40474c,404754,4015e9,4015ed,401174,4046c8 ops=subi r0,32; movi r5,63; movi r6,112; andi r8,15; movi r2,4; andi r14,3; cmplti r14,3; movi r6,124; addi r14,1; andi r14,3; movi r6,124; addi r0,32
+07d3be n=36 ram=4015e9,4015ed,401174,40113a ops=subi r0,16; movi r7,112; andi r12,15; movi r2,4; addi r0,16
+07d404 n=82 ram=401136,401157,4015e9,4015ed,401174,4046c8,4046d4,401134,401150,401153 ops=subi r0,16; movi r6,63; lsri r12,4; andi r7,15; movi r2,4; lsri r14,4; andi r14,3; cmplti r14,3; addi r14,1; movi r6,79; andi r14,3; lsli r14,4; movi r6,79; addi r0,16
+07d4a6 n=95 ram=40114d,401150,4010fe,f3ff,cfff,4015e9,4015ed,401174,4046c8,4010fb,4010fc,4046d4 ops=subi r0,16; cmpnei r7,0; btsti r7,7; bmaski r6,14; movi r7,0; movi r2,8; andi r13,3; cmplti r13,3; movi r6,124; addi r13,1; andi r13,3; movi r6,124; addi r0,16
+07d562 n=123 ram=401157,40470c,4015e9,4015ed,401174,4046c8,401150,401153,4046e4 ops=subi r0,24; movi r6,63; movi r11,79; movi r7,115; addi r7,9; movi r7,0; movi r2,8; lsri r12,4; andi r12,3; cmplti r12,3; ixw r9,r14; ixw r13,r14; addi r12,1; andi r12,3
+07d656 n=61 ram=401157,4015e9,4015ed,401174,4046c8,401150,401153 ops=subi r0,16; movi r6,115; movi r7,0; movi r2,8; andi r14,3; cmplti r14,3; movi r6,124; addi r14,1; andi r14,3; movi r6,124; addi r0,16
+07d6ce n=113 ram=401157,4015e9,4015ed,401174,4046c8,401150,401153,d7f65 ops=subi r0,24; movi r11,79; movi r7,0; movi r2,8; lsri r14,4; andi r14,3; cmplti r14,3; addi r14,1; andi r14,3; lsli r14,4; addi r0,24; movi r6,23; mult r6,r2; andi r2,15
+07d7ae n=22 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07d7d8 n=22 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07d802 n=22 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07d82c n=25 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07d85c n=22 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07d886 n=259 ram=4015eb,4015e8,401162,4046d4,40471c,404714,4046c0,4046c4,404720,40470c,401109,404724,40472c,404734,40473c,404744,40474c,404754,401108,401111,401112,40110c,4046c8,40482e,404804,40475c,4046e4,4046d3,401164,40476e ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16; subi r0,16; movi r6,75; movi r6,0; bmaski r6,16; bmaski r6,12; movi r6,96; movi r13,103; andi r14,31; movi r7,24; andi r14,31
+07e4d6 n=257 ram=24707e87,404805,40480a,404814,40481e,404826,40482e,40476a,a74e2337,4046d4 ops=subi r0,8; movi r1,49; movi r1,51; btsti r7,7; lsli r6,8; cmpnei r7,2; cmpnei r7,6; btsti r7,7; lsli r6,8; cmpnei r7,2; cmpnei r7,6; addi r0,8; subi r0,24; subi r0,8
+07f8d0 n=18 ram=4010e0 ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07f8f4 n=2 ram= ops=bmaski r2,16
+07f8f8 n=2 ram= ops=bmaski r2,16
+07f8fc n=2 ram= ops=bmaski r2,16
+07f900 n=2 ram= ops=bmaski r2,16
+07f904 n=2 ram= ops=bmaski r2,16
+07f908 n=2 ram= ops=bmaski r2,16
+07f90c n=2 ram= ops=bmaski r2,16
+07f910 n=2 ram= ops=bmaski r2,16
+07f914 n=27 ram=4015eb ops=subi r0,16; movi r6,112; movi r2,4; andi r2,15; addi r0,16
+07f948 n=18 ram=4010e1 ops=andi r7,15; cmpnei r7,15; addi r2,1; andi r7,15; cmpnei r7,15; movi r7,112
+07f96c n=2 ram= ops=bmaski r2,16
+07f970 n=2 ram= ops=bmaski r2,16
+07f974 n=2 ram= ops=bmaski r2,16
+07f978 n=2 ram= ops=bmaski r2,16
+07f97c n=22 ram=4015eb ops=subi r0,16; movi r7,0; movi r2,8; addi r0,16
+07f9a6 n=1 ram= ops=
+07f9a8 n=1 ram= ops=
+07f9aa n=1 ram= ops=
+07f9ac n=1 ram= ops=
+07f9ae n=1 ram= ops=
+07f9b0 n=1 ram= ops=
+07f9b2 n=1 ram= ops=
+07f9b4 n=1 ram= ops=
+07f9b6 n=1 ram= ops=
+07f9b8 n=1 ram= ops=
+07f9ba n=1 ram= ops=
+07f9bc n=1 ram= ops=
+07f9be n=1 ram= ops=
+07f9c0 n=1 ram= ops=
+07f9c2 n=1 ram= ops=
+07f9c4 n=1 ram= ops=
+07f9c6 n=1 ram= ops=
+07f9c8 n=1 ram= ops=
+07f9ca n=1 ram= ops=
+07f9cc n=1 ram= ops=
+07f9ce n=259 ram=40485c,404864,40485f,404854,404851,40485e,404862,404861,404860,404841 ops=ixw r11,r14; movi r2,0; addi r2,1; cmplti r2,16; movi r6,5; movi r5,124; andi r2,3; subi r0,8; movi r6,112; movi r6,0; movi r6,16; cmpnei r7,6; movi r6,50; movi r7,5
+0c56d0 n=76 ram=402f1a,f59dd,402f69,402e74,402ee5 ops=subi r0,16; movi r5,23; mult r6,r5; addi r13,16; lsli r6,8; lsli r6,16; lsli r6,24; addi r7,22; andi r5,15; cmpnei r5,0; andi r5,15; andi r7,15; lsli r5,4; movi r14,0
+0c5766 n=242 ram=402f1b,f59dd,402ed8,402f1c,402f20,402f24,402f1e,402f22,402f26,402f2b,402f2c,402f2d,402f2e,402f30,402f32,402f34 ops=subi r0,16; movi r5,23; mult r6,r5; addi r4,16; lsli r6,8; lsli r6,16; lsli r6,24; cmplti r14,1; bmaski r6,8; cmplti r14,1; addi r13,16; addi r7,22; andi r7,15; cmpnei r7,0
+0c5948 n=92 ram=402f1a,402ee5,402f39 ops=subi r0,8; cmpnei r14,14; cmpnei r14,15; cmpnei r14,18; lsri r2,6; andi r2,3; cmplti r2,3; addi r2,1; movi r6,63; andi r2,3; lsli r2,6; lsri r14,2; andi r14,3; cmplti r14,3
+0c59fe n=39 ram=402ede,400966,402f28,402f1a,402ee5,402f39 ops=btsti r7,6; lsri r4,4; andi r4,3; cmplti r4,3; addi r4,1; movi r4,0; movi r6,79; andi r4,3; lsli r4,4
+0c5a4c n=9 ram=402e4e ops=movi r6,63; andi r2,3; lsli r2,6
+0c5a5e n=10 ram=402e4e ops=movi r6,79; andi r2,3; lsli r2,4
+0c5a72 n=37 ram=402ede,400966,402f29,402f1a,402ee5,402f39 ops=btsti r7,6; andi r4,3; cmplti r4,3; addi r4,1; movi r4,0; movi r6,124; andi r4,3
+0c5abc n=10 ram=402e4e ops=movi r6,115; andi r2,3; lsli r2,2
+0c5ad0 n=9 ram=402e4e ops=movi r6,124; andi r2,3
+0c5ae2 n=39 ram=402ede,400966,402f2a,402f1a,402ee5,402f39 ops=btsti r7,6; lsri r4,4; andi r4,3; cmplti r4,3; addi r4,1; movi r4,0; movi r6,79; andi r4,3; lsli r4,4
+0c5b30 n=24 ram=402e50 ops=andi r7,1; cmplti r7,1; lsli r4,7; andi r7,8; cmplti r7,1; andi r2,2; lsli r1,3; cmplti r2,1; lsli r2,2
+0c5b60 n=11 ram=402e52,402ede,402e50 ops=
+0c5b76 n=1 ram= ops=
+0c5b78 n=1 ram= ops=
+0c5b7a n=1 ram= ops=
+0c5b7c n=1 ram= ops=
+0c5b7e n=1 ram= ops=
+0c5b80 n=1 ram= ops=
+0c5b82 n=14 ram=402f49 ops=subi r0,8; btsti r7,2; addi r0,8
+0c5b9c n=62 ram=400966,402e6d,402f46,402f1a,402ee5,40164e,402e6e,402f39 ops=btsti r7,6; cmpnei r2,15; lsri r5,6; andi r5,3; cmplti r5,3; addi r5,1; movi r5,0; movi r6,63; andi r5,3; lsli r5,6; btsti r4,7; lsri r5,7; andi r5,1; lsli r5,5
+0c5c18 n=48 ram=402f53,402e70,402e6e ops=lsli r1,3; asri r2,13; movi r6,103; lsli r1,2; movi r5,5; sexth r1; sexth r3; mult r1,r5; asri r3,14; andi r3,3; asri r1,9; lsli r3,3; lsri r1,22; asri r6,10
+0c5c78 n=212 ram=40164d,402f36,402f53,402f1a,402ee5,40164e,402f5e,401646,402e6d,402f58,c61cc,402e70,402e6e,402f39,402f3d,402f60,7f5f,ffff80a1,401644 ops=movi r6,64; btsti r5,0; bgeni r7,15; lsri r7,5; lsri r6,3; andi r7,3; andi r6,3; andi r7,24; cmpnei r7,0; bgeni r7,15; andi r7,24; cmpnei r7,0; andi r10,17; andi r5,14
+0c5e20 n=21 ram=f58c0,40164d,40164e ops=cmplti r2,2; movi r2,3; movi r6,63; andi r2,3; lsli r2,6
+0c5e4a n=21 ram=402f36 ops=movi r6,79; andi r2,3; lsli r2,4; andi r14,6; andi r3,21; andi r0,7; andi r6,19
+0c5e74 n=3 ram=402f3d ops=
+0c5e7a n=257 ram=402f3d,c5ec8,402f42,402f36,402f53,c987,94b0,c5f7c ops=subi r0,8; movi r1,12; ixw r1,r7; andi r14,21; andi r8,21; andi r9,19; andi r13,19; andi r0,22; andi r13,6; movi r6,46; movi r6,46; movi r6,46; movi r6,46; movi r14,36
+0c62ec n=10 ram=402f53 ops=movi r6,115; andi r2,3; lsli r2,2
+0c6300 n=1 ram= ops=
+0c6302 n=1 ram= ops=
+0c6304 n=1 ram= ops=
+0c6306 n=1 ram= ops=
+0c6308 n=1 ram= ops=
+0c630a n=257 ram=402f5c,402e4c,402ede,402e50,402f64,402f35,402f68,402f36,400956,402f48,402f42,402f3e,b0400,402f53,402f4b,402f4c,402f47 ops=bmaski r6,9; subi r6,11; andi r2,7; cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; cmpnei r2,3; andi r4,31; andi r2,7; lsli r2,5; andi r4,31; andi r2,7; lsli r2,5; subi r0,32
+0c69ea n=1 ram= ops=
+0c69ec n=1 ram= ops=
+0c69ee n=1 ram= ops=
+0c69f0 n=1 ram= ops=
+0c69f2 n=1 ram= ops=
+0c69f4 n=16 ram= ops=andi r10,20; andi r11,20; andi r4,7; andi r9,20
+0c6a14 n=2 ram= ops=movi r2,0
+0c6a18 n=2 ram= ops=movi r2,0
+0c6a1c n=47 ram=400952,40288c,ffff8000,40bf00,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+0c6a78 n=69 ram=400952,40288c,ffff8000,40bf5a,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+0c6b00 n=47 ram=400952,40288c,ffff8000,40bf9a,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+0c6b5c n=47 ram=400952,40288c,ffff8000,40bfda,4032d0 ops=subi r0,8; btsti r7,0; btsti r7,2; sexth r14; sexth r7; lsli r14,2; movi r1,25; divs r14,r1; sexth r14; btsti r14,31; rsubi r14,0; movi r7,75; sexth r14; lsli r7,6
+0c6bb8 n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,0; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+0c6be4 n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+0c6c10 n=39 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,2; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8; andi r12,6; andi r5,16; andi r12,16
+0c6c5c n=23 ram= ops=subi r0,8; subi r0,8; movi r2,1; movi r3,3; bmaski r2,8; sexth r2; movi r7,127; rsubi r7,0; addi r0,8; addi r0,8
+0c6c88 n=12 ram= ops=subi r0,16; movi r2,1; movi r3,0; lsri r2,5; andi r2,1; addi r0,16
+0c6ca0 n=72 ram=40bf00,402880 ops=btsti r7,0; btsti r7,6; movi r3,0; movi r3,1; movi r7,64; btsti r7,0; btsti r7,6; movi r1,0; movi r1,1; bgeni r7,7; lsli r1,1; btsti r7,0; btsti r7,6; movi r1,0
+0c6d30 n=21 ram=400afa ops=lsri r6,7; lsri r2,7; andi r6,1; andi r2,1; lsli r6,1; lsri r6,7; andi r6,1; lsli r6,2; lsri r6,7; andi r6,1; lsli r6,3
+0c6d5a n=2 ram= ops=movi r2,0
+0c6d5e n=2 ram= ops=movi r2,0
+0c6d62 n=2 ram= ops=movi r2,0
+0c6d66 n=1 ram= ops=
+0c6d68 n=2 ram= ops=movi r2,0
+0c6d6c n=2 ram= ops=movi r2,0
+0c6d70 n=2 ram= ops=movi r2,0
+0c6d74 n=2 ram= ops=movi r2,0
+0c6d78 n=11 ram=402f1a,408d2c ops=movi r6,102; movi r6,1
+0c6d8e n=22 ram=402f39,a1000 ops=subi r0,8; lsri r7,6; andi r7,3; cmplti r7,3; movi r2,4; lsri r2,4; andi r2,3; cmplti r2,3; movi r2,2; movi r2,1; addi r0,8
+0c6dba n=25 ram=402f39,a1000 ops=subi r0,8; lsri r7,2; andi r7,3; cmplti r7,3; movi r2,32; andi r2,3; cmplti r2,3; movi r2,16; movi r2,8; addi r0,8
+0c6dec n=22 ram=402f39,a1000 ops=subi r0,8; lsri r7,6; andi r7,3; cmplti r7,3; bgeni r2,8; lsri r2,4; andi r2,3; cmplti r2,3; bgeni r2,7; movi r2,64; addi r0,8
+0c6e18 n=78 ram=40164e,402e6d,402e6e,402f39,402f35,a0040,402f53 ops=subi r0,8; lsri r7,6; andi r7,3; cmplti r7,3; bgeni r2,10; lsri r2,4; andi r2,3; cmplti r2,3; btsti r7,4; bgeni r2,11; bgeni r2,9; btsti r7,4; lsri r2,2; andi r2,3
+0c6eb2 n=2 ram= ops=
+0c6eb6 n=64 ram=402f36,402f42,402f53,402f4f ops=movi r5,1; cmplti r2,4; cmpnei r2,3; cmpnei r2,0; cmpnei r2,1; cmpnei r2,2; cmpnei r2,4; cmpnei r2,5; cmpnei r4,4; lsri r7,6; andi r7,3; cmpnei r7,1; movi r2,64; movi r5,0

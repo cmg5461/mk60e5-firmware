@@ -1,0 +1,45 @@
+M3 7846816A ABS slip / wheel-state / decision layer (cycle 6). 1M address = M3 + 0x200 for all 0x4F000-0x5B000.
+conf: H = opcode/byte verified, M = code read, L = inference
+0x04D270 abs_event_classifier            M-H  per-wheel event word EV0/EV1 -> 4FC3C (= 1M 4D470)
+0x04F85A abs_slip_aggregates             H    E+28/30/32 = vref-wheel slip sums (own+axle partner, cross)
+0x04FFF6 abs_event_prefilter_flags       M    E+24=vref/33, E+26=vref/50 (clamped), preliminary E flag bits
+0x04F7D6 abs_axle_speed_split            M    E+0/E+2 = |0x40907E[3]-[2]| rear L/R speed split
+0x04F5D4 abs_lowspeed_slip_margin        H    E+20 = (20000-vref)/25+(10000-vref)/40, scaled by |ECA| lateral
+0x052380 abs_gross_slip_threshold        H    E+6 = curve(0xD6CE2, vref)=400..599..1090..2194 (+terms)
+0x052774 abs_event_thresholds_C          L    helper after 52380 (flags over 4 rec[0]&0x12 etc)
+0x052C54 abs_phase_decel_threshold       H    E+10 = -100 (rec b2) / -1000 (b3) / -400, minus front L/R split
+0x052CD0 abs_vref_pct_threshold          M    E+12 = 7% vref (+curves 0x40C40/0x40D24)
+0x04F38E abs_hold_slip_threshold         M    E+16/E+18 (1000 default, 4000 cond, +E+20)
+0x04F278 abs_eff_entry_threshold         M    E+14 from E+6 (/2 or x18 scaling, clamp 400/300)
+0x04F518 abs_event_partner_flags         M    E+36 b3 / E+35 b4 from own/partner in-control
+0x04FC3C abs_phase_sm                    H    rec[0] state machine (cycle 5)
+0x0504D0 abs_phase_dispatch              H    rec[0] bit6->50894, bit7->50580, bit3->4CA3C, bit4->4B680, bit5->4AAA8, then 584CC
+0x050580 abs_armed_idle_handler          M-H  states 0x80/0x84: CMD=PM, RAMP=+8000; rear overspeed hold sets 0x408FCC[w]=1
+0x050894 abs_precontrol_handler          M    state 0xC0 pre-control
+0x0584CC abs_cmd_post_clamp              M    clamps CMD(0x408F22) vs 0x408F4A / 0x408F52
+0x05898C abs_slip_ratio_update           H    0x408F84[w] = (vref-v26)*10000/vref >=0 (+3 helpers)
+0x05173C abs_decision_stage              H    5184C -> 51B54 -> (51730 if code==1) -> 58B30
+0x05184C abs_rear_lead_select            M-H  scores rear rec[0] bits, picks lead rear (select-low) -> 0x408DA0 b7, DDE+10 fields
+0x051B54 abs_decision_classify           H    writes 1/64/128/32 (+pct) to 0x408DDE
+0x051730 abs_decision_reset              H    code=1, +8=0
+0x051A5C abs_decision_idx_rotate         M    rotates wheel-index fields in DDE+10 when PM diff>1000 or 408DC6 b2 clear
+0x058B30 abs_decision_resolve            H    64->16, 128->256|2, 16->8; default pct=70
+0x058FF4 abs_decision_pressure_exec      H    switch(code) 2/4/8/32/256 -> CMD/UP/RAMP writes
+0x052004 abs_rear_step_planner           M    5-bit step counters in 0x408F02[w]
+0x054D9A abs_pair_logic                  H    S-state (0x408E5F b6:5) S1/S2/else; writes 32/1024/16/2; curve 0x40DB6 x3
+0x054B70 abs_pair_pred_gate              H    calls predicates A..D
+0x0547D8 abs_pair_pred_A                 M    (1M 549D8)
+0x054954 abs_pair_pred_B                 M    (1M 54B54)
+0x054A80 abs_pair_pred_C                 M    (1M 54C80)
+0x054AF8 abs_pair_pred_D                 M    (1M 54CF8)
+0x054BE8 abs_pair_cornering_rear         M    RL/RR lat clause (0x40BF80/C0, lat=ECC+ECE/2, 0x40DD2=1748)
+0x053940 abs_dump_hold_stage_ctrl        M    calls 53D3C 540D4 5424C 543FC 5471E 5971C 584CC
+0x053D3C abs_pair_state_pack             M    packs rec[0] bits of both axles into 0x400A95 pair-state
+0x0540D4 abs_pair_state_qualify          L-M  clears 0x400A96 b6/b7 by speed/lateral
+0x05424C abs_dump_stage                  H    (cycle 5)
+0x0543FC abs_dump_amount_calc            M    curve 0xD6D18(vref/100) -> reduction amount
+0x055F06 abs_dump_pressure_target        M    dump handler worker (called from 4AAA8)
+0x05D82C abs_sensor_input_gather         H    fills 0x408DAF/E80/E92/E94/ECA/ECB/ECC/ECE/EB2/EDE.. from sensor accessors
+0x05A0DC abs_vehicle_state_publish       M    5A21C..5AEEE sub-estimators -> 0x40915E..0x409188
+0x0530E4 abs_lateral_persist_counter     L-M  |0x408ECC| vs 0x40404.. thresholds, counter
+0x04F9D4 abs_lowmu_flag_update           L    sets 0x40902E b4 from 0x409010 counter vs 0x40D40

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>MK60E5 DSC Calibration Handbook</title>
+<style>
+/* Offline print document: system fonts, light single-theme (it renders to PDF). Teal readout accent;
+   green/amber/red encode tunability and safety. No external resources. */
+:root{
+  --bg:#ffffff; --fg:#1a1e24; --muted:#5b6470; --line:#d2d7dd; --soft:#f1f3f5;
+  --accent:#0a7d86; --accent-weak:#e4f1f2;
+  --cal:#1d7a46; --cal-bg:#e3f3ea; --lit:#8a5610; --lit-bg:#f7edda; --dan:#9e2630; --dan-bg:#f6e3e4;
+  --mono:ui-monospace,"Cascadia Mono","Consolas","Liberation Mono",monospace;
+  --sans:-apple-system,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:11pt;line-height:1.5}
+.page{max-width:900px;margin:0 auto;padding:28px 34px}
+h1{font-size:27pt;line-height:1.05;letter-spacing:-.01em;margin:0 0 6px;font-weight:750}
+h2{font-size:17pt;margin:30px 0 4px;padding-top:8px;border-top:2.5px solid var(--fg);font-weight:700}
+h3{font-size:12.5pt;margin:18px 0 6px;font-weight:650}
+p{margin:0 0 10px;max-width:72ch}
+.kicker{font-family:var(--mono);font-size:9.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.sub{color:var(--muted);font-size:12pt;max-width:70ch}
+.meta{display:flex;flex-wrap:wrap;gap:4px 16px;margin:14px 0 4px;font-family:var(--mono);font-size:9.5pt;color:var(--muted)}
+.meta b{color:var(--fg)}
+code{font-family:var(--mono);font-size:.9em;background:var(--soft);padding:1px 4px;border-radius:3px}
+.muted{color:var(--muted)}
+.lead{font-size:11.5pt}
+
+.note{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--soft);
+  border-radius:6px;padding:11px 14px;margin:12px 0}
+.note.warn{border-left-color:var(--dan)}
+.note b{font-weight:650}
+.note p{margin:0;max-width:none;font-size:10.5pt}
+
+.badge{font-family:var(--mono);font-size:8.5pt;font-weight:700;padding:1px 6px;border-radius:999px;white-space:nowrap}
+.b-cal{background:var(--cal-bg);color:var(--cal)} .b-lit{background:var(--lit-bg);color:var(--lit)} .b-dan{background:var(--dan-bg);color:var(--dan)}
+
+table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:12px 0}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--soft);font-family:var(--mono);font-size:8pt;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.p{font-weight:650;white-space:nowrap} td.a{font-family:var(--mono);font-size:9pt;color:var(--muted);white-space:nowrap}
+td.v{font-family:var(--mono);font-size:9pt;white-space:nowrap} .eff b{color:var(--accent)}
+tbody tr{break-inside:avoid}
+
+figure{margin:14px 0;border:1px solid var(--line);border-radius:7px;background:#fff;padding:12px;break-inside:avoid}
+figure svg{display:block;width:100%;height:auto} figcaption{font-size:9pt;color:var(--muted);margin-top:8px;font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0;font-size:9.5pt;color:var(--muted);align-items:center}
+section{break-inside:auto}
+h2{break-after:avoid} h3{break-after:avoid}
+footer{margin-top:26px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:9pt;font-family:var(--mono)}
+@page{size:A4;margin:14mm 12mm}
+.svgtxt{font-family:var(--mono);font-size:11px}
+</style></head>
+<body><div class="page">
+
+<div class="kicker">BMW MK60E5 DSC · E9x M3 · flash 7846816A (DSCM90)</div>
+<h1>DSC Calibration Handbook</h1>
+<p class="sub lead">What each parameter in the M3 stability-control firmware actually changes — by subsystem,
+with the algorithm it feeds and the direction of its effect.</p>
+<div class="meta"><span><b>Image</b> 7846816A · 1 MiB</span><span><b>CPU</b> Freescale M·CORE (BE)</span>
+<span><b>File offset</b> = CPU + 0x8000</span><span><b>Frame</b> 10 ms</span>
+<span><b>Maps to</b> xdf/MK60E5_7846816A.xdf</span></div>
+
+<div class="note warn"><p><b>Scope.</b> Static analysis of the owner's own ECU, for understanding and comparison.
+Stock values are quoted so edits are legible against a baseline. Not a recipe for disabling the safety system
+on a road car: the strongest levers (DSC mode, the active variant) are EEPROM, not flash, and every edited
+image must be re-signed to load.</p></div>
+
+<section>
+<h2>Reading a parameter</h2>
+<p class="lead">Each table gives the parameter, its address, the stock value, and <b>what happens if you raise it</b>.
+Two tags carry the meaning:</p>
+<div class="legend">
+  <span><span class="badge b-cal">CAL</span> in a calibration block — editable, covered by re-signing</span>
+  <span><span class="badge b-lit">CODE</span> a code literal — changing it needs a patch</span>
+  <span><span class="badge b-dan">EEPROM</span> unit coding, not in the flash</span>
+</div>
+<table><thead><tr><th>Convention</th><th>Meaning</th></tr></thead><tbody>
+<tr><td class="p">0.01 km/h</td><td>Speeds/slip ×100. <code>5000</code> = 50 km/h.</td></tr>
+<tr><td class="p">0.01 g</td><td>Decel ×100, signed. <code>-116</code> ≈ −1.16 g <span class="muted">(unit unproven)</span>.</td></tr>
+<tr><td class="p">Q10</td><td>Value ÷ 1024 — lengths (m) and curve slopes.</td></tr>
+<tr><td class="p">~0.01 bar</td><td>Modelled pressure; consistent with evidence, not pinned <span class="muted">(unproven)</span>.</td></tr>
+<tr><td class="p">variant 0–11</td><td>EEPROM field <code>0x4031AA+1</code> picks one column of the 12-wide model tables (7 distinct).</td></tr>
+<tr><td class="p">curve</td><td>Piecewise-linear <code>(lo,hi,n,breaks,intercepts,slopes)</code> read by <code>0x710FC</code>: out = clamp(c + in·k/1024, lo, hi).</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>Architecture</h2>
+<p>Once per 10 ms frame the main task walks a fixed 41-call sequence: read sensors, estimate vehicle state,
+let each controller decide, arbitrate per wheel, run the pressure model, drive the valves, and send a torque
+request to the engine.</p>
+<figure><svg viewBox="0 0 900 300" role="img" aria-label="DSC control pipeline: inputs to estimation to the ABS, TCS and AYC controllers, through the per-wheel arbiter and the volume pressure model to valves/pump and the engine torque request.">
+  <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#1a1e24"/></marker>
+  <marker id="art" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#0a7d86"/></marker></defs>
+  <g class="svgtxt" fill="#1a1e24">
+  <rect x="8" y="60" width="150" height="180" rx="8" fill="none" stroke="#1a1e24"/>
+  <text x="83" y="52" text-anchor="middle" font-size="11" fill="#0a7d86">INPUTS</text>
+  <text x="20" y="88">Wheel speed ×4</text><text x="20" y="110">Steering 0x0C9</text><text x="20" y="132">Yaw / lat-g 0x0CD</text>
+  <text x="20" y="154">Engine torque</text><text x="20" y="176">Brake pressure</text><text x="20" y="198">Coding / variant</text>
+  <rect x="190" y="60" width="150" height="180" rx="8" fill="none" stroke="#1a1e24"/>
+  <text x="265" y="52" text-anchor="middle" font-size="11" fill="#0a7d86">ESTIMATE</text>
+  <text x="202" y="88">vref</text><text x="202" y="110">wheel accel</text><text x="202" y="132">slip</text>
+  <text x="202" y="154">single-track</text><text x="202" y="172">yaw model</text><text x="202" y="194">(v_ch, Jz, m)</text>
+  <rect x="372" y="36" width="150" height="70" rx="8" fill="none" stroke="#1a1e24"/><text x="447" y="28" text-anchor="middle" font-size="11" fill="#0a7d86">DECIDE</text>
+  <text x="384" y="62">ABS</text><text x="384" y="82" font-size="10" fill="#5b6470">slip + decel</text>
+  <rect x="372" y="116" width="150" height="64" rx="8" fill="none" stroke="#1a1e24"/><text x="384" y="142">TCS</text><text x="384" y="162" font-size="10" fill="#5b6470">drive-slip</text>
+  <rect x="372" y="190" width="150" height="64" rx="8" fill="none" stroke="#1a1e24"/><text x="384" y="216">AYC / yaw</text><text x="384" y="236" font-size="10" fill="#5b6470">+ DSC mode</text>
+  <rect x="556" y="96" width="120" height="110" rx="8" fill="none" stroke="#0a7d86" stroke-width="1.5"/><text x="616" y="88" text-anchor="middle" font-size="11" fill="#0a7d86">ARBITER</text>
+  <text x="616" y="146" text-anchor="middle">per-wheel</text><text x="616" y="166" text-anchor="middle">priority</text>
+  <rect x="710" y="36" width="180" height="90" rx="8" fill="none" stroke="#1a1e24"/><text x="800" y="28" text-anchor="middle" font-size="11" fill="#0a7d86">PRESSURE MODEL</text>
+  <text x="724" y="66">volume ↔ pressure</text><text x="724" y="88">valve-flow Q</text><text x="724" y="110" font-size="10" fill="#5b6470">COA p–V curves</text>
+  <rect x="710" y="150" width="180" height="56" rx="8" fill="none" stroke="#1a1e24"/><text x="800" y="142" text-anchor="middle" font-size="11" fill="#0a7d86">ACTUATE</text><text x="724" y="182">valves · pump</text>
+  <rect x="710" y="222" width="180" height="48" rx="8" fill="none" stroke="#1a1e24"/><text x="724" y="250">torque req → DME</text><text x="724" y="266" font-size="10" fill="#5b6470">TX 0x0B6</text>
+  <line x1="158" y1="150" x2="188" y2="150" stroke="#1a1e24" marker-end="url(#ar)"/>
+  <line x1="340" y1="150" x2="370" y2="90" stroke="#1a1e24" marker-end="url(#ar)"/><line x1="340" y1="150" x2="370" y2="148" stroke="#1a1e24" marker-end="url(#ar)"/><line x1="340" y1="150" x2="370" y2="214" stroke="#1a1e24" marker-end="url(#ar)"/>
+  <line x1="522" y1="80" x2="554" y2="120" stroke="#1a1e24" marker-end="url(#ar)"/><line x1="522" y1="148" x2="554" y2="150" stroke="#1a1e24" marker-end="url(#ar)"/><line x1="522" y1="222" x2="554" y2="182" stroke="#1a1e24" marker-end="url(#ar)"/>
+  <line x1="676" y1="130" x2="708" y2="96" stroke="#0a7d86" marker-end="url(#art)"/><line x1="800" y1="126" x2="800" y2="148" stroke="#0a7d86" marker-end="url(#art)"/><line x1="522" y1="236" x2="708" y2="246" stroke="#0a7d86" marker-end="url(#art)"/>
+  </g></svg><figcaption>Teal = hydraulic / torque output path.</figcaption></figure>
+</section>
+
+<section>
+<h2>Editing &amp; re-signing</h2>
+<p>An edited image is rejected until two integrity values are recomputed — both solved and tooled.</p>
+<table><thead><tr><th>Layer</th><th>What</th><th>Fix</th></tr></thead><tbody>
+<tr><td class="p">ROM self-test</td><td>Hardware MISR over three regions; calibration region <code>[0x40300, 0x4249C)</code>, expected word at <code>0x4249C</code>.</td><td>Recompute after any cal edit.</td></tr>
+<tr><td class="p">BMY signature</td><td>512-bit RSA (e=7) over the application, in the trailing <code>BMY</code> block. Key recovered.</td><td>Re-sign after the MISR fix.</td></tr>
+</tbody></table>
+<div class="note"><p><b>One command:</b> <code>python tools/bmy_resign.py fix &lt;edited.bin&gt;</code> recomputes the MISR
+words then the BMY signature; <code>verify</code> reports both. Whether the bootloader enforces the signature at flash
+time is in the absent 0x0–0x47FFF region — treat edited images as research-only.</p></div>
+</section>
+
+<section>
+<h2>Vehicle model</h2>
+<p>The yaw controller runs a single-track (bicycle) model. These scalars are its physical constants, stored as
+12 columns — one per coding variant — loaded by <code>0x5DE44</code>/<code>0x5E424</code>. They set how much yaw the
+car should make for a given steering and speed; the controller acts on the error vs measured yaw.</p>
+<figure><svg viewBox="0 0 820 120" role="img" aria-label="Vehicle-model scalars feed the single-track model producing a target yaw rate; measured minus target is the error the AYC controller acts on.">
+  <defs><marker id="a2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#1a1e24"/></marker></defs>
+  <g class="svgtxt" fill="#1a1e24">
+  <rect x="8" y="22" width="190" height="78" rx="8" fill="none" stroke="#1a1e24"/>
+  <text x="20" y="46">l_f, l_r (geometry)</text><text x="20" y="66">mass, Jz (inertia)</text><text x="20" y="86">Cf, Cr (stiffness)</text>
+  <rect x="250" y="34" width="150" height="54" rx="8" fill="none" stroke="#0a7d86" stroke-width="1.5"/><text x="325" y="58" text-anchor="middle">single-track</text><text x="325" y="76" text-anchor="middle" font-size="10" fill="#5b6470">v_ch derived</text>
+  <rect x="452" y="34" width="140" height="54" rx="8" fill="none" stroke="#1a1e24"/><text x="522" y="58" text-anchor="middle">target yaw</text><text x="522" y="76" text-anchor="middle" font-size="10" fill="#5b6470">0x400B1A</text>
+  <rect x="644" y="34" width="168" height="54" rx="8" fill="none" stroke="#1a1e24"/><text x="728" y="58" text-anchor="middle">error → AYC entry</text>
+  <line x1="198" y1="61" x2="248" y2="61" stroke="#1a1e24" marker-end="url(#a2)"/><line x1="400" y1="61" x2="450" y2="61" stroke="#1a1e24" marker-end="url(#a2)"/><line x1="592" y1="61" x2="642" y2="61" stroke="#1a1e24" marker-end="url(#a2)"/>
+  </g></svg><figcaption>The six scalars set the reference the car is held to.</figcaption></figure>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">l_f front axle→CG</td><td class="a">0xD6F42</td><td class="v">1413 Q10 m</td><td class="eff">CG treated further forward; shifts understeer balance.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">l_r CG→rear axle</td><td class="a">0xD6F5A</td><td class="v">1413 Q10 m</td><td class="eff">l_f+l_r = wheelbase 2.760 m (fixed); trades balance with l_f.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">mass</td><td class="a">0xD6F72</td><td class="v">1787 kg</td><td class="eff">Model assumes a heavier car: larger yaw-moment demand.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">Jz yaw inertia</td><td class="a">0xD6F8A</td><td class="v">2999 kg·m²</td><td class="eff">Model expects slower rotation → reacts earlier to yaw build-up.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">Cf front stiffness</td><td class="a">0xD6ECA</td><td class="v">7527</td><td class="eff">More assumed front grip; lowers v_ch.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">Cr rear stiffness</td><td class="a">0xD6EE2</td><td class="v">10596</td><td class="eff">More assumed rear grip; Cr&gt;Cf keeps the model understeering.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">v_ch characteristic speed</td><td class="a">derived</td><td class="v">105–142 km/h</td><td class="eff"><b>Not stored</b> — computed from the above. Higher = flatter yaw gain with speed = less yaw demanded at speed. M3 &gt; 1M.</td><td><span class="badge b-lit">DERIVED</span></td></tr>
+<tr><td class="p">track front / rear</td><td class="a">0xD6FA2/BA</td><td class="v">1.538/1.536 m</td><td class="eff">Track geometry — Q10 metres (= real M3 track), not mm.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">active variant</td><td class="a">0x4031AA+1</td><td class="v">EEPROM</td><td class="eff">Selects which column of all the above is used.</td><td><span class="badge b-dan">EEPROM</span></td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>Wheel speed &amp; tyres</h2>
+<p>The four wheel speeds are the root of everything — vref, slip and the broadcast vehicle speed derive from
+them. Tyre circumference is the scale factor; the M3 ships the same geometry as the 1M.</p>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">circumference front</td><td class="a">0x41CF4</td><td class="v">2073 mm</td><td class="eff">ECU reads a <b>higher road speed</b> for the same wheel rpm — shifts vref and the speedo. The knob to match a different rolling radius.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">circumference rear</td><td class="a">0x41CF6</td><td class="v">2073 mm</td><td class="eff">Same, rear. Front≠rear biases the undriven/driven comparison TCS uses.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">tooth count F/R</td><td class="a">0x41CF8/FA</td><td class="v">48 / 48</td><td class="eff">Encoder teeth per rev; must match the tone ring.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">standstill threshold</td><td class="a">0x41CF2</td><td class="v">72 (0.72 km/h)</td><td class="eff">Speed below which a wheel counts as stopped.</td><td><span class="badge b-cal">CAL</span></td></tr>
+</tbody></table>
+<div class="note"><p><b>Sensor type:</b> stock M3 and 1M images configure all four channels for VDA active
+sensors. There is no coding or calibration selector. <b>E46-type 2-level (7/14 mA) sensors work with a 4-byte
+firmware patch</b> (bench-verified on all four wheels, 2026-10-06): ASIC mode mask 0x28C&nbsp;→&nbsp;0, both-edge
+timer capture, direction mask 0, presence mode 2. See <code>docs/E46_SENSOR_FIRMWARE_PATCH.md</code>.</p></div>
+</section>
+
+<section>
+<h2>ABS slip &amp; deceleration</h2>
+<p>ABS arms a wheel when its slip or deceleration crosses a speed- and grip-dependent threshold. The per-wheel
+phase state machine then cycles dump → hold → reapply.</p>
+<figure><svg viewBox="0 0 820 150" role="img" aria-label="Armed state transitions to dump when slip or decel exceeds threshold, then hold, then reapply, cycling back to dump if slip returns.">
+  <defs><marker id="a3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#1a1e24"/></marker></defs>
+  <g class="svgtxt" fill="#1a1e24">
+  <rect x="8" y="55" width="120" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="68" y="81" text-anchor="middle">ARMED 0x80</text>
+  <rect x="190" y="55" width="110" height="44" rx="8" fill="none" stroke="#0a7d86" stroke-width="1.5"/><text x="245" y="81" text-anchor="middle">DUMP 0x21</text>
+  <rect x="362" y="55" width="110" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="417" y="81" text-anchor="middle">HOLD 0x09</text>
+  <rect x="534" y="55" width="130" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="599" y="81" text-anchor="middle">REAPPLY 0x11</text>
+  <line x1="128" y1="77" x2="188" y2="77" stroke="#0a7d86" marker-end="url(#a3)"/><text x="158" y="68" text-anchor="middle" font-size="10" fill="#5b6470">slip↑</text>
+  <line x1="300" y1="77" x2="360" y2="77" stroke="#1a1e24" marker-end="url(#a3)"/>
+  <line x1="472" y1="77" x2="532" y2="77" stroke="#1a1e24" marker-end="url(#a3)"/>
+  <path d="M599,99 C599,128 245,128 245,101" fill="none" stroke="#1a1e24" marker-end="url(#a3)"/><text x="420" y="124" text-anchor="middle" font-size="10" fill="#5b6470">slip returns</text>
+  </g></svg><figcaption>Arming thresholds decide entry; the machine then cycles dump/hold/reapply. Pressure amounts are in the next section.</figcaption></figure>
+<div class="note"><p><b>Key detail:</b> the real arming threshold is the gross-slip curve at <code>0xD6CE2</code>
+(≈4 km/h low-speed, rising to ~11 % of vref) with a persistence counter. The small <code>0x40DB6</code> "entry-slip"
+curve (1.3–2.0 km/h) is used only inside the pair-logic partner test.</p></div>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">gross-slip arming curve</td><td class="a">0xD6CE2</td><td class="v">400 → ~11% vref</td><td class="eff">Slip a wheel must reach to arm ABS. Higher = later ABS, more bite on grip, worse low-μ.</td><td><span class="badge b-lit">ROM</span></td></tr>
+<tr><td class="p">entry-slip (pair test)</td><td class="a">0x40DB6</td><td class="v">≈1.3–2.0 km/h</td><td class="eff">Partner-in-slip test inside pair logic.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">decel base</td><td class="a">0x40620</td><td class="v">−116 (≈−1.16 g)</td><td class="eff">Baseline decel threshold. More negative = tolerates harder decel first.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">decel floor</td><td class="a">0x4061E</td><td class="v">−240 (≈−2.4 g)</td><td class="eff">Most-negative limit.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">accel gain F/R</td><td class="a">0x4061A/1C</td><td class="v">40 / 25</td><td class="eff">How strongly wheel accel feeds the threshold builder.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">low-speed floors</td><td class="a">0x40644/5C</td><td class="v">12 cols</td><td class="eff">Per-variant floors &lt;20 / &lt;60 km/h. Variants 10/11 permissive.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">speed/g-term curves</td><td class="a">0x40412/0x40674</td><td class="v">12 variant copies</td><td class="eff">Shape threshold vs speed and vs g. 0–9 match the 1M; 10/11 differ.</td><td><span class="badge b-cal">CAL</span></td></tr>
+</tbody></table>
+<p class="muted">Decision code <code>0x408DDE</code> classifies each cycle: 1 no rear control · 16→8 select-low rear
+build · 2 pair-hold · 32 yaw-limited build (0–100 % lag) · 256 cornering reapply.</p>
+<div class="note"><p><b>M3 vs 1M:</b> core slip/decel targets are identical for variants 1–9; only 10/11 are more
+permissive at high speed. The M-car's licence lives in the yaw/DSC-mode logic, not these numbers.</p></div>
+</section>
+
+<section>
+<h2>Pressure &amp; hydraulics</h2>
+<p>The controller works through a <b>volume model</b>: each wheel's fluid volume is tracked, converted to pressure
+through the COA p–V curves, and changed by valve flow Q = √Δp · opening · k. A low-pressure accumulator holds
+dumped fluid; a return pump drains it.</p>
+<figure><svg viewBox="0 0 820 140" role="img" aria-label="Pressure request sets inlet mode build hold or dump; valve flow changes wheel volume which maps to pressure; dumped fluid goes to the accumulator and the pump drains it.">
+  <defs><marker id="a5" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#1a1e24"/></marker></defs>
+  <g class="svgtxt" fill="#1a1e24">
+  <rect x="8" y="20" width="150" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="83" y="46" text-anchor="middle">request (arbiter)</text>
+  <rect x="200" y="20" width="150" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="275" y="40" text-anchor="middle">mode:</text><text x="275" y="56" text-anchor="middle" font-size="10" fill="#5b6470">build/hold/dump</text>
+  <rect x="392" y="20" width="130" height="44" rx="8" fill="none" stroke="#0a7d86" stroke-width="1.5"/><text x="457" y="40" text-anchor="middle">valve flow Q</text><text x="457" y="56" text-anchor="middle" font-size="10" fill="#5b6470">√dp·open·k</text>
+  <rect x="564" y="20" width="120" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="624" y="40" text-anchor="middle">volume V</text>
+  <rect x="716" y="20" width="96" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="764" y="40" text-anchor="middle">pressure</text><text x="764" y="56" text-anchor="middle" font-size="10" fill="#5b6470">PM</text>
+  <rect x="392" y="92" width="130" height="40" rx="8" fill="none" stroke="#1a1e24"/><text x="457" y="117" text-anchor="middle">accumulator</text>
+  <rect x="564" y="92" width="120" height="40" rx="8" fill="none" stroke="#1a1e24"/><text x="624" y="117" text-anchor="middle">return pump</text>
+  <line x1="158" y1="42" x2="198" y2="42" stroke="#1a1e24" marker-end="url(#a5)"/><line x1="350" y1="42" x2="390" y2="42" stroke="#1a1e24" marker-end="url(#a5)"/>
+  <line x1="522" y1="42" x2="562" y2="42" stroke="#0a7d86" marker-end="url(#a5)"/><line x1="684" y1="42" x2="714" y2="42" stroke="#1a1e24" marker-end="url(#a5)"/>
+  <line x1="457" y1="64" x2="457" y2="90" stroke="#1a1e24" marker-end="url(#a5)"/><text x="470" y="82" font-size="10" fill="#5b6470">dump</text>
+  <line x1="522" y1="112" x2="562" y2="112" stroke="#1a1e24" marker-end="url(#a5)"/>
+  </g></svg><figcaption>Pressure is a consequence of modelled volume, not a direct command.</figcaption></figure>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">apply ramp / cycle</td><td class="a">0x403A8</td><td class="v">400</td><td class="eff">Pressure built per 10 ms during reapply. Higher = faster, harsher re-clamp.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">dump reductions</td><td class="a">0x40E64</td><td class="v">1000/1500/2000</td><td class="eff">Pressure released per dump stage. Higher = bigger release, quicker recovery, softer ABS.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">reapply nudge</td><td class="a">0x40D90</td><td class="v">80</td><td class="eff">Small step entering reapply.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">k_in build flow F/R</td><td class="a">0x41B26</td><td class="v">957 / 421</td><td class="eff">Inlet-valve flow gain. Higher = pressure builds faster for a given Δp.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">k_out dump flow F/R</td><td class="a">0x41B30</td><td class="v">755 / 465</td><td class="eff">Outlet-valve flow gain. Higher = dumps faster.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">LPA pressure curve</td><td class="a">0x41B16</td><td class="v">0,130,130,500</td><td class="eff">Accumulator model (best clue unit ≈0.01 bar: 1.3–5.0 bar).</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">pump ramp / gain</td><td class="a">0x41B34/36</td><td class="v">1150 / 100</td><td class="eff">Return-pump delivery model.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">pressure clamps</td><td class="a">code</td><td class="v">−8000 / 25000</td><td class="eff">Hard min/max on the request.</td><td><span class="badge b-lit">CODE</span></td></tr>
+<tr><td class="p">valve hold/boost current</td><td class="a">code</td><td class="v">1100/1524/1532</td><td class="eff">Solenoid currents for hold/boost/release.</td><td><span class="badge b-lit">CODE</span></td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>Traction (TCS)</h2>
+<p>TCS acts on the driven (rear) wheels. Drive slip = rear − same-side front (0.01 km/h). Past the target curve,
+a PI loop requests engine-torque reduction and, if needed, brake pressure. The DSC mode (0/1/2) picks the set.</p>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">drive-slip target (set B)</td><td class="a">0xF625C</td><td class="v">curve/mode</td><td class="eff">Allowed rear-over-front slip before TCS cuts. Higher = <b>more wheelspin permitted</b>. Default set.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">drive-slip target (set A)</td><td class="a">0xF61F6</td><td class="v">curve/mode</td><td class="eff">Alternate set for the surface/condition flag.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">slip-target scalar</td><td class="a">0x41046</td><td class="v">2.3→10 km/h</td><td class="eff">Base slip target vs speed.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">PI gains</td><td class="a">0x41072</td><td class="v">180/100/60/25</td><td class="eff">Torque-reduction loop gain. Higher = more aggressive cut.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">PI P / I clamps</td><td class="a">0x41068/6E</td><td class="v">±2500 / ±200</td><td class="eff">Limits on the P and I terms.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">gross-slip limit</td><td class="a">code</td><td class="v">min(1500,4000−vref)</td><td class="eff">Hard ceiling — on the M3 a code literal (cal on the 1M).</td><td><span class="badge b-lit">CODE</span></td></tr>
+<tr><td class="p">DSC mode index</td><td class="a">0x4031B1</td><td class="v">0/1/2 live</td><td class="eff">Picks the target column; from DSC-button state + coding.</td><td><span class="badge b-dan">EEPROM</span></td></tr>
+</tbody></table>
+<p class="muted">The cut leaves as CAN TX 0x0B6 to the DME (÷5 scale), merged with MSR + AYC by <code>dme_torque_request_compose</code> 0xCC2C2.</p>
+</section>
+
+<section>
+<h2>Yaw control &amp; DSC mode</h2>
+<p>Where the M-car's character lives. AYC compares measured yaw to the model target; past the entry threshold it
+brakes individual wheels and cuts engine torque. Three DSC modes scale how much it allows — <b>mode 1 is by far the
+most permissive.</b></p>
+<figure><svg viewBox="0 0 820 150" role="img" aria-label="Yaw error compared with a per-mode entry threshold; past it the PD controller demands a brake moment and torque cut, each scaled by the DSC mode ceiling.">
+  <defs><marker id="a4" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="#1a1e24"/></marker></defs>
+  <g class="svgtxt" fill="#1a1e24">
+  <rect x="8" y="50" width="140" height="50" rx="8" fill="none" stroke="#1a1e24"/><text x="78" y="72" text-anchor="middle">yaw error</text><text x="78" y="90" text-anchor="middle" font-size="10" fill="#5b6470">meas − target</text>
+  <rect x="200" y="50" width="170" height="50" rx="8" fill="none" stroke="#0a7d86" stroke-width="1.5"/><text x="285" y="72" text-anchor="middle">&gt; entry threshold?</text><text x="285" y="90" text-anchor="middle" font-size="10" fill="#5b6470">B6C per mode</text>
+  <rect x="422" y="20" width="160" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="502" y="47" text-anchor="middle">brake moment (PD)</text>
+  <rect x="422" y="86" width="160" height="44" rx="8" fill="none" stroke="#1a1e24"/><text x="502" y="113" text-anchor="middle">torque cut</text>
+  <rect x="634" y="52" width="160" height="46" rx="8" fill="none" stroke="#1a1e24"/><text x="714" y="73" text-anchor="middle">× mode ceiling</text><text x="714" y="91" text-anchor="middle" font-size="10" fill="#5b6470">m0/m1/m2</text>
+  <line x1="148" y1="75" x2="198" y2="75" stroke="#1a1e24" marker-end="url(#a4)"/>
+  <line x1="370" y1="75" x2="420" y2="44" stroke="#0a7d86" marker-end="url(#a4)"/><line x1="370" y1="75" x2="420" y2="108" stroke="#0a7d86" marker-end="url(#a4)"/>
+  <line x1="582" y1="42" x2="632" y2="66" stroke="#1a1e24" marker-end="url(#a4)"/><line x1="582" y1="108" x2="632" y2="84" stroke="#1a1e24" marker-end="url(#a4)"/>
+  </g></svg><figcaption>Entry threshold and the mode ceilings are the primary "how loose is DSC" knobs.</figcaption></figure>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">entry threshold base A/B</td><td class="a">0x413BA/BC</td><td class="v">4.0 / 8.0 deg/s</td><td class="eff">Yaw error needed to trigger. Higher = <b>more yaw/slip-angle allowed before DSC acts</b>. (1396/2792 counts; LSB 0.0028648 deg/s)</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">torque ceiling per mode</td><td class="a">0x4120A</td><td class="v">m0 400 · m1 2000 · m2 330</td><td class="eff">Max engine-torque intervention. m1's 2000 is the permissive mode.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">entry ceiling per mode</td><td class="a">0x41424</td><td class="v">30/30/23 deg/s</td><td class="eff">Clamp on the entry threshold. m2 tightest.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">P-gain % per mode</td><td class="a">0x41460</td><td class="v">30→100 / 70→100</td><td class="eff">How hard it pushes once triggered.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">speed factor per mode</td><td class="a">0x41490/F0</td><td class="v">curves ÷128</td><td class="eff">Scales the entry threshold with speed.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">feature enable per mode</td><td class="a">0xD6DA4</td><td class="v">1 / 0 / 0</td><td class="eff">A feature active only in m0.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">active DSC mode</td><td class="a">0x4031B1</td><td class="v">live</td><td class="eff">Chosen at runtime from DSC-button state + coding bit 0x4031F4 &amp; 0x80.</td><td><span class="badge b-dan">EEPROM</span></td></tr>
+</tbody></table>
+<div class="note"><p><b>Where "MDM" lives:</b> the AYC tables are byte-identical to the 1M. The M-specific
+permissiveness is <em>which mode</em> the coding bit selects (m1 vs m2), not a different number. The mode ceilings
+are the lever, not the slip/decel targets.</p></div>
+<p><b>How AYC brakes:</b> the PD moment picks one wheel by the sign of the yaw error — <b>oversteer brakes the outer
+front; understeer the same-side rear</b> (rear-share 0x4155E, stock rear-only; front-outer pre-fill 0x411B4 = 5 bar).
+The engine-torque cap min-merges into the same TX 0x0B6 request as TCS. The yaw <b>observer</b> (0x5EBC4) is a
+nonlinear single-track model with a per-variant friction-limited tyre-force knee.</p>
+</section>
+
+<section>
+<h2>Brake coding</h2>
+<p>Brake hardware is described by pressure↔volume curves, selected by a 3-bit front and 3-bit rear coding field.
+Rotor and piston geometry are folded into these curves. The blocks are byte-identical to the 1M; coding picks
+code 0 vs 1 per axle.</p>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Changes</th><th></th></tr></thead><tbody>
+<tr><td class="p">p–V pressure axis</td><td class="a">0x41B4E</td><td class="v">0…32700</td><td class="eff">Shared breakpoints for the volume curves.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">front volume set 0/1</td><td class="a">0x41B62/76</td><td class="v">10-pt curve</td><td class="eff">Front caliper fluid intake vs pressure — effective front brake "size". Code +3 selects.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">rear volume set 0/1</td><td class="a">0x41B8A/9E</td><td class="v">10-pt curve</td><td class="eff">Rear equivalent; code +4.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">BCO thresholds</td><td class="a">0x41764…</td><td class="v">pairs 0/1</td><td class="eff">Brake pressure-compare thresholds, per code.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">brake coding F/R</td><td class="a">0x4031AA+3/+4</td><td class="v">EEPROM</td><td class="eff">Selects which curve set each axle uses.</td><td><span class="badge b-dan">EEPROM</span></td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>Steering (CSI)</h2>
+<p>Steering angle (F-CAN 0x0C9) is converted to a road-wheel angle through a variable steering-ratio curve, then
+fed to the yaw reference. One of the few genuinely M3-specific calibrations — it grew and the ratio curve differs.</p>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>Raise it →</th><th></th></tr></thead><tbody>
+<tr><td class="p">steer-ratio curve</td><td class="a">0x40ECC</td><td class="v">15.9:1 → 12.6:1</td><td class="eff">Road-wheel angle per steering angle vs lock. Re-scales the yaw-reference input.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">ratio breakpoints</td><td class="a">0x40EB4</td><td class="v">0…10880 counts</td><td class="eff">Steering-angle axis (3 coding-selectable sets).</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">sensor sign tables</td><td class="a">0x40EE4/F14</td><td class="v">−1 (all)</td><td class="eff">Per-variant polarity for the yaw/lat-g channels.</td><td><span class="badge b-cal">CAL</span></td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h2>DDS · LVC · faults · CAN inputs</h2>
+<table><thead><tr><th>Parameter</th><th>Addr</th><th>Stock</th><th>What it does</th><th></th></tr></thead><tbody>
+<tr><td class="p">DDS/RPA enable</td><td class="a">0x41D48/4A</td><td class="v">0 (use coding)</td><td class="eff">Indirect TPM: 40-bin wheel-speed resonance spectrum (14–151 Hz) watched for a shift vs a learned baseline. Non-zero forces on.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">LVC hold count</td><td class="a">0x4226A</td><td class="v">75 (1M: 50)</td><td class="eff">The one M3-only scalar in LVC — a hold/delay count (~0.75 s).</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">CSW wheel reference</td><td class="a">0x41E40</td><td class="v">1562</td><td class="eff">Only live word in CSW — a DDS wheel reference.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">direction fault ids</td><td class="a">0xF576C</td><td class="v">per wheel</td><td class="eff">DTCs for a wheel-direction fault. Lamp state is CAN-only (no GPIO lamp).</td><td><span class="badge b-lit">ROM</span></td></tr>
+</tbody></table>
+<p class="muted"><b>Inputs:</b> DME torque on PT-CAN 0x0A8/0A9/0AA, gear on 0x0BA, steering on F-CAN 0x0C9, yaw/lat-g
+on F-CAN 0x0CD/0D1. The external torque-limit (0x78F) and several RX frames (0x0AC/0B4/0D5/1B4/388, F-CAN 0x118/11F)
+are present but disabled or dead in this calibration. The DSC also gateways some F-CAN frames onto PT-CAN.</p>
+</section>
+
+<footer>
+Sources: FACTS.md · analysis/7846816A_symbols.md · xdf/MK60E5_7846816A.xdf. Values byte-verified against 7846816A
+unless marked med/low. Addresses are CPU addresses; file offset = CPU + 0x8000. Research only.
+</footer>
+</div></body></html>

@@ -1,0 +1,412 @@
+  0903D8:  0009   trap 1
+  0903DA:  1A0E   asr r14,r0
+  0903DC:  0040   ldq r4-r7,(r0)
+  0903DE:  2136   addi r6,20
+  0903E0:  0000   bkpt
+  0903E2:  EA60   bf 0x908a4
+  0903E4:  0040   ldq r4-r7,(r0)
+  0903E6:  8DA8   ld.w r13,(r8,40)
+  0903E8:  0040   ldq r4-r7,(r0)
+  0903EA:  20D0   addi r0,14
+  0903EC:  0040   ldq r4-r7,(r0)
+  0903EE:  2132   addi r2,20
+  0903F0:  0040   ldq r4-r7,(r0)
+  0903F2:  212E   addi r14,19
+  0903F4:  0040   ldq r4-r7,(r0)
+  0903F6:  20D4   addi r4,14
+  0903F8:  0004   stop
+  0903FA:  0EB4   tst r4,r11
+  0903FC:  0040   ldq r4-r7,(r0)
+  0903FE:  31AA   bclri r10,26
+  090400:  0004   stop
+  090402:  0ECC   tst r12,r12
+  090404:  0000   bkpt
+  090406:  72B0   lrw r2,[0x906c8]   ; = 0xab0d238b
+
+sub_090408:
+  090408:  2570   subi r0,24
+  09040A:  007B   stm r11-r15,(r0)
+  09040C:  7B3B   lrw r11,[0x904f8]   ; = 0x004020d0
+  09040E:  7D3B   lrw r13,[0x904fc]   ; = 0x004049f6
+  090410:  CC0B   ld.h r12,(r11,0)
+  090412:  CE0D   ld.h r14,(r13,0)
+  090414:  017C   sexth r12
+  090416:  017E   sexth r14
+  090418:  0FCE   cmpne r14,r12
+  09041A:  E821   bf 0x9045e
+  09041C:  7E39   lrw r14,[0x90500]   ; = 0x004049f2
+  09041E:  C20E   ld.h r2,(r14,0)
+  090420:  05C2   subu r2,r12
+  090422:  0172   sexth r2
+  090424:  7F38   jsri [0x90504]       ; -> 0x0006d0cc
+  090426:  6447   movi r7,68
+  090428:  0D27   cmplt r7,r2
+  09042A:  E805   bf 0x90436
+  09042C:  C70D   ld.h r7,(r13,0)
+  09042E:  D70E   st.h r7,(r14,0)
+  090430:  7E36   lrw r14,[0x90508]   ; = 0x004049f5
+  090432:  AE0E   ld.b r14,(r14,0)
+  090434:  F006   br 0x90442
+  090436:  7E35   lrw r14,[0x9050c]   ; = 0x004049f4
+  090438:  AE0E   ld.b r14,(r14,0)
+  09043A:  3277   bgeni r7,7
+  09043C:  0D7E   cmplt r14,r7
+  09043E:  E803   bf 0x90446
+  090440:  200E   addi r14,1
+  090442:  7732   lrw r7,[0x9050c]   ; = 0x004049f4
+  090444:  BE07   st.b r14,(r7,0)
+  090446:  7730   lrw r7,[0x90508]   ; = 0x004049f5
+  090448:  6016   movi r6,1
+  09044A:  B607   st.b r6,(r7,0)
+  09044C:  C20B   ld.h r2,(r11,0)
+  09044E:  C30D   ld.h r3,(r13,0)
+  090450:  6404   movi r4,64
+  090452:  0172   sexth r2
+  090454:  0173   sexth r3
+  090456:  3484   bseti r4,8
+  090458:  7F2E   jsri [0x90510]       ; -> 0x00091986
+  09045A:  D20D   st.h r2,(r13,0)
+  09045C:  F01A   br 0x90492
+  09045E:  7C2B   lrw r12,[0x9050c]   ; = 0x004049f4
+  090460:  AB0C   ld.b r11,(r12,0)
+  090462:  3277   bgeni r7,7
+  090464:  0D7B   cmplt r11,r7
+  090466:  E802   bf 0x9046c
+  090468:  200B   addi r11,1
+  09046A:  BB0C   st.b r11,(r12,0)
+  09046C:  7B27   lrw r11,[0x90508]   ; = 0x004049f5
+  09046E:  AC0B   ld.b r12,(r11,0)
+  090470:  0D7C   cmplt r12,r7
+  090472:  E802   bf 0x90478
+  090474:  200C   addi r12,1
+  090476:  BC0B   st.b r12,(r11,0)
+  090478:  7C22   lrw r12,[0x90500]   ; = 0x004049f2
+  09047A:  C20C   ld.h r2,(r12,0)
+  09047C:  05E2   subu r2,r14
+  09047E:  0172   sexth r2
+  090480:  7F21   jsri [0x90504]       ; -> 0x0006d0cc
+  090482:  6447   movi r7,68
+  090484:  0D27   cmplt r7,r2
+  090486:  E003   bt 0x9048e
+  090488:  A70B   ld.b r7,(r11,0)
+  09048A:  23F7   cmplti r7,32
+  09048C:  E002   bt 0x90492
+  09048E:  C70D   ld.h r7,(r13,0)
+  090490:  D70C   st.h r7,(r12,0)
+  090492:  761B   lrw r6,[0x90500]   ; = 0x004049f2
+  090494:  CD0D   ld.h r13,(r13,0)
+  090496:  C606   ld.h r6,(r6,0)
+  090498:  7B1C   lrw r11,[0x90508]   ; = 0x004049f5
+  09049A:  7C1C   lrw r12,[0x9050c]   ; = 0x004049f4
+  09049C:  056D   subu r13,r6
+  09049E:  AB0B   ld.b r11,(r11,0)
+  0904A0:  AC0C   ld.b r12,(r12,0)
+  0904A2:  6646   movi r6,100
+  0904A4:  036D   mult r13,r6
+  0904A6:  0DCB   cmplt r11,r12
+  0904A8:  017D   sexth r13
+  0904AA:  E806   bf 0x904b8
+  0904AC:  12C1   mov r1,r12
+  0904AE:  05B1   subu r1,r11
+  0904B0:  3A1B   asri r11,1
+  0904B2:  0DB1   cmplt r1,r11
+  0904B4:  00B1   incf r1
+  0904B6:  E803   bf 0x904be
+  0904B8:  220C   cmplti r12,1
+  0904BA:  E003   bt 0x904c2
+  0904BC:  12C1   mov r1,r12
+  0904BE:  321D   divs r13,r1
+  0904C0:  017D   sexth r13
+  0904C2:  7E14   lrw r14,[0x90514]   ; = 0x004049f8
+  0904C4:  12D2   mov r2,r13
+  0904C6:  C30E   ld.h r3,(r14,0)
+  0904C8:  7414   lrw r4,[0x90518]   ; = 0x000008ed
+  0904CA:  0173   sexth r3
+  0904CC:  7F11   jsri [0x90510]       ; -> 0x00091986
+  0904CE:  7D13   lrw r13,[0x9051c]   ; = 0x00402130
+  0904D0:  D20E   st.h r2,(r14,0)
+  0904D2:  C60D   ld.h r6,(r13,0)
+  0904D4:  0172   sexth r2
+  0904D6:  0176   sexth r6
+  0904D8:  64C5   movi r5,76
+  0904DA:  0526   subu r6,r2
+  0904DC:  3475   bseti r5,7
+  0904DE:  0356   mult r6,r5
+  0904E0:  1261   mov r1,r6
+  0904E2:  3A71   asri r1,7
+  0904E4:  3F81   lsri r1,24
+  0904E6:  1C16   addu r6,r1
+  0904E8:  1227   mov r7,r2
+  0904EA:  3A86   asri r6,8
+  0904EC:  1C67   addu r7,r6
+  0904EE:  D70D   st.h r7,(r13,0)
+  0904F0:  006B   ldm r11-r15,(r0)
+  0904F2:  2170   addi r0,24
+  0904F4:  00CF   jmp r15            ; return
+  0904F6:  0000   bkpt
+  0904F8:  0040   ldq r4-r7,(r0)
+  0904FA:  20D0   addi r0,14
+  0904FC:  0040   ldq r4-r7,(r0)
+  0904FE:  49F6   .short 0x49f6
+  090500:  0040   ldq r4-r7,(r0)
+  090502:  49F2   .short 0x49f2
+  090504:  0006   doze
+  090506:  D0CC   st.h r0,(r12,24)
+  090508:  0040   ldq r4-r7,(r0)
+  09050A:  49F5   .short 0x49f5
+  09050C:  0040   ldq r4-r7,(r0)
+  09050E:  49F4   .short 0x49f4
+  090510:  0009   trap 1
+  090512:  1986   mtcr r6,cr24
+  090514:  0040   ldq r4-r7,(r0)
+  090516:  49F8   .short 0x49f8
+  090518:  0000   bkpt
+  09051A:  08ED   .short 0x08ed
+  09051C:  0040   ldq r4-r7,(r0)
+  09051E:  2130   addi r0,20
+  090520:  2470   subi r0,8
+  090522:  9F00   st.w r15,(r0,0)
+  090524:  6832   .short 0x6832
+  090526:  7322   lrw r3,[0x905b0]   ; = 0x00408da8
+  090528:  C303   ld.h r3,(r3,0)
+  09052A:  0173   sexth r3
+  09052C:  7F22   jsri [0x905b4]       ; -> 0x000919e2
+  09052E:  0172   sexth r2
+  090530:  3C22   lsli r2,2
+  090532:  7F21   jsri [0x905b8]       ; -> 0x0006d102
+  090534:  0172   sexth r2
+  090536:  8F00   ld.w r15,(r0,0)
+  090538:  2070   addi r0,8
+  09053A:  00CF   jmp r15            ; return
+
+sub_09053C:
+  09053C:  24F0   subi r0,16
+  09053E:  007D   stm r13-r15,(r0)
+  090540:  7D1F   lrw r13,[0x905bc]   ; = 0x00400aea
+  090542:  C20D   ld.h r2,(r13,0)
+  090544:  0172   sexth r2
+  090546:  3C32   lsli r2,3
+  090548:  7F1C   jsri [0x905b8]       ; -> 0x0006d102
+  09054A:  7D19   lrw r13,[0x905b0]   ; = 0x00408da8
+  09054C:  1223   mov r3,r2
+  09054E:  C20D   ld.h r2,(r13,0)
+  090550:  0173   sexth r3
+  090552:  0172   sexth r2
+  090554:  0322   mult r2,r2
+  090556:  3A42   asri r2,4
+  090558:  7F17   jsri [0x905b4]       ; -> 0x000919e2
+  09055A:  7619   lrw r6,[0x905c0]   ; = 0x00400ae8
+  09055C:  0172   sexth r2
+  09055E:  C606   ld.h r6,(r6,0)
+  090560:  3C22   lsli r2,2
+  090562:  0176   sexth r6
+  090564:  1C62   addu r2,r6
+  090566:  3A22   asri r2,2
+  090568:  7F14   jsri [0x905b8]       ; -> 0x0006d102
+  09056A:  C70D   ld.h r7,(r13,0)
+  09056C:  2CA6   bmaski r6,10
+  09056E:  0177   sexth r7
+  090570:  2566   subi r6,23
+  090572:  0D76   cmplt r6,r7
+  090574:  122E   mov r14,r2
+  090576:  E818   bf 0x905a8
+  090578:  7213   lrw r2,[0x905c4]   ; = 0x0040215a
+  09057A:  12E3   mov r3,r14
+  09057C:  C202   ld.h r2,(r2,0)
+  09057E:  FFD0   bsr 0x90520
+  090580:  7712   lrw r7,[0x905c8]   ; = 0x0040217a
+  090582:  12E3   mov r3,r14
+  090584:  D207   st.h r2,(r7,0)
+  090586:  7211   lrw r2,[0x905cc]   ; = 0x0040215c
+  090588:  C202   ld.h r2,(r2,0)
+  09058A:  FFCA   bsr 0x90520
+  09058C:  7711   lrw r7,[0x905d0]   ; = 0x0040217c
+  09058E:  12E3   mov r3,r14
+  090590:  D207   st.h r2,(r7,0)
+  090592:  7210   lrw r2,[0x905d4]   ; = 0x00402100
+  090594:  C202   ld.h r2,(r2,0)
+  090596:  FFC4   bsr 0x90520
+  090598:  7710   lrw r7,[0x905d8]   ; = 0x0040217e
+  09059A:  12E3   mov r3,r14
+  09059C:  D207   st.h r2,(r7,0)
+  09059E:  720F   lrw r2,[0x905dc]   ; = 0x00402160
+  0905A0:  C202   ld.h r2,(r2,0)
+  0905A2:  FFBE   bsr 0x90520
+  0905A4:  770F   lrw r7,[0x905e0]   ; = 0x00402180
+  0905A6:  D207   st.h r2,(r7,0)
+  0905A8:  006D   ldm r13-r15,(r0)
+  0905AA:  20F0   addi r0,16
+  0905AC:  00CF   jmp r15            ; return
+  0905AE:  0000   bkpt
+  0905B0:  0040   ldq r4-r7,(r0)
+  0905B2:  8DA8   ld.w r13,(r8,40)
+  0905B4:  0009   trap 1
+  0905B6:  19E2   mtcr r2,cr30
+  0905B8:  0006   doze
+  0905BA:  D102   st.h r1,(r2,0)
+  0905BC:  0040   ldq r4-r7,(r0)
+  0905BE:  0AEA   movf r10,r14
+  0905C0:  0040   ldq r4-r7,(r0)
+  0905C2:  0AE8   movf r8,r14
+  0905C4:  0040   ldq r4-r7,(r0)
+  0905C6:  215A   addi r10,22
+  0905C8:  0040   ldq r4-r7,(r0)
+  0905CA:  217A   addi r10,24
+  0905CC:  0040   ldq r4-r7,(r0)
+  0905CE:  215C   addi r12,22
+  0905D0:  0040   ldq r4-r7,(r0)
+  0905D2:  217C   addi r12,24
+  0905D4:  0040   ldq r4-r7,(r0)
+  0905D6:  2100   addi r0,17
+  0905D8:  0040   ldq r4-r7,(r0)
+  0905DA:  217E   addi r14,24
+  0905DC:  0040   ldq r4-r7,(r0)
+  0905DE:  2160   addi r0,23
+  0905E0:  0040   ldq r4-r7,(r0)
+  0905E2:  2180   addi r0,25
+
+sub_0905E4:
+  0905E4:  2470   subi r0,8
+  0905E6:  007E   stm r14-r15,(r0)
+  0905E8:  7716   lrw r7,[0x90640]   ; = 0x00402009
+  0905EA:  A707   ld.b r7,(r7,0)
+  0905EC:  3647   btsti r7,4
+  0905EE:  E803   bf 0x905f6
+  0905F0:  7215   lrw r2,[0x90644]   ; = 0x00402104
+  0905F2:  C202   ld.h r2,(r2,0)
+  0905F4:  F00A   br 0x9060a
+  0905F6:  6002   movi r2,0
+  0905F8:  7F14   jsri [0x90648]       ; -> 0x000c583c
+  0905FA:  7614   lrw r6,[0x9064c]   ; = 0x004031aa
+  0905FC:  7715   lrw r7,[0x90650]   ; = 0x00040f14
+  0905FE:  A616   ld.b r6,(r6,1)
+  090600:  1D67   ixh r7,r6
+  090602:  C707   ld.h r7,(r7,0)
+  090604:  0372   mult r2,r7
+  090606:  770F   lrw r7,[0x90644]   ; = 0x00402104
+  090608:  D207   st.h r2,(r7,0)
+  09060A:  7E12   lrw r14,[0x90654]   ; = 0x004020f0
+  09060C:  66D4   movi r4,109
+  09060E:  C30E   ld.h r3,(r14,0)
+  090610:  0172   sexth r2
+  090612:  0173   sexth r3
+  090614:  3C34   lsli r4,3
+  090616:  7F10   jsri [0x90658]       ; -> 0x00091986
+  090618:  D20E   st.h r2,(r14,0)
+  09061A:  7E10   lrw r14,[0x9065c]   ; = 0x004020f2
+  09061C:  0172   sexth r2
+  09061E:  C70E   ld.h r7,(r14,0)
+  090620:  6716   movi r6,113
+  090622:  0177   sexth r7
+  090624:  0527   subu r7,r2
+  090626:  3476   bseti r6,7
+  090628:  0367   mult r7,r6
+  09062A:  1271   mov r1,r7
+  09062C:  3A71   asri r1,7
+  09062E:  3F81   lsri r1,24
+  090630:  1C17   addu r7,r1
+  090632:  3A87   asri r7,8
+  090634:  1C27   addu r7,r2
+  090636:  D70E   st.h r7,(r14,0)
+  090638:  006E   ldm r14-r15,(r0)
+  09063A:  2070   addi r0,8
+  09063C:  00CF   jmp r15            ; return
+  09063E:  0000   bkpt
+  090640:  0040   ldq r4-r7,(r0)
+  090642:  2009   addi r9,1
+  090644:  0040   ldq r4-r7,(r0)
+  090646:  2104   addi r4,17
+  090648:  000C   .short 0x000c
+  09064A:  583C   .short 0x583c
+  09064C:  0040   ldq r4-r7,(r0)
+  09064E:  31AA   bclri r10,26
+  090650:  0004   stop
+  090652:  0F14   cmpne r4,r1
+  090654:  0040   ldq r4-r7,(r0)
+  090656:  20F0   addi r0,16
+  090658:  0009   trap 1
+  09065A:  1986   mtcr r6,cr24
+  09065C:  0040   ldq r4-r7,(r0)
+  09065E:  20F2   addi r2,16
+
+sub_090660:
+  090660:  25F0   subi r0,32
+  090662:  0079   stm r9-r15,(r0)
+  090664:  7AD3   lrw r10,[0x909b0]   ; = 0x0040bf00
+  090666:  6402   movi r2,64
+  090668:  3472   bseti r2,7
+  09066A:  7DD2   lrw r13,[0x909b4]   ; = 0x0040210a
+  09066C:  7BD3   lrw r11,[0x909b8]   ; = 0x00400978
+  09066E:  1CA2   addu r2,r10
+  090670:  6007   movi r7,0
+  090672:  0CA2   cmphs r2,r10
+  090674:  B70D   st.b r7,(r13,0)
+  090676:  601E   movi r14,1
+  090678:  9A0B   st.w r10,(r11,0)
+  09067A:  E812   bf 0x906a0
+  09067C:  12AC   mov r12,r10
+  09067E:  79CF   lrw r9,[0x909bc]   ; = 0x00400952
+  090680:  62A7   movi r7,42
+  090682:  1CC7   addu r7,r12
+  090684:  C707   ld.h r7,(r7,0)
+  090686:  1C97   addu r7,r9
+  090688:  A707   ld.b r7,(r7,0)
+  09068A:  3677   btsti r7,7
+  09068C:  E803   bf 0x90694
+  09068E:  A70D   ld.b r7,(r13,0)
+  090690:  1EE7   or r7,r14
+  090692:  B70D   st.b r7,(r13,0)
+  090694:  3C1E   lsli r14,1
+  090696:  6406   movi r6,64
+  090698:  1C6C   addu r12,r6
+  09069A:  0CC2   cmphs r2,r12
+  09069C:  E7F1   bt 0x90680
+  09069E:  9C0B   st.w r12,(r11,0)
+  0906A0:  AE0D   ld.b r14,(r13,0)
+  0906A2:  600B   movi r11,0
+  0906A4:  12E7   mov r7,r14
+  0906A6:  2EF7   andi r7,15
+  0906A8:  2AF7   cmpnei r7,15
+  0906AA:  E016   bt 0x906d8
+  0906AC:  7DC5   lrw r13,[0x909c0]   ; = 0x0040210b
+  0906AE:  AD0D   ld.b r13,(r13,0)
+  0906B0:  65A7   movi r7,90
+  0906B2:  0DD7   cmplt r7,r13
+  0906B4:  E80F   bf 0x906d4
+  0906B6:  7CC3   lrw r12,[0x909c4]   ; = 0x004020fc
+  0906B8:  AB0C   ld.b r11,(r12,0)
+  0906BA:  7DC3   lrw r13,[0x909c8]   ; = 0x0040211e
+  0906BC:  367B   btsti r11,7
+  0906BE:  E002   bt 0x906c4
+  0906C0:  6007   movi r7,0
+  0906C2:  B70D   st.b r7,(r13,0)
+  0906C4:  347B   bseti r11,7
+  0906C6:  BB0C   st.b r11,(r12,0)
+  0906C8:  AB0D   ld.b r11,(r13,0)
+  0906CA:  238B   cmplti r11,25
+  0906CC:  E807   bf 0x906dc
+  0906CE:  200B   addi r11,1
+  0906D0:  BB0D   st.b r11,(r13,0)
+  0906D2:  F004   br 0x906dc
+  0906D4:  12DB   mov r11,r13
+  0906D6:  200B   addi r11,1
+  0906D8:  77BA   lrw r7,[0x909c0]   ; = 0x0040210b
+  0906DA:  BB07   st.b r11,(r7,0)
+  0906DC:  2ECE   andi r14,12
+  0906DE:  2ACE   cmpnei r14,12
+  0906E0:  E00B   bt 0x906f8
+  0906E2:  C7DA   ld.h r7,(r10,26)
+  0906E4:  6646   movi r6,100
+  0906E6:  0177   sexth r7
+  0906E8:  0D67   cmplt r7,r6
+  0906EA:  E806   bf 0x906f8
+  0906EC:  65A7   movi r7,90
+  0906EE:  1CA7   addu r7,r10
+  0906F0:  C707   ld.h r7,(r7,0)
+  0906F2:  0177   sexth r7
+  0906F4:  0D67   cmplt r7,r6
+  0906F6:  E037   bt 0x90766
+  0906F8:  7AB3   lrw r10,[0x909c4]   ; = 0x004020fc
+  0906FA:  AE0A   ld.b r14,(r10,0)
+  0906FC:  367E   btsti r14,7
+  0906FE:  E8C6   bf 0x9088c

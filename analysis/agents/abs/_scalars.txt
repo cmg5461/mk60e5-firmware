@@ -1,0 +1,140 @@
+| 0x00C | 0x0190 | 400 | 044722 | additive speed offset/step, added to a per-wheel speed-history word then clamped to 0x61A8=25000 (250 km/h); fn 0x44722 [agent, low] 0.01 km/h |
+| 0x00E | 0x0003 | 3 | - | no code reader found unknown |
+| 0x010 | 0x2710 | 10000 | - | no code reader found (10000) unknown |
+| 0x012 | 0xFF80 | -128 | - | no direct reader; -128/-116/-80 trio unknown |
+| 0x014 | 0xFF8C | -116 | - | no direct reader (same value as 0xCC) unknown |
+| 0x016 | 0xFFB0 | -80 | - | no direct reader unknown |
+| 0x046 | 0x0258 | 600 | 050A94 | scalar next to curve 0x18 (literal pools 0x50D10/0x510D0); 600 [agent, low] |
+| 0x048 | 0x0028 | 40 | 04D470 | scalar read by fn 0x4D470 (cmplt vs counter); 40 [agent, low] |
+| 0x066 | 0x0019 | 25 | 0463E0 | scalar read by fn 0x463E0, added to a counter, compared with 10 [agent, low] |
+| 0x068 | 0x0417 | 1047 | 0533CA, 0D8118 | |x| threshold #1 -> counter++ (cap 0x70); noise/plausibility-style counter, fn 0x533CA/0x53312 [agent, low] signal unit unknown |
+| 0x06A | 0x001C | 28 | 0533CA | increment step of that counter (28) [agent, low] |
+| 0x06C | 0x0623 | 1571 | 0533CA | |x| threshold #2 [agent, low] |
+| 0x06E | 0x0BBA | 3002 | 0533CA | |x| threshold #3 [agent, low] |
+| 0x070 | 0x003F | 63 | 0533CA | counter cap (63) [agent, low] |
+| 0x072 | 0x0B9B | 2971 | 0533CA | |x| threshold #4 (also read by fn 0xD8118) [agent, low] |
+| 0x074 | 0x00AC | 172 | 053556 | fn 0x53556: compared with a 16-bit value then counter/flag; 172 [agent, low] |
+| 0x0C6 | 0x0028 | 40 | 0474B8 | front gain: x*0xC6/10 used as floor for per-wheel accumulator struct+6 in fn 0x474B8; 40 (=4.0x) [agent, low] |
+| 0x0C8 | 0x0019 | 25 | 0474B8 | rear gain (struct bit7 selects 0xC8 vs 0xC6); 25 (=2.5x) [agent, low] |
+| 0x0CA | 0xFF10 | -240 | 047DFC | LOWER LIMIT of per-wheel decel threshold built in fn 0x47DFC (r14 = max(r14, 0xCA)); -240 [agent, med] accel unit ~0.01 g (0.1 m/s2): about -2.4 g |
+| 0x0CC | 0xFF8C | -116 | 047DFC | BASE (start) value of that per-wheel decel threshold, then reduced by curves 0x76/0x9e and 0xF4; -116 [agent, med] about -1.2 g if unit 0.01 g |
+| 0x0F0 | 0xFF88 | -120 | 047DFC | limit for the threshold when vref < 2000 (20 km/h): r14 = max(r14, 0xF0); -120 [agent, med] |
+| 0x0F2 | 0xFF7C | -132 | 047DFC | limit for the threshold when vref < 6000 (60 km/h): r14 = max(r14, 0xF2); -132 [agent, med] |
+| 0x1FE | 0x04C6 | 1222 | 05B0EE | scalar 1222 (equals y[0] of curve 0x200); fn 0x5B0EE [agent, low] |
+| 0x222 | 0x082E | 2094 | 05B0EE | 2094 = 2 x 1047; fn 0x5B0EE region [agent, low] |
+| 0x224 | 0x0417 | 1047 | 05B0EE | 1047; same value as 0x68 [agent, low] |
+| 0x2A2 | 0x0000 | 0 | 05B0EE | 0, fn 0x5B0EE [agent, low] |
+| 0x2A4 | 0x0032 | 50 | 04ACA8 | compared with a per-wheel counter 0x408F88[w] after /10 (so 5.0); 50 [agent, low] |
+| 0x2A6 | 0x0096 | 150 | 05B0EE | 150, fn 0x5B0EE [agent, low] |
+| 0x2C4 | 0x02BC | 700 | 057224 | 700; compared with speed-like value, fn 0x57224 [agent, low] |
+| 0x2C6 | 0x0050 | 80 | 04D470 | 80; fn 0x4D470 [agent, low] |
+| 0x2C8 | 0xFF74 | -140 | 055EE8 | ladder threshold #1 (wheel accel vs vehicle decel) in fn 0x55D44; -140 [agent, low-med] about -1.4 g? |
+| 0x2CA | 0xFFA6 | -90 | 055EE8 | ladder threshold #2; -90 [agent, low-med] |
+| 0x2CC | 0xFFD8 | -40 | 055EE8 | ladder threshold #3; -40 [agent, low-med] |
+| 0x2CE | 0xFF2E | -210 | 055EE8, 0564DC | ladder threshold #4 (also fn 0x564DC); -210 [agent, low-med] |
+| 0x2D0 | 0xFEA2 | -350 | 056B96 | threshold, fn 0x56B96 (cmplt vs r10); -350 [agent, low] |
+| 0x2D2 | 0xFE16 | -490 | 056B96 | threshold, fn 0x56B96; -490 [agent, low] |
+| 0x2F6 | 0x0078 | 120 | 0564DC | hysteresis ladder (upper side) 120, fn 0x564DC [agent, low] percent-like |
+| 0x2F8 | 0x0064 | 100 | 0564DC | ladder 100 [agent, low] |
+| 0x2FA | 0x005A | 90 | 0564DC | ladder 90 [agent, low] |
+| 0x2FC | 0x0032 | 50 | 0564DC | ladder 50 (lower side) [agent, low] |
+| 0x2FE | 0x001E | 30 | 0564DC | ladder 30 [agent, low] |
+| 0x300 | 0x0014 | 20 | 0564DC | ladder 20 [agent, low] |
+| 0x302 | 0x0001 | 1 | 045A28 | 1 (flag/enable-like; fn 0x45A28) [agent, low] |
+| 0x304 | 0x0258 | 600 | 057224 | 600; fn 0x57224 (clamp window low end) [agent, low] |
+| 0x306 | 0x0320 | 800 | 057224 | 800; fn 0x57224 (window high end) [agent, low] |
+| 0x308 | 0x0004 | 4 | 0564DC | 4; fn 0x564DC [agent, low] |
+| 0x30A | 0x0004 | 4 | 0564DC | 4; fn 0x564DC [agent, low] |
+| 0x32E | 0x0014 | 20 | 056106 | 20; fn 0x56106 (output offset) [agent, low] |
+| 0x3A6 | 0x1770 | 6000 | 056106 | 6000 = 60 km/h gate compared with a vref-like r4; fn 0x55F4E [agent, med] 0.01 km/h |
+| 0x3A8 | 0x07D0 | 2000 | 056106 | 2000 = 20 km/h gate [agent, med] 0.01 km/h |
+| 0x3AA | 0x00A0 | 160 | 0564DC | 160; compared with percent-like value, fn 0x564DC [agent, low] |
+| 0x3AC | 0x008C | 140 | 0564DC | 140 [agent, low] |
+| 0x3AE | 0x0078 | 120 | 0564DC | 120 [agent, low] |
+| 0x3B0 | 0x00B2 | 178 | 0570DC | 178; base of small array {178,5,3,2,2,1,0..} read with disp +12 (fn 0x570DC) [agent, low] |
+| 0x3FE | 0x012C | 300 | - | 300, no reader found unknown |
+| 0x416 | 0xFFB0 | -80 | 04D470 | -80; fn 0x4D470 / 0x4E2F4 (cmplt vs signal) [agent, low] |
+| 0x418 | 0x0004 | 4 | 049772 | 4; fn 0x49772 (cmpne vs counter) [agent, low] |
+| 0x454 | 0x0046 | 70 | 04D470 | 70; fn 0x4D470/0x4E310 [agent, low] |
+| 0x456 | 0x0001 | 1 | 0468C4, 052ED0 | 1; enable-like (cmpnei 0), fn 0x468C4/0x52ED0 [agent, low] |
+| 0x458 | 0x1B58 | 7000 | 049772 | 7000: per-wheel speed word 0x408FCC[w] compared against it in fn 0x49680 -> 70 km/h speed gate [agent, med] 0.01 km/h |
+| 0x45A | 0x0014 | 20 | 049772 | 20; fn 0x49772 (cmplt) [agent, low] |
+| 0x45C | 0x0005 | 5 | - | 5; no reader found unknown |
+| 0x486 | 0x01F4 | 500 | 049772 | 500; fn 0x49772 (cmplt) [agent, low] |
+| 0x500 | 0x0032 | 50 | 04FD44 | 50; compared with byte 0x408FEC[w] (per-wheel age/quality counter), fn 0x4FD44 [agent, low] |
+| 0x502 | 0x1B58 | 7000 | 04FD44 | 7000; compared with 0x408E8E in fn 0x4FD44 (speed gate?) [agent, low] 0.01 km/h? |
+| 0x504 | 0x0001 | 1 | - | 1; no reader unknown |
+| 0x506 | 0x0014 | 20 | 049772 | 20; fn 0x49772 / 0x49BBE (cmplt) [agent, low] |
+| 0x508 | 0x2710 | 10000 | 049680 | 10000; fn 0x49680 (cmplt vs 0x408E5C) [agent, low] |
+| 0x50A | 0x0064 | 100 | 04C2BC | 100; fn 0x4C2BC clamp (movt) [agent, low] |
+| 0x50C | 0xFFF6 | -10 | 04C2BC | -10; fn 0x4C2BC clamp [agent, low] |
+| 0x50E | 0x00FF | 255 | - | 255, no reader unknown |
+| 0x510 | 0x00AC | 172 | 04BE84, 053B40 | 172; fn 0x4BE84/0x53B40 (cmplt vs r9) [agent, low] |
+| 0x512 | 0x0005 | 5 | 04C568 | 5; fn 0x4C568 [agent, low] |
+| 0x514 | 0x0000 | 0 | 0583BA | 0; enable-like; fn 0x583BA [agent, low] |
+| 0x516 | 0x0000 | 0 | 04BD52 | 0; enable-like; fn 0x4BD52 [agent, low] |
+| 0x518 | 0x0000 | 0 | 04C2BC | 0; enable-like; fn 0x4C2BC [agent, low] |
+| 0x51A | 0x006E | 110 | 04C568 | 110; fn 0x4C568 (cmplt vs r2) [agent, low] |
+| 0x51C | 0x0064 | 100 | 057B52 | 100; fn 0x57B52 clamp [agent, low] |
+| 0x51E | 0x012C | 300 | 04B880, 057B52 | 300; clamp, fns 0x4B880/0x57B52 [agent, low] |
+| 0x520 | 0x01F4 | 500 | 04B880, 054F9A, 057B52 | 500; clamp [agent, low] |
+| 0x522 | 0x000A | 10 | 04D176 | 10; fn 0x4D176 [agent, low] |
+| 0x524 | 0x000A | 10 | 04D176 | 10; fn 0x4D176 [agent, low] |
+| 0x526 | 0x0018 | 24 | 05587C | score threshold -> state 3 of detector at 0x408D89 (fn 0x5587C); 24 [agent, low-med] |
+| 0x528 | 0x000E | 14 | 05587C | score threshold -> state 4; 14 [agent, low-med] |
+| 0x52A | 0x0013 | 19 | 05587C | score threshold -> state 5/6; 19 [agent, low-med] |
+| 0x52C | 0x03E8 | 1000 | 05587C | 1000: speed-history word (0x408EFE[idx]) below this => weight path; 10 km/h [agent, low-med] 0.01 km/h |
+| 0x52E | 0x0064 | 100 | 05587C | 100: upper threshold on same word [agent, low-med] |
+| 0x530 | 0x0BB8 | 3000 | 05587C | 3000: 0x408FCC[w] vs this -> add weight 0x538; 30 km/h [agent, low-med] 0.01 km/h |
+| 0x532 | 0x0050 | 80 | 05587C | 80: timer reload for state (stored to 0x408E8B) [agent, low] |
+| 0x534 | 0x0032 | 50 | 05587C | 50: timer reload for state [agent, low] |
+| 0x536 | 0x003C | 60 | 045A28, 05587C | 60 [agent, low] |
+| 0x538 | 0x0003 | 3 | 05587C | weight 3 [agent, low-med] |
+| 0x53A | 0x0004 | 4 | 05587C | weight 4 [agent, low-med] |
+| 0x53C | 0x0005 | 5 | 05587C | weight 5 [agent, low-med] |
+| 0x53E | 0x0001 | 1 | 05587C | weight 1 [agent, low-med] |
+| 0x540 | 0x0001 | 1 | 051D54 | 1 enable-like; fn 0x51D54 [agent, low] |
+| 0x542 | 0x0001 | 1 | 051D54 | 1 enable-like; fn 0x51D54 [agent, low] |
+| 0x544 | 0x0046 | 70 | 054CF8 | 70; fn 0x54CF8 [agent, low] |
+| 0x546 | 0x01C9 | 457 | 054F9A | 457; fn 0x54F9A (ld.h then cmp) [agent, low] |
+| 0x548 | 0x0477 | 1143 | 054F9A | 1143 [agent, low] |
+| 0x54A | 0x08EE | 2286 | 054F9A | 2286 [agent, low] |
+| 0x54C | 0x0007 | 7 | 054F9A | 7 [agent, low] |
+| 0x54E | 0x0007 | 7 | 054F9A | 7 [agent, low] |
+| 0x550 | 0x0050 | 80 | 054F9A | 80 [agent, low] |
+| 0x552 | 0x000E | 14 | 054F9A | 14 [agent, low] |
+| 0x570 | 0x0003 | 3 | 054F9A | 3; fn 0x54F9A [agent, low] |
+| 0x572 | 0x000A | 10 | 054DE8 | 10; fn 0x54DE8 [agent, low] |
+| 0x574 | 0x0002 | 2 | 054F9A | 2; fn 0x54F9A [agent, low] |
+| 0x586 | 0x0FA0 | 4000 | 054F9A | 4000; fn 0x54F9A [agent, low] |
+| 0x588 | 0x2AF8 | 11000 | 054CF8 | 11000; fn 0x54CF8 [agent, low] |
+| 0x58A | 0x0028 | 40 | 054F9A | 40 [agent, low] |
+| 0x58C | 0x003F | 63 | 054F9A | 63 [agent, low] |
+| 0x58E | 0x007E | 126 | 054F9A | 126 [agent, low] |
+| 0x590 | 0x0008 | 8 | 054F9A | 8 [agent, low] |
+| 0x592 | 0x06D4 | 1748 | 054F9A | 1748; compared with 0x40BFC0 (wheel struct word) [agent, low] |
+| 0x594 | 0x0577 | 1399 | 054CF8 | 1399 [agent, low] |
+| 0x596 | 0x0417 | 1047 | 054F9A | 1047 (again) [agent, low] |
+| 0x61E | 0xFFC2 | -62 | 05444C | stage-1 threshold (set A) on signed byte struct+0x39, fn 0x5444C; -62 [agent, low-med] slip-like, unit unknown |
+| 0x620 | 0xFFB2 | -78 | 05444C | stage-2 threshold (set A); -78 [agent, low-med] |
+| 0x622 | 0xFFA2 | -94 | 05444C | stage-3 threshold (set A); -94 [agent, low-med] |
+| 0x624 | 0x03E8 | 1000 | 05444C | stage-1 output value (written to 0x409188, clamped to 2000); 1000 [agent, low] |
+| 0x626 | 0x05DC | 1500 | 05444C | stage-2 output value; 1500 [agent, low] |
+| 0x628 | 0x07D0 | 2000 | 05444C | stage-3 output value; 2000 [agent, low] |
+| 0x62A | 0x000A | 10 | 0545FC | 10; fn 0x545FC [agent, low] |
+| 0x62C | 0x0028 | 40 | 0545FC | 40; fn 0x545FC [agent, low] |
+| 0x62E | 0x2328 | 9000 | 05991C | 9000; fn 0x5991C (cmplt) [agent, low] 0.01 km/h? |
+| 0x630 | 0x0014 | 20 | - | 20, no reader unknown |
+| 0x632 | 0x0046 | 70 | 05491E | 70; fn 0x5491E (cmplt) [agent, low] |
+| 0x650 | 0x0032 | 50 | - | 50, no reader unknown |
+| 0x652 | 0x0000 | 0 | 051546, 053B40, 053F3C | 0: feature/variant switch (cmpnei 0), fns 0x51546/0x53B40/0x53F3C [agent, med] enable flag |
+| 0x654 | 0x0001 | 1 | 05444C | 1: enable flag, fn 0x5444C [agent, med] |
+| 0x656 | 0x0001 | 1 | 053B40, 0545FC | 1: enable flag [agent, med] |
+| 0x658 | 0x0001 | 1 | - | 1: no reader unknown |
+| 0x65A | 0x0001 | 1 | 053B40 | 1: enable flag, fn 0x53B40 [agent, med] |
+| 0x65C | 0x0001 | 1 | 053B40, 053F3C, 05444C | 1: enable flag (selects threshold set A/B), fns 0x53B40/0x53F3C/0x5444C [agent, med] |
+| 0x65E | 0xFFE7 | -25 | 05444C | stage-1 threshold (set B, selected via 0x65C); -25 [agent, low-med] |
+| 0x660 | 0xFFD4 | -44 | 05444C | stage-2 threshold (set B); -44 [agent, low-med] |
+| 0x662 | 0xFFC2 | -62 | 05444C | stage-3 threshold (set B); -62 [agent, low-med] |
+| 0x664 | 0x0064 | 100 | 05991C | 100; fn 0x5991C (max, movt) [agent, low] |
+| 0x666 | 0xFFFF | -1 | - | -1; no reader (end marker/pad?) unknown |

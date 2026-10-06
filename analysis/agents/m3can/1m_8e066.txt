@@ -1,0 +1,93 @@
+  08E066:  12D2   mov r2,r13
+  08E068:  FF3D   bsr 0x8dee4
+  08E06A:  122E   mov r14,r2
+  08E06C:  601C   movi r12,1
+  08E06E:  F033   br 0x8e0d6
+  08E070:  608C   movi r12,8
+  08E072:  12CD   mov r13,r12
+  08E074:  12C2   mov r2,r12
+  08E076:  FF36   bsr 0x8dee4
+  08E078:  122E   mov r14,r2
+  08E07A:  601C   movi r12,1
+  08E07C:  F02C   br 0x8e0d6
+  08E07E:  609C   movi r12,9
+  08E080:  12CD   mov r13,r12
+  08E082:  12C2   mov r2,r12
+  08E084:  FF2F   bsr 0x8dee4
+  08E086:  122E   mov r14,r2
+  08E088:  601C   movi r12,1
+  08E08A:  F025   br 0x8e0d6
+  08E08C:  605C   movi r12,5
+  08E08E:  12CD   mov r13,r12
+  08E090:  12C2   mov r2,r12
+  08E092:  FF28   bsr 0x8dee4
+  08E094:  122E   mov r14,r2
+  08E096:  601C   movi r12,1
+  08E098:  F01E   br 0x8e0d6
+  08E09A:  7268   lrw r2,[0x8e23c]   ; = 0x00401ff1
+  08E09C:  A202   ld.b r2,(r2,0)
+  08E09E:  3E52   lsri r2,5
+  08E0A0:  2E72   andi r2,7
+  08E0A2:  FF44   bsr 0x8df2c
+  08E0A4:  602D   movi r13,2
+  08E0A6:  12D2   mov r2,r13
+  08E0A8:  FF2D   bsr 0x8df04
+  08E0AA:  122E   mov r14,r2
+  08E0AC:  F014   br 0x8e0d6
+  08E0AE:  607C   movi r12,7
+  08E0B0:  12CD   mov r13,r12
+  08E0B2:  12C2   mov r2,r12
+  08E0B4:  FF17   bsr 0x8dee4
+  08E0B6:  122E   mov r14,r2
+  08E0B8:  601C   movi r12,1
+  08E0BA:  F00D   br 0x8e0d6
+  08E0BC:  7E5D   lrw r14,[0x8e230]   ; = 0x00401fe6
+  08E0BE:  AE0E   ld.b r14,(r14,0)
+  08E0C0:  360E   btsti r14,0
+  08E0C2:  E805   bf 0x8e0ce
+  08E0C4:  7E5F   lrw r14,[0x8e240]   ; = 0x00400966
+  08E0C6:  A70E   ld.b r7,(r14,0)
+  08E0C8:  3477   bseti r7,7
+  08E0CA:  B70E   st.b r7,(r14,0)
+  08E0CC:  F003   br 0x8e0d4
+  08E0CE:  340E   bseti r14,0
+  08E0D0:  7758   lrw r7,[0x8e230]   ; = 0x00401fe6
+  08E0D2:  BE07   st.b r14,(r7,0)
+  08E0D4:  602E   movi r14,2
+  08E0D6:  014E   zextb r14
+  08E0D8:  2A1E   cmpnei r14,1
+  08E0DA:  E017   bt 0x8e10a
+  08E0DC:  7B5A   lrw r11,[0x8e244]   ; = 0x00401fac
+  08E0DE:  12C6   mov r6,r12
+  08E0E0:  AE0B   ld.b r14,(r11,0)
+  08E0E2:  2E16   andi r6,1
+  08E0E4:  341E   bseti r14,1
+  08E0E6:  300E   bclri r14,0
+  08E0E8:  1E6E   or r14,r6
+  08E0EA:  2A1C   cmpnei r12,1
+  08E0EC:  BE0B   st.b r14,(r11,0)
+  08E0EE:  E809   bf 0x8e102
+  08E0F0:  12DC   mov r12,r13
+  08E0F2:  014C   zextb r12
+  08E0F4:  6637   movi r7,99
+  08E0F6:  3477   bseti r7,7
+  08E0F8:  2E7C   andi r12,7
+  08E0FA:  16E7   and r7,r14
+  08E0FC:  3C2C   lsli r12,2
+  08E0FE:  1EC7   or r7,r12
+  08E100:  B70B   st.b r7,(r11,0)
+  08E102:  7752   lrw r7,[0x8e24c]   ; = 0x00401fe0
+  08E104:  BD07   st.b r13,(r7,0)
+  08E106:  7F50   jsri [0x8e248]       ; -> 0x0008da1c
+  08E108:  F018   br 0x8e13a
+  08E10A:  2A0E   cmpnei r14,0
+  08E10C:  AD1B   ld.b r13,(r11,1)
+  08E10E:  E00C   bt 0x8e128
+  08E110:  307D   bclri r13,7
+  08E112:  306D   bclri r13,6
+  08E114:  BD1B   st.b r13,(r11,1)
+  08E116:  2A1C   cmpnei r12,1
+  08E118:  E010   bt 0x8e13a
+  08E11A:  7C4D   lrw r12,[0x8e250]   ; = 0x00401fe4
+  08E11C:  AD1C   ld.b r13,(r12,1)
+  08E11E:  306D   bclri r13,6

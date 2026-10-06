@@ -1,0 +1,36 @@
+M3 set 0 x (0, 3383, 6926, 10880) y (16282, 15729, 14223, 12892) ratio [15.9, 15.36, 13.89, 12.59] sw_deg@0.043 [0.0, 145.4, 297.7, 467.7]
+   raw 0 ratio 15.9 delta_u 0 road_deg 0.0
+   raw 500 ratio 15.82 delta_u 906 road_deg 1.35
+   raw 1000 ratio 15.74 delta_u 1821 road_deg 2.72
+   raw 2000 ratio 15.58 delta_u 3680 road_deg 5.49
+   raw 3383 ratio 15.36 delta_u 6314 road_deg 9.42
+   raw 5000 ratio 14.69 delta_u 9759 road_deg 14.56
+   raw 8000 ratio 13.54 delta_u 16944 road_deg 25.28
+   raw 10880 ratio 12.59 delta_u 24777 road_deg 36.97
+M3 set 1 x (0, 3383, 6926, 10880) y (16282, 15729, 14223, 12892) ratio [15.9, 15.36, 13.89, 12.59] sw_deg@0.043 [0.0, 145.4, 297.7, 467.7]
+   raw 0 ratio 15.9 delta_u 0 road_deg 0.0
+   raw 500 ratio 15.82 delta_u 906 road_deg 1.35
+   raw 1000 ratio 15.74 delta_u 1821 road_deg 2.72
+   raw 2000 ratio 15.58 delta_u 3680 road_deg 5.49
+   raw 3383 ratio 15.36 delta_u 6314 road_deg 9.42
+   raw 5000 ratio 14.69 delta_u 9759 road_deg 14.56
+   raw 8000 ratio 13.54 delta_u 16944 road_deg 25.28
+   raw 10880 ratio 12.59 delta_u 24777 road_deg 36.97
+M3 set 2 x (0, 2263, 5120, 10788) y (16282, 15852, 14490, 12749) ratio [15.9, 15.48, 14.15, 12.45] sw_deg@0.043 [0.0, 97.3, 220.1, 463.8]
+   raw 0 ratio 15.9 delta_u 0 road_deg 0.0
+   raw 500 ratio 15.81 delta_u 906 road_deg 1.35
+   raw 1000 ratio 15.71 delta_u 1824 road_deg 2.72
+   raw 2000 ratio 15.53 delta_u 3692 road_deg 5.51
+   raw 3383 ratio 14.96 delta_u 6483 road_deg 9.67
+   raw 5000 ratio 14.21 delta_u 10090 road_deg 15.06
+   raw 8000 ratio 13.29 delta_u 17262 road_deg 25.76
+   raw 10880 ratio 12.45 delta_u 24843 road_deg 37.07
+1M set 0 x (0, 2514, 5028, 10194) y (14950, 15114, 14234, 12810) ratio [14.6, 14.76, 13.9, 12.51] sw_deg@0.043 [0.0, 108.1, 216.2, 438.2]
+   raw 0 ratio 14.6 delta_u 0 road_deg 0.0
+   raw 500 ratio 14.63 delta_u 979 road_deg 1.46
+   raw 1000 ratio 14.66 delta_u 1955 road_deg 2.92
+   raw 2000 ratio 14.73 delta_u 3893 road_deg 5.81
+   raw 3383 ratio 14.46 delta_u 6706 road_deg 10.01
+   raw 5000 ratio 13.91 delta_u 10306 road_deg 15.38
+   raw 8000 ratio 13.1 delta_u 17508 road_deg 26.12
+   raw 10880 ratio 12.51 delta_u 23364 road_deg 34.86

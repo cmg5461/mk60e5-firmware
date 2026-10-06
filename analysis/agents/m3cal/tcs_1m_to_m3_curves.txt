@@ -1,0 +1,63 @@
+1M +0x01E len11 lo=-500 hi=500 n=3 -> ['TCS+0x00C']
+1M +0x034 len11 lo=-5000 hi=1000 n=3 -> ['0xf61b4']
+1M +0x04E len14 lo=0 hi=1400 n=4 -> ['0xf61ca']
+1M +0x076 len 8 lo=0 hi=10000 n=2 -> ['0xf61e6']
+1M +0x086 len17 lo=0 hi=30000 n=5 -> ['0xf61f6']
+1M +0x0A8 len17 lo=0 hi=30000 n=5 -> ['0xf6218']
+1M +0x0CA len17 lo=0 hi=30000 n=5 -> ['0xf623a']
+1M +0x0EC len17 lo=0 hi=30000 n=5 -> ['0xf625c']
+1M +0x10E len17 lo=0 hi=30000 n=5 -> ['0xf627e']
+1M +0x130 len17 lo=0 hi=30000 n=5 -> ['0xf62a0']
+1M +0x160 len 8 lo=0 hi=2000 n=2 -> ['0xf62ce']
+1M +0x170 len 8 lo=0 hi=2000 n=2 -> ['0xf62de']
+1M +0x180 len14 lo=0 hi=1000 n=4 -> ['0xf62ee']
+1M +0x19C len14 lo=0 hi=1000 n=4 -> ['0xf630a']
+1M +0x1B8 len14 lo=0 hi=1000 n=4 -> ['0xf6326']
+1M +0x1D4 len 8 lo=10 hi=10 n=2 -> NO EXACT MATCH
+1M +0x1E4 len14 lo=0 hi=2000 n=4 -> ['0xf6342']
+1M +0x200 len17 lo=0 hi=1800 n=5 -> ['0xf635e']
+1M +0x240 len14 lo=0 hi=10000 n=4 -> ['0xf6380', '0xf639c']
+1M +0x25C len14 lo=0 hi=10000 n=4 -> ['0xf6380', '0xf639c']
+1M +0x28A len14 lo=80 hi=100 n=4 -> NO EXACT MATCH
+1M +0x2AA len 8 lo=18 hi=24 n=2 -> ['0xf63d4']
+1M +0x2BE len11 lo=1 hi=2 n=3 -> ['0xf63e8']
+1M +0x2DA len 8 lo=6 hi=7 n=2 -> NO EXACT MATCH
+1M +0x2F4 len14 lo=0 hi=100 n=4 -> ['0xf6408']
+1M +0x310 len11 lo=0 hi=2500 n=3 -> ['0xf6424']
+1M +0x3D4 len14 lo=0 hi=5000 n=4 -> NO EXACT MATCH
+1M +0x3F0 len14 lo=0 hi=16 n=4 -> ['TCS+0x054']
+1M +0x422 len11 lo=0 hi=150 n=3 -> ['TCS+0x074']
+1M +0x438 len11 lo=0 hi=1000 n=3 -> ['TCS+0x08A']
+1M +0x4A8 len11 lo=0 hi=600 n=3 -> ['0xf64cc', '0xf64e2']
+1M +0x4C4 len11 lo=0 hi=600 n=3 -> ['0xf64cc', '0xf64e2']
+1M +0x504 len 8 lo=2100 hi=2100 n=2 -> ['TCS+0x0CA']
+1M +0x534 len14 lo=0 hi=600 n=4 -> ['TCS+0x0FA', 'TCS+0x116', 'TCS+0x132']
+1M +0x550 len14 lo=0 hi=600 n=4 -> ['TCS+0x0FA', 'TCS+0x116', 'TCS+0x132']
+1M +0x56C len14 lo=0 hi=600 n=4 -> ['TCS+0x0FA', 'TCS+0x116', 'TCS+0x132']
+1M +0x588 len14 lo=0 hi=2000 n=4 -> ['TCS+0x14E']
+1M +0x5A4 len14 lo=0 hi=2000 n=4 -> ['TCS+0x16A']
+1M +0x5C6 len14 lo=0 hi=10000 n=4 -> ['0xf64f8']
+1M +0x5E2 len14 lo=0 hi=10000 n=4 -> ['0xf6514', '0xf6530']
+1M +0x5FE len14 lo=0 hi=10000 n=4 -> ['0xf6514', '0xf6530']
+1M +0x61C len 8 lo=1 hi=16 n=2 -> NO EXACT MATCH
+1M +0x63A len14 lo=0 hi=2000 n=4 -> ['TCS+0x188']
+1M +0x658 len11 lo=20 hi=20 n=3 -> NO EXACT MATCH
+1M +0x66E len17 lo=0 hi=16000 n=5 -> NO EXACT MATCH
+1M +0x690 len17 lo=0 hi=16000 n=5 -> NO EXACT MATCH
+1M +0x6B2 len17 lo=0 hi=16000 n=5 -> NO EXACT MATCH
+1M +0x6D4 len17 lo=0 hi=16000 n=5 -> ['0xf65b2']
+1M +0x6F6 len17 lo=0 hi=16000 n=5 -> ['0xf65d4']
+1M +0x718 len17 lo=0 hi=16000 n=5 -> ['0xf65f6']
+1M +0x742 len14 lo=0 hi=1000 n=4 -> ['0xf6618']
+1M +0x764 len 8 lo=5 hi=5 n=2 -> NO EXACT MATCH
+1M +0x77E len17 lo=0 hi=5000 n=5 -> ['0xf6634']
+1M +0x7D6 len 8 lo=2 hi=8 n=2 -> NO EXACT MATCH
+1M +0x7F0 len11 lo=0 hi=100 n=3 -> ['0xf665c']
+1M +0x806 len11 lo=0 hi=100 n=3 -> ['0xf6672']
+1M +0x826 len11 lo=0 hi=2000 n=3 -> ['0xf6688']
+1M +0x83C len11 lo=0 hi=1500 n=3 -> ['0xf669e']
+1M +0x852 len11 lo=0 hi=1500 n=3 -> ['0xf66b4']
+1M +0x868 len11 lo=0 hi=1500 n=3 -> ['0xf66ca']
+1M +0x894 len11 lo=0 hi=2000 n=3 -> ['0xf66f6']
+1M +0x8AA len11 lo=0 hi=2000 n=3 -> ['0xf670c']
+1M +0x8E4 len11 lo=0 hi=6000 n=3 -> ['TCS+0x1BE']

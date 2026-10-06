@@ -1,0 +1,202 @@
+
+sub_0D4DC0:
+  0D4DC0:  2570   subi r0,24
+  0D4DC2:  007A   stm r10-r15,(r0)
+  0D4DC4:  122E   mov r14,r2
+  0D4DC6:  123B   mov r11,r3
+  0D4DC8:  124C   mov r12,r4
+  0D4DCA:  125A   mov r10,r5
+  0D4DCC:  7F37   jsri [0xd4ea8]       ; -> 0x0006c6a8
+  0D4DCE:  1002   mfcr r2,cr0
+  0D4DD0:  11F2   psrclr 0x2
+  0D4DD2:  11F1   psrclr 0x1
+  0D4DD4:  6507   movi r7,80
+  0D4DD6:  1672   and r2,r7
+  0D4DD8:  122D   mov r13,r2
+  0D4DDA:  7F34   jsri [0xd4eac]       ; -> 0x0006c6b8
+  0D4DDC:  7135   lrw r1,[0xd4eb0]   ; = 0x00db0008
+  0D4DDE:  7635   lrw r6,[0xd4eb4]   ; = 0x00007df3
+  0D4DE0:  C701   ld.h r7,(r1,0)
+  0D4DE2:  1213   mov r3,r1
+  0D4DE4:  60F4   movi r4,15
+  0D4DE6:  1667   and r7,r6
+  0D4DE8:  3CC4   lsli r4,12
+  0D4DEA:  2073   addi r3,8
+  0D4DEC:  D701   st.h r7,(r1,0)
+  0D4DEE:  1232   mov r2,r3
+  0D4DF0:  1246   mov r6,r4
+  0D4DF2:  C703   ld.h r7,(r3,0)
+  0D4DF4:  0E47   tst r7,r4
+  0D4DF6:  E7FD   bt 0xd4df2
+  0D4DF8:  7730   lrw r7,[0xd4eb8]   ; = 0x00db000c
+  0D4DFA:  12B6   mov r6,r11
+  0D4DFC:  2D05   bmaski r5,16
+  0D4DFE:  1C56   addu r6,r5
+  0D4E00:  D607   st.h r6,(r7,0)
+  0D4E02:  60B7   movi r7,11
+  0D4E04:  3C87   lsli r7,8
+  0D4E06:  D703   st.h r7,(r3,0)
+  0D4E08:  772D   lrw r7,[0xd4ebc]   ; = 0x00db0014
+  0D4E0A:  3276   bgeni r6,7
+  0D4E0C:  722D   lrw r2,[0xd4ec0]   ; = 0x00db0480
+  0D4E0E:  D607   st.h r6,(r7,0)
+  0D4E10:  8702   ld.w r7,(r2,0)
+  0D4E12:  762C   lrw r6,[0xd4ec4]   ; = 0xfff0ff00
+  0D4E14:  01FE   not r14
+  0D4E16:  1667   and r7,r6
+  0D4E18:  014E   zextb r14
+  0D4E1A:  762B   lrw r6,[0xd4ec8]   ; = 0xc0080000
+  0D4E1C:  1EE7   or r7,r14
+  0D4E1E:  1E67   or r7,r6
+  0D4E20:  220B   cmplti r11,1
+  0D4E22:  9702   st.w r7,(r2,0)
+  0D4E24:  600E   movi r14,0
+  0D4E26:  E010   bt 0xd4e48
+  0D4E28:  7429   lrw r4,[0xd4ecc]   ; = 0x00db0400
+  0D4E2A:  12E7   mov r7,r14
+  0D4E2C:  3C17   lsli r7,1
+  0D4E2E:  A60C   ld.b r6,(r12,0)
+  0D4E30:  1C47   addu r7,r4
+  0D4E32:  D607   st.h r6,(r7,0)
+  0D4E34:  12E7   mov r7,r14
+  0D4E36:  200E   addi r14,1
+  0D4E38:  3C27   lsli r7,2
+  0D4E3A:  8602   ld.w r6,(r2,0)
+  0D4E3C:  016E   zexth r14
+  0D4E3E:  1C27   addu r7,r2
+  0D4E40:  0DBE   cmplt r14,r11
+  0D4E42:  200C   addi r12,1
+  0D4E44:  9607   st.w r6,(r7,0)
+  0D4E46:  E7F1   bt 0xd4e2a
+  0D4E48:  12BC   mov r12,r11
+  0D4E4A:  7621   lrw r6,[0xd4ed0]   ; = 0x00db047c
+  0D4E4C:  3C2C   lsli r12,2
+  0D4E4E:  1C6C   addu r12,r6
+  0D4E50:  870C   ld.w r7,(r12,0)
+  0D4E52:  2DE6   bmaski r6,30
+  0D4E54:  1667   and r7,r6
+  0D4E56:  970C   st.w r7,(r12,0)
+  0D4E58:  C701   ld.h r7,(r1,0)
+  0D4E5A:  3296   bgeni r6,9
+  0D4E5C:  34F6   bseti r6,15
+  0D4E5E:  1E67   or r7,r6
+  0D4E60:  D701   st.h r7,(r1,0)
+  0D4E62:  3291   bgeni r1,9
+  0D4E64:  1216   mov r6,r1
+  0D4E66:  C703   ld.h r7,(r3,0)
+  0D4E68:  1617   and r7,r1
+  0D4E6A:  0F17   cmpne r7,r1
+  0D4E6C:  E7FC   bt 0xd4e66
+  0D4E6E:  6003   movi r3,0
+  0D4E70:  220B   cmplti r11,1
+  0D4E72:  E00B   bt 0xd4e8a
+  0D4E74:  7118   lrw r1,[0xd4ed4]   ; = 0x00db0440
+  0D4E76:  1237   mov r7,r3
+  0D4E78:  3C17   lsli r7,1
+  0D4E7A:  1C17   addu r7,r1
+  0D4E7C:  2003   addi r3,1
+  0D4E7E:  C707   ld.h r7,(r7,0)
+  0D4E80:  0163   zexth r3
+  0D4E82:  0DB3   cmplt r3,r11
+  0D4E84:  B70A   st.b r7,(r10,0)
+  0D4E86:  200A   addi r10,1
+  0D4E88:  E7F6   bt 0xd4e76
+  0D4E8A:  7F07   jsri [0xd4ea8]       ; -> 0x0006c6a8
+  0D4E8C:  12D7   mov r7,r13
+  0D4E8E:  364D   btsti r13,4
+  0D4E90:  E801   bf 0xd4e94
+  0D4E92:  11FA   psrset 0x2
+  0D4E94:  12D7   mov r7,r13
+  0D4E96:  366D   btsti r13,6
+  0D4E98:  E801   bf 0xd4e9c
+  0D4E9A:  11F9   psrset 0x1
+  0D4E9C:  006A   ldm r10-r15,(r0)
+  0D4E9E:  2170   addi r0,24
+  0D4EA0:  7003   jmpi [0xd4eac]       ; -> 0x0006c6b8
+  0D4EA2:  006A   ldm r10-r15,(r0)
+  0D4EA4:  2170   addi r0,24
+  0D4EA6:  00CF   jmp r15            ; return
+  0D4EA8:  0006   doze
+  0D4EAA:  C6A8   ld.h r6,(r8,20)
+  0D4EAC:  0006   doze
+  0D4EAE:  C6B8   ld.h r6,(r8,22)
+  0D4EB0:  00DB   jsr r11
+  0D4EB2:  0008   trap 0
+  0D4EB4:  0000   bkpt
+  0D4EB6:  7DF3   lrw r13,[0xd5284]   ; = 0x127e7f05
+  0D4EB8:  00DB   jsr r11
+  0D4EBA:  000C   .short 0x000c
+  0D4EBC:  00DB   jsr r11
+  0D4EBE:  0014   .short 0x0014
+  0D4EC0:  00DB   jsr r11
+  0D4EC2:  0480   loopt r8,0xd4ec2
+  0D4EC4:  FFF0   bsr 0xd4ea6
+  0D4EC6:  FF00   bsr 0xd4cc8
+  0D4EC8:  C008   ld.h r0,(r8,0)
+  0D4ECA:  0000   bkpt
+  0D4ECC:  00DB   jsr r11
+  0D4ECE:  0400   loopt r0,0xd4ece
+  0D4ED0:  00DB   jsr r11
+  0D4ED2:  047C   loopt r7,0xd4ecc
+  0D4ED4:  00DB   jsr r11
+  0D4ED6:  0440   loopt r4,0xd4ed6
+  0D4ED8:  7304   lrw r3,[0xd4ee8]   ; = 0x00db0016
+  0D4EDA:  7604   lrw r6,[0xd4eec]   ; = 0x0000f00f
+  0D4EDC:  C103   ld.h r1,(r3,0)
+  0D4EDE:  3C42   lsli r2,4
+  0D4EE0:  1661   and r1,r6
+  0D4EE2:  1E12   or r2,r1
+  0D4EE4:  D203   st.h r2,(r3,0)
+  0D4EE6:  00CF   jmp r15            ; return
+  0D4EE8:  00DB   jsr r11
+  0D4EEA:  0016   .short 0x0016
+  0D4EEC:  0000   bkpt
+  0D4EEE:  F00F   br 0xd4f0e
+  0D4EF0:  740B   lrw r4,[0xd4f1c]   ; = 0x00db0018
+  0D4EF2:  760B   lrw r6,[0xd4f20]   ; = 0x0000f00f
+  0D4EF4:  C304   ld.h r3,(r4,0)
+  0D4EF6:  C114   ld.h r1,(r4,2)
+  0D4EF8:  3C42   lsli r2,4
+  0D4EFA:  1661   and r1,r6
+  0D4EFC:  1E31   or r1,r3
+  0D4EFE:  1E21   or r1,r2
+  0D4F00:  D114   st.h r1,(r4,2)
+  0D4F02:  7608   lrw r6,[0xd4f24]   ; = 0x00db0016
+  0D4F04:  C714   ld.h r7,(r4,2)
+  0D4F06:  C206   ld.h r2,(r6,0)
+  0D4F08:  1F32   andn r2,r3
+  0D4F0A:  1F72   andn r2,r7
+  0D4F0C:  2CC7   bmaski r7,12
+  0D4F0E:  24E7   subi r7,15
+  0D4F10:  1672   and r2,r7
+  0D4F12:  0142   zextb r2
+  0D4F14:  3E42   lsri r2,4
+  0D4F16:  0142   zextb r2
+  0D4F18:  00CF   jmp r15            ; return
+  0D4F1A:  0000   bkpt
+  0D4F1C:  00DB   jsr r11
+  0D4F1E:  0018   .short 0x0018
+  0D4F20:  0000   bkpt
+  0D4F22:  F00F   br 0xd4f42
+  0D4F24:  00DB   jsr r11
+  0D4F26:  0016   .short 0x0016
+  0D4F28:  7408   lrw r4,[0xd4f48]   ; = 0x00db0018
+  0D4F2A:  7608   lrw r6,[0xd4f4c]   ; = 0x0000f00f
+  0D4F2C:  1243   mov r3,r4
+  0D4F2E:  C104   ld.h r1,(r4,0)
+  0D4F30:  2413   subi r3,2
+  0D4F32:  C703   ld.h r7,(r3,0)
+  0D4F34:  3C42   lsli r2,4
+  0D4F36:  1661   and r1,r6
+  0D4F38:  1E27   or r7,r2
+  0D4F3A:  D703   st.h r7,(r3,0)
+  0D4F3C:  1E21   or r1,r2
+  0D4F3E:  D104   st.h r1,(r4,0)
+  0D4F40:  C723   ld.h r7,(r3,4)
+  0D4F42:  1E27   or r7,r2
+  0D4F44:  D723   st.h r7,(r3,4)
+  0D4F46:  00CF   jmp r15            ; return
+  0D4F48:  00DB   jsr r11
+  0D4F4A:  0018   .short 0x0018
+  0D4F4C:  0000   bkpt
+  0D4F4E:  F00F   br 0xd4f6e
