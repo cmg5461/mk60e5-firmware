@@ -1,33 +1,35 @@
 # MK60E5 7846816A (E9x M3) — Pressure actuation chain: command → valves, and is pressure closed-loop?
 
-Scope: the actuation chain from an ABS pressure command to the hydraulic valves, and whether wheel
-pressure is controlled closed-loop on sensors or open-loop on a modelled (P-V) estimate.
+Scope: the actuation chain from an ABS pressure command to the hydraulic valves, and how wheel pressure
+is fed back (measured wheel-output sensors, with the COA P-V model as feed-forward and fallback).
 CPU addresses; file offset = CPU + 0x8000. Byte reads from `flash/bin/7846816A_00000000.bin`.
 Confidence: **CONFIRMED** = read from bytes/listing here · **INFERRED** = read from code structure ·
 **UNCONFIRMED** = not resolved.
 
 ---
 
-## 0. Bottom line (answers the owner's concern)
+## 0. Bottom line
 
-**ABS wheel-pressure control in this firmware is NOT closed-loop on any wheel pressure sensor.** The
-controller tracks each wheel's caliper pressure with an *internal volume-domain model* (fluid volume
-integrated from valve open-times, converted to pressure by the COA pressure↔volume compliance curves).
-The only *measured* pressure is the **master-cylinder / line pressure** on a single ADC channel; it enters
-the model as the hydraulic **supply** pressure, not as a per-wheel feedback.
+**Wheel pressure is closed-loop on measured pressure.** The MK60E5 has a pressure transducer on each of
+the four wheel outputs plus one on the master/input side, and the firmware uses all five. Each 10 ms
+frame the per-wheel pressure PM `0x4016E2[w]` is overwritten with the measured wheel-output pressure
+`0x402198[w]`, and the internal volume model is re-synchronised to it (`sub_082BC0`, §3). Everything
+downstream — the valve sequencer's pressure error, ABS PM `0x408F2A`, `supply_pressure`, CAN 0x2B2 — works
+from that measured value.
 
-The dominant ABS regulation loop is **slip + wheel-acceleration** (the classic ABS loop), which is
-measured and closed every 10 ms. Dump/hold/build *decisions* (when to act) come from that loop and are
-**robust to P-V error**. The P-V model only governs *metering* (how much valve time per pulse, and what
-caliper-pressure number the reapply/hold targets are compared against).
+The **volume-domain model** (fluid volume integrated from valve open-times, converted to pressure by the
+COA pressure↔volume compliance curves) has two jobs: **feed-forward** (sizing how many valve-open steps a
+given pressure error needs) and **fallback** (supplying PM while a wheel's outlet valve is dumping, and
+whenever the wheel sensors are faulted or invalid).
 
-**Would an off P-V model make braking sluggish/soft?** For **ABS** (driver on the pedal, wheel locking):
-mostly no — the slip loop still fires dumps on lock and re-applies on recovery regardless of P-V accuracy,
-so braking won't "run away" or go persistently soft; a wrong P-V curve degrades *modulation precision/feel*
-(pulses sized wrong → coarse or slightly laggy reapply, not loss of braking). For **DSC/AYC/TCS active
-build** (no pedal, ECU building pressure autonomously): the P-V feedforward *is* the primary metering
-against the measured line pressure, so an off model there would directly make autonomous pressure build
-sluggish or overshoot. Keep the two cases distinct — see §6.
+The dominant ABS regulation loop is still **slip + wheel-acceleration**, measured and closed every 10 ms.
+Dump/hold/build *decisions* come from that loop; pressure feedback governs *metering*.
+
+**Would an off P-V model make braking sluggish/soft?** With healthy sensors, little: a wrong curve
+mis-sizes an individual pulse, and the measured pressure corrects the error on the next frame. It matters
+during dump phases (PM is modelled until the inlet side is active again) and matters fully in sensor-fault
+fallback, where the model is the only wheel-pressure source. Onset "bite" is set by the apply-ramp/slew
+constants (§4), not the P-V curve. See §6.
 
 ---
 
@@ -44,12 +46,12 @@ Dispatcher slot 32 `hydraulic_actuation_pipeline` 0x843BC → `valve_pulse_seque
   sign of pressure error).
   - **Hold (1)** 0x8541C: 10-step profile held at the last value, clamped to `0x604`=**1540**
     (literal `0x5F4`=1524 fallback).
-  - **Build (2)** 0x854AC: computes pressure error = supply − modelled PM, interpolates the COA p-V curve
+  - **Build (2)** 0x854AC: computes pressure error = supply − PM (measured wheel pressure, §3), interpolates the COA p-V curve
     (front coding `0x4031AA+3`/table `0x41B62`, rear `+4`/`0x41B8A`, shared pressure axis `0x41B4E`) and
     scales by the **build gain** front `0x41A76`=**800**, rear `0x41A78`=**350** (bytes `03 20 / 01 5E`,
     CONFIRMED). Result → number of valve-open steps (`r14`, clamped 0..10 at 0x856C8).
   - **Release (4)** 0x857B8: profile forced to dump current `0x5FC`=**1532** (clamp `0x604`=1540), counters
-    reset, modelled pressure snapshotted to `0x401C08`.
+    reset, PM snapshotted to `0x401C08`.
 - A per-wheel temperature/compensation value is read at `0x401FF7` (byte, sign-extended, clamped to
   [−30,+100]) and folded into the profile (0x853E6..0x85402). (INFERRED: valve-current temp comp.)
 
@@ -64,49 +66,47 @@ ASIC CS5 `asic_reg_xfer32` 0xD4A30, cmd 0xFA), ch4-7 = outlet/dump (digital latc
 
 ---
 
-## 2. Pressure sensors — how many are MEASURED, their scale (CONFIRMED)
+## 2. Pressure sensors — five measured (CONFIRMED)
 
-**Firmware reads exactly ONE pressure sensor: the master-cylinder / front line pressure.** No per-wheel
-pressure acquisition exists in the control path.
+Full acquisition detail: `06_pressure_sensors_recheck.md`.
 
-- Acquisition `pressure_adc_track` 0x8F344 reads **MCU ADC channel 21** (primary) and **channel 6**
-  (companion/redundant rail) via the 59-entry ADC jump table `adc_read` 0x6FB30 (`movi r2,21` / `movi r2,6`
-  at 0x8F34C/0x8F350, CONFIRMED). Scale: `p = adc * 0x5EE8 / 0xFFC0` then offset (0x5EE8=24296,
-  0xFFC0=65472 → ×0.371; offsets `0x556A`=21866 / `0x97D`=2429). Dual-track ratiometric with a 113/128
-  low-pass blend of the two elements (0x8F3B2) — characteristic of one safety-grade MC pressure sensor,
-  not four independent caliper sensors.
-- Result stored as master pressure **`0x404994`** (also written by `driver_pressure_from_sensor` 0x8CE8E
-  from pointer table `0x40171A`). Compared directly against modelled caliper pressures and clamped to
-  `0x4E20`=**20000** in `supply_pressure` — so its unit is the same **~0.01 bar** domain (20000 = 200 bar).
-- A sweep of every `adc_read` call site shows pressure-related reads only on **ch21** (+ch6); channels
-  0/1/2 at 0xB1A06 are the KWP diagnostic supply-rail reads, not caliper pressures (CONFIRMED by context —
-  that block is in the kwp 0x21 handler region writing 0x409435/0x409489).
-
-**Owner's "4 wheel pressure sensors":** whatever the hardware carries, **this firmware does not sample or
-use any per-wheel pressure signal for control.** The per-wheel "pressure" the controller works with is the
-*modelled* value `0x4016E2[ch]` (see §3) — it is written only by the volume→pressure model and the ABS
-pressure bookkeeping, never by an ADC/ASIC sensor read. (CONFIRMED: `0x4016E2` writers are all in the COA
-model, abs_pm, and AYC code; none is a sensor-acquisition routine.)
+- **Master / input sensor:** `pressure_adc_track` 0x8F344 conditions the dual-element sensor (ASIC
+  channels 6 / 7; scale `adc * 0x5EE8 / 0xFFC0` ≈ ×0.371, offsets `0x556A` / `0x97D`, 113/128 low-pass
+  blend) into the validated value `0x401FF8`. `dispatch_slot00_driver_pressure` 0x8CE5E commits it as
+  driver pressure **`0x404994`**; if the master sensor is invalid it falls back to the mean of the valid
+  wheel pressures (`sub_08CDC4` → `0x404996`), then to a modelled circuit pressure `0x40171A`.
+  `0x404994` is clamped to `0x4E20` = 20000 in `supply_pressure`, i.e. the **0.01 bar** domain
+  (20000 = 200 bar).
+- **Four wheel-output sensors:** sampled several times per frame by the fast SPI burst `sub_06FD90` →
+  `sub_08FA00` (zero-offset corrected, 4-sample average) into **`0x402198[w]`** `{value, flags}`, same
+  0.01 bar unit. Each has a redundant second element used for plausibility. Control reads them through
+  getter `sub_091A50(w)` (valid bit in r2).
+- (`adc_read(21)` at 0x8F34C returns a constant stub and is discarded; channel 21 is not a sensor.)
 
 ---
 
-## 3. The P-V feedforward model — what it computes, and the (absent) closed-loop trim
+## 3. The P-V model and the measured-pressure selector
 
-**It is a volume-domain estimator**, run as dispatcher slot 8 `hydraulic_model_step` 0x82EF4 (10 ms):
+**The model is a volume-domain estimator**, run as dispatcher slot 8 `hydraulic_model_step` 0x82EF4 (10 ms):
 
 1. `valve_flow(dp, k, open)` 0x818B6: **Q = isqrt(|dp|) · open · k / 4096**, clamp ≤ 2000. `isqrt` via
    0x71172; `dp` and `k` supplied by the caller. (CONFIRMED arithmetic.)
-2. `wheel_volume_delta` 0x8216E computes `dp = supply_pressure − modelled caliper pressure` per wheel and
-   calls valve_flow with the inlet/outlet flow coefficient `k`.
+2. `wheel_volume_delta` 0x8216E computes `dp = supply_pressure − PM` per wheel and calls valve_flow with
+   the inlet/outlet flow coefficient `k`.
 3. `circuit_volume_update` 0x826C0: `V[w] += dV`, routes dumped fluid to the low-pressure accumulator,
    clamps `V ≤ 30000`. Volume RAM `0x4016DA[w]`.
-4. `coa_vol_to_pressure(w)` 0x819FE: **PM `0x4016E2[w]` = P(V)**, the *inverse* compliance curve lookup —
-   this is the modelled caliper pressure the whole controller consumes.
+4. **`sub_082BC0` (0x82F36) selects PM `0x4016E2[w]`** (CONFIRMED):
+   - **normal:** `PM = measured 0x402198[w]`, then `coa_pressure_to_vol(w)` 0x816E8 rewrites `V[w]` from
+     it, so the model restarts from the measurement every frame;
+   - **outlet/dump active** (valve state `0x401A16[w]` negative, latched in `0x401715[w]` until the state
+     goes positive): `PM = coa_vol_to_pressure(w)` 0x819FE, the inverse compliance lookup P(V). On the
+     first frame back, the volume discrepancy is pushed into the circuit accumulator `0x4016F2[c]`;
+   - **inlet fully open (state 20) with recent pump flow in the circuit:** `PM = min(model, measured)`;
+   - **sensors unusable** (`0x402888` b5, any of fault ids 35/57/59/61/63 `<<15`, or any one of the four
+     sensors invalid): `PM = coa_vol_to_pressure(w)` for all wheels.
 
-`supply_pressure(w)` 0x84D42 (CONFIRMED): `supply = max(partner-wheel modelled PM, measured master
-`0x404994`)`, clamp [.,20000]. **So the one measured pressure (line) sets the driving head `dp`; the
-caliper pressure itself is never measured and never corrected by a sensor.** This is an **open-loop
-estimator seeded by the measured supply pressure** — there is **no caliper-pressure closed-loop trim**.
+`supply_pressure(w)` 0x84D42 (CONFIRMED): `supply = max(partner-wheel PM, driver pressure 0x404994)`,
+clamp [.,20000]. Both terms are measured in normal operation.
 
 ### Decoded COA p-V table (CONFIRMED bytes, COA block 0x41978)
 
@@ -129,15 +129,15 @@ interpolates P from accumulated V on this curve; `coa_pressure_to_vol` 0x816E8 i
 to pre-size build pulses. Flow coefficients (k_in/k_out, front/rear) and the LPA tables live in the same COA
 block and are in the XDF. Bodies are **byte-identical to the 1M 7846411A** — not retuned for M3.
 
-**How measured pressure corrects the feedforward:** only through the `supply` term (measured line pressure
-as the source head for `dp`). The caliper estimate is self-consistent model state; a divergence between
-modelled and real caliper pressure is **not** detected or trimmed by this firmware.
+**How measured pressure corrects the feedforward:** directly — PM is replaced by the measured wheel
+pressure and the volume state is recomputed from it each frame the inlet side is active. A divergence
+between model and reality persists only within a dump phase or in sensor-fault fallback.
 
 ---
 
 ## 4. Pulse timing & slew limiting (CONFIRMED values)
 
-- **Build:** valve-open step count = f(pressure error, COA p-V) × build gain (front 800 / rear 350), 0..10
+- **Build:** valve-open step count = f(pressure error vs measured PM, COA p-V) × build gain (front 800 / rear 350), 0..10
   steps per 10 ms frame. So build is **pressure-gradient / P-V based**, not a fixed pulse width.
 - **Dump:** release forces dump current, with the *amount* set upstream by `abs_dump_stage` 0x5424C →
   `abs_dump_entry_target` 0x55F06: target = `max(LOCKEST − R, 0)`, R from the staged ladder (−10/−15/−20 bar
@@ -155,37 +155,34 @@ modelled and real caliper pressure is **not** detected or trimmed by this firmwa
 No standalone EBD module; EBD-like rear limiting is folded into the same ABS controller:
 
 - `abs_rear_lead_select` 0x5184C: rear-axle **select-low** behavior; a rear wheel's pressure reference is
-  the **same-side front wheel's modelled pressure** (per ABS_ALGORITHM §5). Rear reapply uses arbiter
+  the **same-side front wheel's pressure PM** (per ABS_ALGORITHM §5). Rear reapply uses arbiter
   **id 11** (rear-only; loses priority to the driver's master-cylinder id 0).
 - `abs_pair_logic` 0x54D9A pairs front(0,1)/rear(2,3), runs the axle-pair S0..S3 cycle, and a cornering
   clause (lateral-accel term) relaxes rear pressure in corners.
-- Distribution is therefore **model-pressure-referenced** (rear target derived from modelled front
-  pressure), reinforcing that the whole per-wheel pressure picture is the model, not sensors.
+- Distribution is therefore **referenced to front wheel pressure PM**, which is the measured front
+  output pressure in normal operation.
 
 ---
 
-## 6. Direct answer: closed-loop vs feedforward (the owner's concern)
+## 6. Closed-loop vs feed-forward, by case
 
 | | ABS (pedal down, wheel locking) | DSC/AYC/TCS active build (no pedal) |
 |---|---|---|
 | Decision loop | **Slip + wheel accel, measured, closed** | Yaw/slip error, measured, closed |
-| Pressure metering | Target pressure-level + P-V-sized pulses | **P-V feedforward vs measured line pressure** |
-| Caliper pressure feedback | **None** (modelled) | **None** (modelled) |
-| Effect of wrong P-V | Pulses mis-sized → coarse/soft *feel*, slip loop still arrests lock | Direct: build sluggish or overshoots |
+| Pressure metering | Target pressure-level + P-V-sized pulses | P-V-sized pulses toward the requested pressure |
+| Wheel pressure feedback | **Measured** (model during dump phases) | **Measured** |
+| Effect of wrong P-V | Pulse mis-sized for one frame; dump-phase estimate off until re-sync | Pulse mis-sized for one frame |
+| Sensor-fault fallback | Pure volume model: P-V error accumulates | Pure volume model: build sluggish or overshoots |
 
-- There is **no caliper pressure sensor feedback** in either case — wheel pressure is always the volume
-  model. The single measured pressure (master/line, ADC ch21) is dominant only as the **supply head**.
-- For **ABS**, the measured **slip loop** is dominant, so an inaccurate P-V model would **not** make ABS
-  braking persistently sluggish; it degrades modulation precision/feel (reapply granularity, pulse sizing).
-- For **autonomous DSC build**, the P-V feedforward *is* the metering authority, so an off P-V model there
-  would plausibly make active pressure build feel sluggish or grabby — but that is DSC active-build, a
-  different function from driver-braking ABS.
-- Note COA bodies are byte-identical to the 1M image (not a M3-specific mis-tune); brake-code selects only
-  code 0 vs 1 per axle.
+- With healthy sensors the P-V curves are a feed-forward term inside a measured-pressure loop; they
+  affect modulation granularity, not braking authority.
+- With the wheel sensors faulted or unplugged (e.g. bench unit), PM, CAN 0x2B2 and all metering run on
+  the model alone, seeded by driver pressure as the supply head.
+- COA bodies are byte-identical to the 1M image (not M3-retuned); brake-code selects only code 0 vs 1
+  per axle.
+
 
 ## 7. Open / unconfirmed
 - `inlet_mode_select` 0x84460 exact predicate (hold vs build vs release thresholds) — INFERRED from error sign.
-- ch6's exact role vs ch21 (redundant element vs reference) — INFERRED.
-- Absolute truth of the 0.01-bar unit — self-consistent across axis (327 bar max), supply clamp (200 bar),
-  and pedal values, but not proven against a gauge (needs a bench pressure trace).
-- Whether the hardware actually has 4 caliper sensors is irrelevant to control: firmware samples none.
+- How each ABS routine that reads the measured wheel pressure (`sub_046ADC` filters `0x408E20+14w`,
+  `abs_hold_entry_sync`, `abs_decision_resolve`) uses it in its decisions.

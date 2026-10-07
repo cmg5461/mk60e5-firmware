@@ -148,7 +148,7 @@ a small fixed-ish margin (~1.3–2.0 km/h); the gross-slip limit is a speed-prop
   - Rears are handled through the pair/S-state machine with a **cornering clause**: `abs_pair_cornering_rear`
     0x054BE8 uses RL=0x40BF80 / RR=0x40BFC0 and lateral accel (lat = 0x408ECC + 0x408ECE/2) vs cal 0x40DD2
     (=1748); an ECC counter limit `2 + max(0, 8−(|lat|−1748)/126)`. Rear-only. **INFERRED (code).**
-  - A rear wheel's pressure reference is the **same-side front wheel's modelled pressure** (X[i] indexing).
+  - A rear wheel's pressure reference is the **same-side front wheel's pressure PM** (X[i] indexing).
     **INFERRED(port).**
   - Reapply request id 11 is **rear-only**. **CONFIRMED(port).**
 - **Pre-gate:** `abs_pair_logic` first calls `abs_pair_pred_gate` 0x54B70 (predicates A..D at
@@ -207,7 +207,7 @@ post-clamp 0x0584CC. **CONFIRMED** (callee list in `m3absslip/fnlist.txt`).
   `abs_rear_step_planner` 0x052004 keeps 5-bit step counters in 0x408F02[w] for stepped reapply; ECC/ECB
   cornering counters (limit 2, +8 in corners) in the rear clause. **CONFIRMED(gate)/INFERRED(counters).**
 - **Adaptive behavior:** lock-onset pressure latch `abs_lockon_pressure_estimator` 0x05862C writes LOCKEST
-  0x408FD0 (min-selected with modelled pressure PM, clamp 25000); dump targets reference it, so the dump floor
+  0x408FD0 (min-selected with wheel pressure PM, clamp 25000); dump targets reference it, so the dump floor
   adapts to the pressure at which lock last began. **INFERRED (M-H)** (= 1M estimator).
 
 ---

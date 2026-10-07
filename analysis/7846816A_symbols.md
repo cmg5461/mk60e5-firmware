@@ -134,7 +134,7 @@ shifted +0x1B8, ≥+0x134 shifted +0x4A4.
 | Address | Name | Conf | Evidence |
 |---|---|---|---|
 | 0x08CCB8 | `control_dispatcher` | high | flat 41-`jsri` per-frame call sequencer (NOT a jump table); tail-jumps to 0x88D00; = 1M 0x8CAD8 |
-| 0x08CE5E | `dispatch_slot00_driver_pressure` | high | master-cylinder pressure; = 1M 0x8CC7E |
+| 0x08CE5E | `dispatch_slot00_driver_pressure` | high | driver pressure 0x404994 from master sensor, wheel-sensor mean as fallback; = 1M 0x8CC7E |
 | 0x08428C | `abs_pressure_arbiter` | high | dispatcher slot 31; = 1M 0x840AC |
 | 0x0833DA | `req_arbiter_submit(op,id,ch,start,target,rate,flag)` | high | = 1M 0x831FA |
 | 0x083720 | `channel_owner_select` | high | priority arbitration → 0x401960; = 1M 0x83540 |
@@ -365,9 +365,21 @@ dictionary (both buses, 286 callbacks): `analysis/agents/m3cansig/`.
 | 0x08216E | `wheel_volume_delta(c,w)` | high | per-wheel valve-flow dV |
 | 0x0826C0 | `circuit_volume_update(c)` | high | applies dV, dump to LPA, clamp V≤30000 |
 | 0x00818B6 | `valve_flow(dp,k,open)` | high | Q = isqrt(|dp|)·open·k/4096, clamp 2000 |
-| 0x084D42 | `supply_pressure(w)` | med-high | max(P_MC, own PM, partner PM), clamp [0,20000] |
-| 0x0819FE | `coa_vol_to_pressure(w)` | high | PM 0x4016E2[w] = Vcurve⁻¹(V 0x4016DA[w]) |
-| 0x08CE8E | `driver_pressure_from_sensor` | med | 0x404994 master-cylinder pressure |
+| 0x084D42 | `supply_pressure(w)` | med-high | max(driver pressure 0x404994, own PM, partner PM), clamp [0,20000] |
+| 0x0819FE | `coa_vol_to_pressure(w)` | high | PM 0x4016E2[w] = Vcurve⁻¹(V 0x4016DA[w]); model path only (dump phase / sensor fault) |
+| 0x082BC0 | `wheel_pressure_select` | high | per wheel: PM 0x4016E2[w] = measured 0x402198[w] (store 0x82E9C) + V re-sync; model when 0x401A16[w]<0 or gate closed; sets 0x401719 b7/b6 = measured-valid |
+| 0x06FD90 | `wheel_pressure_spi_sample(phase)` | high | fast QSPI CS5 burst (cmd tbl 0xD73C8) → 0x8FA00 |
+| 0x08FA00 | `wheel_pressure_condition(phase,raw)` | high | offset 0x40218C[w]/16, ring 0x40202A, 4-avg → 0x402198+4w; fills 0x40206A |
+| 0x091A50 | `wheel_pressure_get(w,out)` | high | measured wheel pressure + flags, r2 = valid; 16 control callers |
+| 0x091A7C | `wheel_pressure_status_update` | med-high | 10 ms; calls 0x8FBEA/0x8FCE8; builds valid flags 0x40219A+4w |
+| 0x08FBEA | `wheel_pressure_tracks_10ms` | med-high | primary 0x40207A/0x40208E, redundant 0x402082/0x402096 |
+| 0x08FCE8 | `wheel_pressure_offset_learn` | med-high | zero offsets 0x40218C[w], 0x40209E[w] |
+| 0x0946D0 | `wheel_pressure_diag_get(sel,w,out)` | med-high | KWP 0x21: value / redundant track / offsets |
+| 0x08CDC4 | `wheel_pressure_mean` | high | mean of valid wheel pressures → 0x404996; master fallback |
+| 0x08CFCC | `can_2b2_stage_wheel_pressure` | high | PM → 0x40499A+4w, flags b5 = measured, b7 = valid |
+| 0x093E1C | `master_pressure_get(sel,out)` | med-high | 0x401FF8 + validity |
+| 0x08F488 | `master_pressure_offset_learn` | med-high | offsets 0x4020AA/AC → 0x4020E2/E8 |
+| 0x08CE8E | (tail of 0x8CE5E) | med | commits 0x404994: master 0x401FF8 → wheel mean 0x404996 → model 0x40171A |
 | 0x0955EC | `ddsrpa_value_range_monitor` | med | uses CSW+0x18 (0x41E40=1562); faults 0xC0100.. |
 | 0x0B433A | `nvm_fault_slot_commit` | high | FSF descriptor table 0xF57F8; NVM blocks 0x31/0x1B1/0x1C1 |
 | 0x0B4140 | `fault_history_push` | high | 14-entry ring at 0x4028E4 |
@@ -377,8 +389,8 @@ dictionary (both buses, 286 callbacks): `analysis/agents/m3cansig/`.
 
 Pressure model is **volume-domain** (not a simple integrator): V tracked per wheel via the COA p↔V curves, valve
 flow Q = isqrt(dp)·open·k/4096, low-pressure accumulator per circuit. Tunable COA fields (k_in 957/421, k_out
-755/465, k_cross, k_back 705, LPA tables, pump ramp/gain/filter, temp-comp) in the XDF. **Pressure unit ~0.01 bar**
-is consistent (LPA 1.3–5.0 bar, pedal 8 bar, clamp 200 bar) but still unproven. **CSW** 0x41E28: only +0x18=1562 is
+755/465, k_cross, k_back 705, LPA tables, pump ramp/gain/filter, temp-comp) in the XDF. **Pressure unit 0.01 bar**
+(pinned by CAN 0x2B2/0x19E: internal value ÷100 = integer bar; LPA 1.3–5.0 bar, pedal 8 bar, clamp 200 bar). **CSW** 0x41E28: only +0x18=1562 is
 live (DDS/RPA reference); rest vestigial. **VAR** 0x41D00: empty placeholder (payload 0). **FSF** 0xF57C4: fault-NVM
 slot descriptors + a speed monitor + mask tables; body byte-identical to the 1M.
 
@@ -388,7 +400,7 @@ ABS/vref RAM shifted +0x24; code shift −0x220/−0x200. Full work in `analysis
 
 | Address | Name | Conf | Evidence |
 |---|---|---|---|
-| 0x0559CC | `abs_pm_snapshot` | high | PM 0x408F2A[w] = modelled pressure 0x4016E2[ch]; dispatcher-direct after model step |
+| 0x0559CC | `abs_pm_snapshot` | high | PM 0x408F2A[w] = wheel pressure 0x4016E2[ch] (measured; model in dump/fault); dispatcher-direct after model step |
 | 0x045F54 | `abs_pressure_frame` | high | per-wheel slip update, phase dispatch, dump-stage coord, decision chain |
 | 0x04D270 | `abs_event_classifier` | med-high | builds the per-wheel threshold scratch, then → abs_phase_sm |
 | 0x0504D0 | `abs_wheel_phase_dispatch` | high | switch on rec[0] → 5 phase handlers |

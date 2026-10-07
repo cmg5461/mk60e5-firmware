@@ -53,7 +53,7 @@ Per-wheel record R (5×s16): R+0 (sub_056106, pressure-proportional dump %), R+2
 ## Units
 speeds/vref 0.01 km/h [verified]; +0x20 0.01 g (×2.83 conv) [high unit / med normal source]; 0x47DFC thr
 0.01 g [med]; delta 0.01 km/h per 10 ms [verified]; 0x408D8B ≈0.01 g signed [med], = 0x408EC4/21; pressure
-level 0.01 bar [unproven].
+level 0.01 bar [pinned by CAN 0x2B2 ÷100 = bar].
 
 ## Corrections to earlier docs
 1. ABS+0x576 curve input = **vref**, not slip (both this and the phase agent agree).
