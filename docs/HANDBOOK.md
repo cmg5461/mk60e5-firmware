@@ -34,7 +34,7 @@ Unit conventions:
 | `0.01 g` | Decelerations stored ×100, signed. `-116` ≈ −1.16 g *(unit unproven)*. |
 | `Q10` | Fixed-point: value ÷ 1024. Used for lengths (metres) and curve slopes. |
 | `~0.01 bar` | Modelled brake pressure. Consistent with the evidence, not pinned to a sensor *(unproven)*. |
-| `variant 0–11` | A 5-bit EEPROM field (`0x4031AA+1`) selects one column of the 12-wide model tables. Only 7 are distinct (0–4 repeat as 5–9; 10/11 unique). |
+| `variant 0–11` | A 5-bit EEPROM field (`0x4031AA+1`) selects one column of the 12-wide model tables. Only 7 are distinct: 0–4 (sedan, Custom ESM, unidentified, coupe, convertible) repeat as 5–9 (the Competition versions); 10/11 are the GTS coupe / GTS sedan and are unique. |
 | `curve` | Piecewise-linear table `(lo, hi, n, breakpoints, intercepts, slopes)` read by the interpolator at `0x710FC`: `out = clamp(intercept + input·slope/1024, lo, hi)`. |
 
 ---
@@ -125,6 +125,21 @@ flowchart LR
 | track front / rear | `0xD6FA2`/`BA` | 1.538 / 1.536 m | Track geometry — **Q10 metres** (= the real M3 track), not mm | CAL · med |
 | active variant | `0x4031AA+1` | EEPROM | Selects *which column* of all the above is used | EEPROM · high |
 
+The Stock column above is variant 0. The variant is coding byte 1 (bits 0–4) and names the car:
+
+| Variant | Car | Mass | Notes |
+|---|---|---|---|
+| 0 | M3 sedan | 1787 kg | |
+| 1 | Custom ESM | 1814 kg | model parameters come from coding bytes 31–40 instead of a fixed car |
+| 3 | M3 coupe | 1731 kg | |
+| 4 | M3 convertible | 1947 kg | |
+| 5 / 8 / 9 | M3 Competition sedan / coupe / convertible | as 0 / 3 / 4 | same model columns as the non-Competition body |
+| 10 | M3 GTS coupe | 1691 kg | own model, own ABS decel curves, own observer lag curve |
+| 11 | M3 GTS sedan | 1674 kg | own model and observer lag curve; ABS decel curves as 10 |
+
+2, 6 and 7 pass the coding check but are not identified (6 and 7 repeat 1 and 2). The model names
+are user-supplied; the per-column data is from the image.
+
 ---
 
 ## Wheel speed & tyres
@@ -182,8 +197,8 @@ the primary arming threshold.
 | decel base | `0x40620` | −116 (≈−1.16 g) | Baseline decel threshold. More negative = tolerates harder decel before acting. | CAL · high/unit-med |
 | decel floor | `0x4061E` | −240 (≈−2.4 g) | Most-negative limit of the threshold. | CAL · high |
 | accel gain F / R | `0x4061A`/`1C` | 40 / 25 | How strongly wheel accel feeds the threshold builder. | CAL · high |
-| low-speed floors | `0x40644`/`0x4065C` | 12 cols | Per-variant floors below 20 / 60 km/h. Variants 10/11 are the permissive set. | CAL · high |
-| speed-term / g-term curves | `0x40412`/`0x40674` | 12 variant copies | Shape the threshold vs speed and vs g. 0–9 match the 1M; 10/11 differ. | CAL · high |
+| low-speed floors | `0x40644`/`0x4065C` | 12 cols | Per-variant floors below 20 / 60 km/h. Variants 10/11 (GTS) are the permissive set. | CAL · high |
+| speed-term / g-term curves | `0x40412`/`0x40674` | 12 variant copies | Shape the threshold vs speed and vs g. 0–9 match the 1M; 10/11 (GTS) differ. | CAL · high |
 
 **Decision code `0x408DDE`** classifies the control action each cycle (`abs_decision_classify` `0x51B54`,
 resolved by `0x58B30`): `1` no rear control · `16→8` stepped/select-low rear build · `2` pair-hold
@@ -191,7 +206,7 @@ complete · `32` yaw-limited build (0–100 % lag, see AYC) · `256` cornering r
 transient within a cycle.)
 
 > **M3 vs 1M.** The core slip and decel targets are **identical** to the 1M for coding variants 1–9. Only
-> variants 10/11 are measurably more permissive (high-speed, ≥150 km/h). The M-car's extra licence lives
+> variants 10/11 — the GTS coupe and GTS sedan codings — are measurably more permissive (high-speed, ≥150 km/h). The M-car's extra licence lives
 > in the yaw/DSC-mode logic, not these numbers.
 
 ---

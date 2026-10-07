@@ -197,9 +197,11 @@ Front values:
 - g-term k-tail richer for 10/11. CONFIRMED (byte-verified).
 
 **E9x M3 index:** not determinable from flash (EEPROM-coded). Vehicle-model geometry rows (`0xD6F42`…) show
-**rows 0–4 duplicated as 5–9** (E90/E92/E93 body variants, wheelbase l_f+l_r ≈ 2.76 m on every row) with
-**10/11 unique** — i.e. one M3 part number, coding picks body geometry and (for 10/11) the permissive ABS
-curves. INFERRED that the stock E9x M3 uses a 0–9 (standard) index; the track-relevant lever is that 10/11
+**rows 0–4 duplicated as 5–9** (wheelbase l_f+l_r ≈ 2.76 m on every row) with **10/11 unique** — i.e. one M3
+part number, coding picks body geometry and (for 10/11) the permissive ABS curves. Mapping (user-supplied,
+added after this pass): 0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
+convertible, **10 GTS coupe, 11 GTS sedan**; 2/6/7 not identified. So the standard and Competition cars all
+use the 0–9 ABS set and the permissive set is the GTS calibration; the track-relevant lever is that 10/11
 raise the high-speed decel ceiling.
 
 ---

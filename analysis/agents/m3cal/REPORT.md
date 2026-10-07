@@ -30,8 +30,8 @@ Threshold = −116 − speed_term − g_term, floored at −240 (more negative =
 - **Variants 10/11:** higher-speed thresholds more permissive — at 150/200/250/300 km/h = −139/−154/−177/
   −200 vs 1M −135/−144/−167/−190 (g-term up to +7 larger); floor for vref<60 km/h = −140 vs −132.
 - Rear curve, base, floor, gains, ladder, stage thresholds all identical.
-- **So the M3 is more permissive only if coded to variant 10/11** (high-speed, ≥150 km/h, by ≈3–5% at
-  200–300) **or variant 0** (<20 km/h). The active variant lives in EEPROM, not the flash.
+- **So the M3 is more permissive only if coded to variant 10/11** (= GTS coupe / GTS sedan; high-speed,
+  ≥150 km/h, by ≈3–5% at 200–300) **or variant 0** (= M3 sedan; <20 km/h). The active variant lives in EEPROM, not the flash.
 
 ## TCS differences: small, unresolved sign [agent, low on direction]
 - Three 0..16000 cap curves (1M +0x66E/690/6B2 → M3 0xF654C/656E/6590, ÷20 in code, fn 0x0CB576) are
@@ -51,7 +51,9 @@ Threshold = −116 − speed_term − g_term, floored at −240 (more negative =
 
 ## Open
 1. Active EEPROM coding variant (0..11, record 24) and TCS mode byte for the real E9x M3 — unknown
-   statically; the ABS verdict hinges on variant 10/11 vs 0 vs 1–9.
+   statically; the ABS verdict hinges on variant 10/11 vs 0 vs 1–9. Variant meanings since supplied by the
+   user (0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition, 10/11 GTS coupe/sedan): only the
+   GTS codings get the permissive set.
 2. Sign of the 0xF654C-set and +0x038 TCS effects (needs consumer trace of 0x402FB6/B8, unit of 0x403098).
 3. Whether the M3 dropped the missing gross-slip/gate/pct/hysteresis scalars or inlined them as immediates.
 4. M Dynamic Mode (MDM) permissiveness is more likely in DSC-mode logic / AYC / code constants than these blocks.

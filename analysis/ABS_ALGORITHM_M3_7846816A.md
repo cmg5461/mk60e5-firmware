@@ -134,7 +134,8 @@ own sensor gather (~0x5D8xx) latching lateral accel → **0x408ECA**, yaw → 0x
 
 ## 5. Edge cases, failsafe & coding variants (agent 5)
 
-- **Variants:** ABS has only two flavors — **0–9 (standard)** vs **10/11 (more permissive)**. Only the
+- **Variants:** ABS has only two flavors — **0–9 (standard: M3 and Competition sedan/coupe/convertible, Custom ESM)**
+  vs **10/11 (more permissive: GTS coupe / GTS sedan)**. Only the
   front speed-term (0x40412) and g-term (0x40674) families are variant-indexed (in builder 0x47BDC); 10/11
   differ only at high speed and raise the <60 km/h decel floor to −1.40 g ⇒ later/less-intrusive ABS at
   speed. Everything else (rear curve, entry-slip, decel scalars) is **global**. **M3 coded index is in EEPROM**

@@ -6,7 +6,8 @@ below. XDF addr = CPU + 0x8000 = file offset. Edits change MISR + BMY -> use
 --resign (or run tools/bmy_resign.py fix) before flashing.
 
 The per-variant tables are 12 long, indexed 0..11 by the active EEPROM coding
-variant. The ABS *entry-slip* target is intentionally SINGLE (one global curve) —
+variant (0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition
+sedan/coupe/convertible, 10 GTS coupe, 11 GTS sedan; 2/6/7 not identified). The ABS *entry-slip* target is intentionally SINGLE (one global curve) —
 only the decel/threshold *shaping* (speed-term, g-term, decel floors) and the
 chassis/DSC block are per-variant.
 
@@ -108,6 +109,8 @@ def cmd_export(buf, out):
         "# MK60E5 M3 7846816A calibration. addr = file offset (CPU+0x8000).",
         "# Edit the raw integer value(s); re-sign (MISR+BMY) before flashing.",
         "# per_variant tables are 12 long, coding index 0..11 (EEPROM-selected).",
+        "# 0 M3 sedan, 1 Custom ESM, 2 ?, 3 coupe, 4 convertible, 5 Comp sedan, 6 ?, 7 ?,",
+        "# 8 Comp coupe, 9 Comp convertible, 10 GTS coupe, 11 GTS sedan.",
         "# NOTE: abs_entry_* (the ABS entry-slip target) is SINGLE/global, not per-variant.",
         "",
         "single:",
