@@ -1,53 +1,34 @@
-# 06 — Pressure sensing RE-CHECK: how many sensors does 7846816A actually READ, and is per-wheel/rear pressure measured, modelled, or fused?
+# 06 — Pressure sensing on 7846816A: five transducers, all five used
 
-**Mandate:** challenge the prior claim (docs 04 / 07 / ABS_ALGORITHM §4) that *"firmware samples exactly
-ONE pressure sensor — master/front-line on ADC channel 21."* Owner's physical evidence: the PCB carries
-**FIVE** pressure transducers on the hydraulic block, and on the car the ECU's reported pressure FOLLOWS the
-**rear** circuit set by a bias-bar pedal box (rear mechanically independent of front).
+How the firmware acquires the five MK60E5 pressure transducers (1 master/input + 4 wheel outputs), and
+where each one enters control.
 
-CPU addresses throughout; **file offset = CPU + 0x8000**. Byte reads from `flash/bin/7846816A_00000000.bin`,
-disassembly `analysis/7846816A_main.lst`. **[C]** = read from bytes/listing, **[I]** = inferred from
-structure, **[open]** = unresolved.
+CPU addresses throughout; **file offset = CPU + 0x8000**. Disassembly `analysis/7846816A_main.lst`.
+**[C]** = read from the listing, **[I]** = inferred from structure, **[open]** = unresolved.
 
 ---
 
-## 0. Bottom line (settles it)
+## 0. Bottom line
 
-1. **The prior "exactly ONE pressure sensor" count is WRONG.** The firmware samples **FIVE pressure-class
-   transducers**, each **dual-element** (main + redundant), i.e. **10 ADC channels**, acquired every 10 ms by
-   `sub_0B85EC` (0x0B85EC) and conditioned by the identical routine `0x0B800C` through the identical
-   ratiometric transfer function (`0x0B83DA`, id=190, gains 0x5EE9/0x556B). This **matches the owner's five
-   physical transducers.** [C]
-2. **But the prior CONTROL conclusion is essentially RIGHT.** Only **one** of the five (S1 = master/primary
-   brake-line pressure, raw 0x402954) reaches the hydraulic model, ABS/DSC control, and the CAN/diagnostic
-   pressure reports. The other four (S2–S5) are measured, plausibility-checked, and routed **only to internal
-   fault monitoring** — **not** to the per-wheel model, **not** to `supply_pressure`, **not** to CAN, **not**
-   to KWP read-data. [C]
-3. **Per-wheel / rear pressure in control is MODELLED, not measured and NOT fused.** The per-wheel caliper
-   pressure array `0x4016E2[w]` has exactly three writers, all the COA volume→pressure model; **zero** sensor
-   writers and **zero** Kalman/complementary `PM = PM_pred + K·(meas − pred)` writers. [C]
-4. **The channel detail in the prior docs was also wrong.** "ADC channel 21" is not a pressure channel at all
-   (see §1.3). The master sensor is on ASIC scan channels **ch6 & ch7**; the ×0.371 scale was right, the
-   channel number was not.
-5. **Rear-circuit resolution:** there is **no firmware path** that derives rear pressure as an independent
-   *measured* rear-line value feeding control, and **none of the five sensors is labelled front/rear or
-   circuit-1/2** — they are only numerically indexed. The ECU's single reported/controlling pressure is S1;
-   if the reported pressure tracks the rear bias-bar circuit, that is because **S1's hydraulic port is teed
-   into the rear circuit on the owner's car (a plumbing fact), not a firmware selection.** The owner's
-   inference that the firmware *measures and uses* rear pressure is **not supported**; the owner's inference
-   that there are *five real transducers the firmware reads* **is confirmed**. [C]/[I]
-
-So: **5 sensors READ, 1 (master) USED for control/report, 4 read-but-ignored (fault-watch only); per-wheel/
-rear is a pure forward model with no measured correction.**
+1. **Five transducers are sampled, each dual-element** (main + redundant track). [C]
+2. **All five are used for control.** The master sensor gives driver pressure `0x404994`. The four
+   wheel-output sensors give measured wheel pressure `0x402198[w]`, which is read by the hydraulic model,
+   the ABS controller, the valve sequencer and diagnostics through getter `sub_091A50` (16 call sites). [C]
+3. **Per-wheel pressure `0x4016E2[w]` (PM) is measurement-primary.** Every 10 ms `sub_082BC0` overwrites
+   it with the measured wheel pressure and re-syncs the model's volume state to match. The COA volume
+   model supplies PM only while a wheel's outlet valve is active, or when the wheel sensors are unusable. [C]
+4. **CAN `0x2B2` bytes 0–3 are therefore the measured wheel-output pressures** in normal operation
+   (÷100 → bar, wheel order 0..3 = LF, RF, LR, RR). `0x19E` byte 6 is the measured master pressure. [C]
+5. On a car with independent front/rear master cylinders (bias bar), `0x2B2` shows the real per-circuit
+   pressures; rear above master is physical, not an artefact. [I]
 
 ---
 
-## 1. The ADC acquisition, in full
+## 1. ADC acquisition
 
-### 1.1 `adc_read` 0x6FB30 is a RAM-mirror GETTER, not a hardware driver
-`adc_read(idx)` (0x6FB30) is a 59-entry jump table (table @0x6FB44, byte-verified). 42 of 59 indices map to
-the default stub 0x6FC56 which returns the constant **1** (no hardware access). The live indices each do
-`ld.h` from the **ADC result mirror** `0x4009CE[]` (base lrw = 0x004009CE). Decoded index→RAM map [C]:
+### 1.1 `adc_read` 0x6FB30 is a RAM-mirror getter
+`adc_read(idx)` is a 59-entry jump table (table @0x6FB44). 42 indices map to the default stub 0x6FC56
+(returns constant 1). The live indices `ld.h` from the ADC result mirror `0x4009CE[]` [C]:
 
 | logical idx | RAM | | logical idx | RAM |
 |---|---|---|---|---|
@@ -61,154 +42,156 @@ the default stub 0x6FC56 which returns the constant **1** (no hardware access). 
 | 56 | 0x4009E0 | | 47 | 0x4009F2 |
 | 58 | 0x4009E2 | | | |
 
-### 1.2 The real acquisition: `sub_06FCC0` scans ~19 ASIC channels over SPI
-`sub_06FCC0` (0x6FCC0) fills the mirror `0x4009CE[0..18]` with a **burst of 19 reads from the safety ASIC
-over QSPI CS5** (`qspi_xfer` 0xD4CA8, r2=5). The 19 ASIC MUX command words come from ROM table **0xD73DC**
-(decoded: 144,80,152,176,120,224,240,200,96,216,136,192,88,104,128,112,208,184,0 — opaque ASIC pin selects).
-So the firmware does acquire ~18 analog inputs; the pressure sensors are a subset. [C]
+`adc_read(21)` (seen at 0x8F34C and in KWP 0xB1A22) hits the stub; channel 21 carries nothing.
 
-### 1.3 Why "channel 21" was a mis-read
-`pressure_adc_track` 0x8F344 begins `movi r2,21 / jsri adc_read` — but `adc_read(21)` maps to the default stub
-(returns 1) **and its result is immediately discarded** (overwritten at 0x8F350 by `movi r2,6`). The value
-actually used is `adc_read(6)`. The KWP diag block at 0xB1A22 likewise reads `adc_read(21)` → stub → 1,
-stored as a meaningless diagnostic byte. **"ADC channel 21" never carries pressure.** [C]
+### 1.2 Slow scan: `sub_06FCC0`
+Fills the mirror `0x4009CE[0..18]` with a burst of 19 reads from the safety ASIC over QSPI CS5
+(`qspi_xfer` 0xD4CA8, r2=5); MUX command words from ROM table 0xD73DC. [C]
 
----
-
-## 2. FIVE pressure sensors — the acquisition routine `sub_0B85EC` (0x0B85EC, 10 ms)
-
-Called from the sensor dispatcher `sub_08F028` (0x8F04A), itself in the **T3 10 ms** cycle (0x7101A), before
-the control dispatcher 0x8CCB8 — so the five sensors are **live every frame.** [C]
-
-Each sensor = **two** `adc_read` channels (a main + a redundant element = ratiometric dual-die), stored to a
-raw cell, processed by `0x0B800C`, then scaled by `0x0B83DA` (all five pass the **same** group id = 190,
-`movi r9,62; bseti r9,7` @0x0B8616/18). [C]
-
-| Sensor | raw RAM | ROM cal | ADC ch (companion / main) | role |
-|---|---|---|---|---|
-| **S1** | 0x402954 | 0x0F56F4 | 6 / 7 | **master / primary brake-line pressure** → control+report |
-| S2 | 0x4029B6 | 0x0F570C | 34 / 44 | measured pressure, fault-watch only |
-| S3 | 0x4029B8 | 0x0F5724 | 35 / 45 | measured pressure, fault-watch only |
-| S4 | 0x4029BA | 0x0F573C | 37 / 47 | measured pressure, fault-watch only |
-| S5 | 0x4029BC | 0x0F5754 | 36 / 46 | measured pressure, fault-watch only |
-
-### 2.1 All five are the same sensor class (CONFIRMED by identical scaling)
-`0x0B83DA` with id=190 (branch 0x0B84AA) applies, for **every** sensor, the two-element linear scale
-`(gain·x)/den + off` with gains **0x5EE9 (24297)** and **0x556B (21867)** and offsets 0xFFFFF683 /
-0xFFFFA117, then differences the elements for plausibility and sums them. These are the **same constants**
-(to ±1 LSB) as the master `pressure_adc_track` chain (0x5EE8=24296, 0x556A=21866, 0x97D). Identical transfer
-function ⇒ same physical quantity as the known brake-pressure sensor S1. [C]
-
-### 2.2 The five ROM cal blocks are per-sensor fault descriptors, structurally identical
-0x18 bytes each at 0x0F56F4 / 570C / 5724 / 573C / 5754. All share the plausibility signature
-`02 8A 00 00` (650,0) and the same slot layout; they differ only in packed DTC words (cal+0x00 range DTC,
-cal+0x14 timeout DTC) consumed by `fault_set` 0x0B427C. Same structure for all five = same sensor class,
-each with its own fault code. [C] (Decoded bytes in the agent working notes; exact BMW DTC numbers need the
-`fault_set` bitfield model — not required for this verdict.)
-
-### 2.3 Honest caveat
-Identical **dual-element ratiometric** processing is also what a dual-track position/travel sensor would use.
-"Pressure" for S2–S5 is therefore **[C]** on *same-class-as-S1* and **[I]** on the literal word "pressure" —
-but the identical scale to the confirmed brake-pressure sensor plus the owner's five physical transducers
-make pressure overwhelmingly likely.
+### 1.3 Fast wheel-pressure burst: `sub_06FD90(phase)`
+A separate 5-word QSPI CS5 burst (command table ROM 0xD73C8) returns the four wheel-output channels; the
+results are shifted `<<6` and passed to `sub_08FA00(phase, raw[4])`. Called from the sub-frame task
+`sub_070BFC` (0x70C14) with a phase index, so the wheel pressures are sampled several times per 10 ms
+control frame. [C] (exact sub-frame period [open])
 
 ---
 
-## 3. Where each sensor goes — only S1 reaches control/report
+## 2. Master / input sensor (S1)
 
-### 3.1 S1 → master pressure 0x404994 → the whole model
-`driver_pressure_from_sensor` 0x8CE8E (dispatcher slot 0) select-lows the two conditioned master tracks in RAM
-`0x40171A[0]/[2]` and commits to **0x404994** (sole writer, st.h @0x8CE9E). `0x404994` is read **~48×, all in
-the control region 0x081xxx–0x08Cxxx** (hydraulic model, supply pressure, COA). S1's raw getter 0x0B8720 also
-feeds a fault monitor (0x6A24C). [C]
-
-### 3.2 S2–S5 → conditioning + fault memory ONLY
-Raw S2–S5 (0x4029B6/B8/BA/BC) are referenced **only** in `sub_0B85EC` (writes) and getter `0x0B874E`
-(indexed 0..3), which is called **only** from the two conditioning loops `0x08FBEA` and `0x091F62`. Those
-loops plausibility-check and low-pass the values into 0x40207A / 0x402082 / 0x40208E / 0x402096 / 0x402280,
-whose readers all live in 0x08Fxxx / 0x090–094xxx (internal conditioning + fault state, e.g. 0x09240A /
-0x092962 call `fault_is_set`/`fault` 0x0B4312). **Region tally of every S2–S5 reference:**
-`08F:15 · 090:1 · 091:4 · 092:33 · 093:3 · 094:4 · 0B8:48 · 0B9:22 · 0BF:4` — **zero** in the control region
-0x081–088, **zero** at `supply_pressure` 0x84D42, **zero** near 0x4016E2, **zero** in the CAN-TX region
-0x07Axxx–0x07Fxxx, **zero** in the KWP region 0x0B1xxx–0x0B3xxx. [C]
-
-### 3.3 What IS reported is the master only
-- **CAN 0x19E (StatusDSC) byte 6 "BrakePressure"** getter 0x7AD2A → `0x93F00(idx2)` → 0x401FF8 (master
-  validated track). **Measured master.** [C] (cross-ref doc 07)
-- **CAN 0x2B2 (WheelPressure) bytes 0–3** ← staging array 0x40499A ← **modelled** 0x4016E2[w] (`sub_08CFCC`).
-  **Modelled per-wheel, not sensors.** [C] (cross-ref doc 07)
-- **KWP SID 0x21** builds a response via `0x93F00`: call sites 0xB1A36 (idx0 → 0x4020DE) and 0xB1C2A
-  (idx3 → 0x4020AA). The selector map (decoded from 0x93F00): idx0→0x4020DE, 1→0x4020E4, 2→0x401FF8,
-  3→0x4020AA, 4→0x4020AC. **Crucially, 0x4020AA/0x4020AC are DERIVED FROM THE MASTER tracks** (written by
-  `sub_08F488` from 0x4020E0 and 0x4020E6, the `pressure_adc_track` master cells) — **not** from S2–S5. So
-  **every reported pressure, CAN or KWP, originates from the single master sensor S1.** [C]
-
-**⇒ No reported pressure anywhere comes from the four extra sensors.** They are read-and-watched, nothing more.
+- Raw cell `0x402954` (ASIC channels 6 / 7), acquired by `sub_0B85EC` (10 ms), ROM cal block 0x0F56F4,
+  getter `sub_0B8720`. Conditioned by `pressure_adc_track` 0x8F344 into two tracks `0x4020DE` / `0x4020E4`
+  (ratiometric scale gains 0x5EE8 / 0x556A, offset 0x97D). [C]
+- `sub_08F488` learns a slow zero offset per track (`0x4020AA`, `0x4020AC`, ×16 fixed-point) and produces
+  the offset-corrected tracks `0x4020E2` / `0x4020E8`. The validated, filtered master pressure is
+  `0x401FF8` (clamped at 0 below 300). [C]
+- Getters: `sub_093E1C(1, out)` → `0x401FF8` + validity; `sub_093F00(idx, out)` selects
+  0→`0x4020DE`, 1→`0x4020E4`, 2→`0x401FF8`, 3→`0x4020AA`, 4→`0x4020AC`. [C]
+- **Driver pressure `0x404994`** is committed by `dispatch_slot00_driver_pressure` 0x8CE5E (sole store
+  0x8CE9E) [C]:
+  1. master sensor valid → `0x404994 = 0x401FF8` (measured master);
+  2. else, if `sub_08CDC4` finds valid wheel sensors with mean ≥ 100 (1 bar) → `0x404994 =` that mean
+     (`0x404996`);
+  3. else → modelled circuit pressure `0x40171A[0]` (or `[+4]`, chosen on `0x408DA1` b4).
 
 ---
 
-## 4. Per-wheel pressure RAM 0x4016E2 — all writers (no sensor, no fusion)
+## 3. Wheel-output sensors (four, w = 0..3)
 
-Full register-taint sweep of all ~100 `=0x004016E2` sites isolated exactly **three** genuine writers; every
-other reference is a read (for min/clamp/snapshot). [C]
+Each sensor has two elements, processed as two independent tracks.
 
-| store CPU | fn | class | evidence |
-|---|---|---|---|
-| **0x081A34** | `coa_vol_to_pressure` 0x819FE | MODEL | `st.h r2,(0x4016E2+2w)`; r2 = volume→pressure interp (`0x7119E`) from gain tbl 0x4031AA, bp tbls 0x41B62/0x41B4E, volume state 0x4016DA. No sensor term. |
-| **0x082E06** | model fn 0x082BC0 | MODEL + clamp | r14 = same interp, min-clamped to a table limit then **rate-clamped against the PREVIOUS modelled value** (0x4016E2[w]). The only nearby subtract is this clamp, not a fusion. |
-| **0x082E9C** | model fn 0x082BC0 | MODEL | r7 = model-output buffer. The adjacent `subu` writes a *different* array (0x4016F2), not 0x4016E2. |
+### 3.1 Primary track → measured wheel pressure `0x402198[w]`
+`sub_08FA00(phase, raw)` per wheel [C]:
+- scale the raw sample (`0x91A40`, full-scale 0xFFC0), store to ring `0x40202A[w][phase]` (4 samples),
+  subtract the learned zero offset `0x40218C[w] / 16`, clamp ≥ 0;
+- average the 4-sample ring → **`0x402198 + 4·w`** = `{s16 value, flags}` (unit 0.01 bar);
+- also fill `0x40206A + 4·w` (two halfwords): measured when the sensor is valid, otherwise a copy of
+  PM `0x4016E2[w]`. This is the cell the valve sequencer reads.
 
-**No writer traces to `adc_read`, the ASIC acquisition, the sensor RAM (0x402954/0x4029B6..BC), or the
-conditioned cells. No `(measured − predicted)·K + predicted → 0x4016E2` exists anywhere.** `0x4016E2` is a
-**pure forward-model state.** [C]
+The same element is also read on the 10 ms scan (`adc_read` channels ROM 0xDA966 = 34, 35, 36, 37) by
+`sub_08FBEA` → `0x40207A[w]`, low-passed (113/256) into `0x40208E[w]`, the input to offset learning.
 
-`supply_pressure(w)` 0x84D42 confirms the same: `supply = max(PM[partner1], PM[partner2], 0x404994)`, clamp
-0x4E20 (200 bar) — the only *measured* term is the master 0x404994; the partner terms are modelled PMs
-(partner map ROM 0xDA1B8 = identity/cross pairs). [C]
+### 3.2 Redundant track → plausibility
+Raw cells `0x4029B6 / B8 / BA / BC` (acquired by `sub_0B85EC`, companion channels 44–47, ROM cal blocks
+0x0F570C + 0x18·n, getter `sub_0B874E(idx)`), scaled into `0x402082[w]`, low-passed into `0x402096[w]`
+with its own learned offset `0x40209E[w]`. Readers are confined to 0x08F–0x094xxx (cross-check against the
+primary track, fault latching) plus KWP. This track does not feed control directly; it decides whether
+the primary track is flagged valid. [C]
+
+### 3.3 Zero-offset learning
+`sub_08FCE8` (10 ms, from `sub_091A7C`) slews the offsets `0x40218C[w]` (±26/step) and `0x40209E[w]`
+(±6/step) toward the filtered reading every 100 frames while the learn-enable flags are set
+(`0x4020FC+1` b7, `0x402144+2` b2), bounded by a window of ±1000 raw and clamps 16000 / 21600. [C]
+
+### 3.4 Validity
+`sub_091A7C` builds the per-wheel flag byte `0x40219A + 4·w`: bit 3 / bit 4 are per-wheel fault bits from
+`0x402888+1` / `0x402884+1`; **bit 7 (valid)** is set when bits 6 and 5 are set and bits 3, 4 are clear. [C]
+
+### 3.5 Getters
+| fn | returns |
+|---|---|
+| `sub_091A50(w, out)` | `0x402198[w]` value + flags; r2 = valid bit. **The control-side getter.** |
+| `sub_094634(w, out)` | same value with diagnostic status bits |
+| `sub_0946D0(sel, w, out)` | sel 0 → `0x402198`, 1 → `0x402096`, 2 → `0x40218C`, 3 → `0x40209E` (KWP) |
+| `sub_08D030(w, out)` | CAN staging `0x40499A[w]` (= PM + flags) |
+
+A 5-deep per-wheel history of `0x402198` is kept in `0x402222[w][5]` (`sub_091EA0`). [C]
 
 ---
 
-## 5. The rear-circuit / bias-bar paradox — resolved
+## 4. Where measured wheel pressure enters control
 
-- The firmware's rear caliper pressure (control **and** CAN 0x2B2) is the COA volume model, driven by the
-  **single measured supply head** (0x404994 = S1) and valve open-time integration. With a bias-bar pedal box
-  the rear circuit is hydraulically independent of the front, so this model's rear estimate is **physically
-  wrong on such a car** — but, per doc 04, ABS/DSC regulation is dominated by the measured slip + wheel-accel
-  loop, so the car still brakes; only pressure *telemetry/metering* is affected. [C]/[I]
-- **There is no measured independent rear-line channel feeding control.** None of the five sensors is tagged
-  rear; S2–S5 are not used for control or report; S1 is the only control/report pressure. [C]
-- Therefore **"the ECU's reported pressure follows the rear circuit" ⇒ S1's physical port is plumbed into the
-  rear circuit on the owner's car.** That is consistent with everything here: the firmware faithfully reads,
-  controls on, and reports its *one* primary sensor, whatever circuit it is teed to. The four extra measured
-  pressure channels the owner sees on the PCB are genuinely read by the firmware but their values are used
-  **only** for sensor-plausibility fault monitoring — they are not a per-circuit control input on this image.
-  [C for the firmware facts; I for the specific plumbing conclusion]
+### 4.1 `sub_082BC0` — measured/model selector for PM `0x4016E2[w]`
+Called from `hydraulic_model_step` 0x82EF4 at 0x82F36, after the volume updates, every 10 ms. [C]
 
----
+**Gate.** The wheel sensors are used only if `0x402888` b5 is clear and none of the fault ids
+`35<<15, 57<<15, 59<<15, 61<<15, 63<<15` is latched (`fault_is_set` 0xB4312). The four getters are then
+polled; `0x401719` b7 (front) and b6 (rear) end up set **only if all four sensors are valid** — one
+invalid sensor drops all four wheels to the model.
 
-## 6. Verdict vs. the prior claim and the owner
+**Per wheel**, with `st = 0x401A16[w]` (signed valve-pulse state: 20 = inlet fully open, 2·n = n inlet
+steps, negative = outlet/dump active) and `c = circuit(w)` (ROM 0xDA1B4 = 0,0,1,1):
 
-| Question | Prior claim | This re-check |
+| condition | PM `0x4016E2[w]` | store |
 |---|---|---|
-| How many pressure sensors does firmware READ? | 1 (master, "ch21") | **5 pressure-class (10 ADC ch), S1 ch6/7 + S2–S5 ch34–37/44–47** [C] |
-| Channel of master sensor | ch21 ("primary") | **ch6/7** (ch21 is a discarded stub) [C] |
-| Per-wheel pressure measured/modelled/fused? | modelled, no correction | **MODELLED; no sensor writer, no fusion** (3 model writers) [C] |
-| Does measured pressure correct the model? | no | **no** — only the measured master sets the supply head in `supply_pressure` 0x84D42 [C] |
-| Rear independently measured & used? | no | **no measured rear in control**; S2–S5 (incl. any rear) are fault-watch only [C] |
-| Owner's 5 transducers real? | dismissed as irrelevant | **CONFIRMED read by firmware**; 4 of them simply unused for control/report [C] |
+| gate closed | `coa_vol_to_pressure(w)` — pure volume model | 0x81A34 |
+| `st < 0` (sets `0x401715[w] = 1`), and until `st` next goes positive | `coa_vol_to_pressure(w)` | 0x81A34 |
+| `st == 20`, pump flow in circuit within the last 5 frames (`0x401724[c] > 0`), `0x401A16[c+6] > 0`, `0x401DCC[c] != 3`, and PM < `sub_081AF4(c)` | `min(model interp, measured)`; if PM < 500 also `≥` previous PM | 0x82E06 |
+| otherwise (normal) | **`= measured 0x402198[w]`** | 0x82E9C |
 
-**The prior agent was INCOMPLETE** — it analysed only `pressure_adc_track` and missed the five-sensor
-acquisition `sub_0B85EC` entirely, so it undercounted 5→1 and mislabelled the master channel. **The prior
-agent was CORRECT** that the control model consumes a single measured pressure and that per-wheel/rear is an
-uncorrected forward model. Both corrections are now byte-verified.
+After a measured store, `coa_pressure_to_vol(w)` 0x816E8 rewrites the volume state `0x4016DA[w]` from the
+new PM, so the model always restarts from the last measurement. On the first frame after a dump ends
+(`0x401715[w]` 1 → 0), the difference between the modelled volume and the volume implied by the measured
+pressure is added to the circuit accumulator volume `0x4016F2[c]` (clamped by `0x41B1E+6`). [C]
 
-### Platform note
-Both the M3 7846816A **and** the 1M 7846411A images contain **five** pressure-sensor cal blocks (plausibility
-signature `02 8A 00 00` at 0xF5700/0718/0730/0748/0760 in M3; mirror set in 1M). The five-sensor acquisition
-is **platform-standard MK60E5**, not M3-specific. [C]
+Because `0x4016E2` is measured in the normal case, **every reader of PM consumes measured pressure**:
+`abs_pm_snapshot` 0x559CC → ABS PM `0x408F2A[w]`, `supply_pressure` 0x84D42, `wheel_volume_delta`, the
+arbiter, the valve sequencer's pressure error, and the CAN staging copy.
 
-### Open
-- Exact BMW DTC numbers in the five cal blocks (need `fault_set` 0x0B427C bitfield model). [open]
-- Absolute pressure scale (self-consistent ~0.01 bar; unproven vs a gauge). [open]
-- Which physical block port each of S2–S5 is plumbed to (not in flash; needs the hydraulic drawing/bench
-  probe). [open]
+### 4.2 Direct consumers of the measured value
+
+| consumer | use |
+|---|---|
+| `sub_046ADC` (ABS, called 0x4627A) | reads `0x402198[w]` directly → `0x4045F4`; per-wheel filters `0x408E20 + 14·w` (+0 = ½-step tracker, +6 = slower tracker with ±5 % deadband). The struct is referenced from ~15 ABS routines (0x4BDE2…, 0x57042, 0x575A6…, 0x5A37A, 0x5B8D8). |
+| `sub_055A84` (ABS, called 0x444CC) | 7-deep per-wheel pressure history `0x403296`; measured when the staging flag b5 and the getter are valid, else PM |
+| `abs_hold_entry_sync` 0x57200 (0x57250) | getter call |
+| `abs_decision_resolve` 0x58B30 (0x58DD6, 0x58E0A) | getter call |
+| `valve_pulse_sequencer` 0x853A8 → `sub_084620` | loads `0x40206A[w]` into the pulse struct `0x401AF8 + 20·w + 10` |
+| `sub_08CDC4` (from driver-pressure slot 0x8CE5E) | mean of valid wheel pressures → `0x404996` (master fallback, §2) |
+| `coa_wheel_gain_apply` 0x84E38 (0x84E5E) | getter call |
+| `sub_069992`, `sub_089D8A` (×4), `sub_08A90C` (×2), `sub_08B9E0` | getter calls — role [open] |
+| KWP `0x21` 0xB184A (0xB1AEE, 0xB1D32) | `sub_0946D0` — wheel pressure, filtered track, offsets |
+
+What each ABS routine does with the value in its decision logic is [open]; that they read the measured
+value is [C].
+
+---
+
+## 5. CAN reporting
+
+- **`0x2B2` bytes 0–3**: `sub_08CFCC` (dispatcher, after the model step) copies PM `0x4016E2[w]` into the
+  staging array `0x40499A + 4·w` and builds flags: b6 = wheel-sensor system enabled (`0x402888` b5 clear),
+  b5 = "PM is measured" (`0x401719` b7 for w 0,1; b6 for w 2,3), b7 = valid (b5 | b6). Getters
+  0x7B490 / 4DE / 51C / 566 send `clamp(value/100, 0..254)`, `0xFF` when invalid. [C]
+- **`0x19E` byte 6**: `sub_093F00(2)` → `0x401FF8`, measured master, same ÷100. [C]
+
+Detail and byte maps: `07_pressure_on_can.md`.
+
+---
+
+## 6. Consequences
+
+- Wheel pressure is **closed-loop on measured caliper-line pressure**. The COA p↔V curves size valve
+  pulses (feed-forward) and carry PM through dump phases; their error is corrected on the next frame the
+  inlet side is active. [C]/[I]
+- A failed wheel sensor (or any of the five gate faults) silently changes PM, `0x2B2` and every consumer
+  to the pure volume model; `0x2B2` flag b5 distinguishes the two cases on the bus. [C]
+- Front/rear circuits are separate (wheel→circuit map 0,0,1,1). With independent master cylinders the
+  measured rear pressures are independent of the master sensor; which input circuit the master sensor
+  sits on is not determinable from the flash. [I]/[open]
+- Both the M3 7846816A and the 1M 7846411A images carry five pressure-sensor cal blocks; the five-sensor
+  acquisition is platform-standard. Whether the 1M image has the same `sub_082BC0` selector is [open].
+
+## Open
+- BMW DTC numbers for the five gate fault ids and the per-sensor cal blocks.
+- Sub-frame sampling period of `sub_06FD90`.
+- Mapping of redundant-track index (`sub_0B874E` 0..3) to wheel, and of sensors to physical block ports.

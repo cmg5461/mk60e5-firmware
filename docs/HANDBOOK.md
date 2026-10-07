@@ -33,7 +33,7 @@ Unit conventions:
 | `0.01 km/h` | Speeds and slip stored ×100. `5000` = 50.00 km/h. |
 | `0.01 g` | Decelerations stored ×100, signed. `-116` ≈ −1.16 g *(unit unproven)*. |
 | `Q10` | Fixed-point: value ÷ 1024. Used for lengths (metres) and curve slopes. |
-| `~0.01 bar` | Modelled brake pressure. Consistent with the evidence, not pinned to a sensor *(unproven)*. |
+| `0.01 bar` | Brake pressure (measured and modelled). Pinned by CAN: `0x2B2` / `0x19E` send the same values ÷100 as integer bar. |
 | `variant 0–11` | A 5-bit EEPROM field (`0x4031AA+1`) selects one column of the 12-wide model tables. Only 7 are distinct: 0–4 (sedan, Custom ESM, unidentified, coupe, convertible) repeat as 5–9 (the Competition versions); 10/11 are the GTS coupe / GTS sedan and are unique. |
 | `curve` | Piecewise-linear table `(lo, hi, n, breakpoints, intercepts, slopes)` read by the interpolator at `0x710FC`: `out = clamp(intercept + input·slope/1024, lo, hi)`. |
 
@@ -213,16 +213,24 @@ transient within a cycle.)
 
 ## Pressure & hydraulics
 
-The controller does not command pressure directly — it works through a **volume model**. Each wheel's
-fluid volume is tracked, converted to pressure through the COA p–V curves, and changed by valve flow
-`Q = √Δp · opening · k`. A low-pressure accumulator per circuit holds dumped fluid; a return pump drains it.
+The unit has five pressure transducers: one on the master/input side and one on each wheel output. Each
+10 ms the **measured wheel pressure** becomes the working pressure PM, and is broadcast on CAN `0x2B2`
+(bytes 0–3 = LF, RF, LR, RR in bar); the master pressure goes out on `0x19E` byte 6.
+
+Alongside that runs a **volume model**: each wheel's fluid volume is tracked, converted to pressure through
+the COA p–V curves, and changed by valve flow `Q = √Δp · opening · k`. The model sizes valve pulses, is
+re-synced to the measurement every frame, and replaces PM only while a wheel is dumping or when a wheel
+pressure sensor is faulted. A low-pressure accumulator per circuit holds dumped fluid; a return pump drains it.
 
 ```mermaid
 flowchart LR
   REQ["pressure request (arbiter)"] --> MODE["inlet mode: build / hold / dump"]
   MODE --> Q["valve flow Q = sqrt(dp)·open·k/4096"]
   Q --> V["wheel volume V"]
-  V --> P["pressure PM = Vcurve-inverse(V)"]
+  V --> P["model pressure = Vcurve-inverse(V)"]
+  SENS["wheel pressure sensor"] -->|normal| PM["pressure PM"]
+  P -->|dump phase / sensor fault| PM
+  PM -->|re-sync| V
   MODE -->|dump| LPA["low-pressure accumulator"]
   LPA --> PUMP["return pump"]
 ```
@@ -234,7 +242,7 @@ flowchart LR
 | reapply nudge | `0x40D90` | 80 | Small pressure step entering reapply. | CAL · high |
 | k_in build flow F/R | `0x41B26` | 957 / 421 | Inlet-valve flow gain. Higher = pressure builds faster for a given Δp. | CAL · high/unit-med |
 | k_out dump flow F/R | `0x41B30` | 755 / 465 | Outlet-valve flow gain. Higher = dumps faster. | CAL · high/unit-med |
-| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (best clue the unit ≈0.01 bar: 1.3–5.0 bar). | CAL · high |
+| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (0.01 bar: 1.3–5.0 bar). | CAL · high |
 | pump ramp / gain | `0x41B34`/`36` | 1150 / 100 | Return-pump delivery model. | CAL · med |
 | pressure clamps | *code* | −8000 / 25000 | Hard min/max on the pressure request. | CODE · high |
 | valve hold/boost current | *code* | 1100 / 1524 / 1532 | Solenoid currents for hold/boost/release steps. | CODE · high |
@@ -381,7 +389,9 @@ PT-CAN frame it transmits carries a checksum (`Σ payload + CAN-id`, low byte) a
 | coding block | `0x4031AA` | Variant +1, brake front +3 / rear +4, DSC-mode bit via `0x4031F4 & 0x80`. |
 | target yaw | `0x400B1A` | Model reference yaw rate. |
 | vehicle-model RAM | `0x400AA4…` | Single-track coefficients loaded per variant. |
-| modelled pressure PM | `0x4016E2[w]` | Per-wheel pressure from the volume model (~0.01 bar). |
+| wheel pressure PM | `0x4016E2[w]` | Per-wheel pressure (0.01 bar): measured sensor value, volume model during dump / sensor fault. |
+| measured wheel pressure | `0x402198 + 4·w` | Wheel-output transducer, offset-corrected and averaged, with validity flags. |
+| master pressure | `0x401FF8` | Validated master/input transducer; driver pressure `0x404994`. |
 | curve interpolator | `0x710FC` | Reads every `(lo,hi,n,x,c,k)` piecewise-linear table. |
 
 *Addresses are CPU addresses; file offset = CPU + 0x8000. Full function map in

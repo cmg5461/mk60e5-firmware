@@ -12,8 +12,8 @@ Consolidated from five parallel agent passes (2026-10-05), each byte-verified ag
 | 5 | `05_edge_cases_variants.md` | µ-split/GMA, µ-flag, rough-road, failsafe, variants |
 
 **Conventions:** CPU addresses below; **file offset = CPU + 0x8000 = XDF address**. Frame = 10 ms.
-Units: speed/slip **0.01 km/h**, decel/accel **0.01 g**, pressure **~0.01 bar** (self-consistent,
-needs a bench gauge trace to prove absolute scale). Tags: **[C]** confirmed from bytes/listing,
+Units: speed/slip **0.01 km/h**, decel/accel **0.01 g**, pressure **0.01 bar** (pinned by CAN:
+0x2B2/0x19E send the internal value ÷100 as integer bar). Tags: **[C]** confirmed from bytes/listing,
 **[I]** inferred, **[open]** unresolved.
 
 This is a *superset* of the 1M doc (`ABS_ALGORITHM.md`); core architecture matches opcode-for-opcode,
@@ -99,26 +99,19 @@ own sensor gather (~0x5D8xx) latching lateral accel → **0x408ECA**, yaw → 0x
 
 ## 4. Pressure actuation & the COA P-V model (agent 4)
 
-> **✔ RE-INVESTIGATION RESOLVED (2026-10-05) — the "one sensor" count below is WRONG; corrected here.**
-> Firmware READS **5 pressure transducers** (10 ADC channels, S1 0x402954 … S5 0x4029BC; acquisition
-> `sub_0B85EC`) — matching the 5-transducer MK60E5 hardware. **But only S1 (master line) is USED for
-> control + the 0x19E broadcast; S2–S5 are measured and routed ONLY to fault/plausibility monitoring**
-> (zero reads in control/CAN/model). Per-wheel pressure `0x4016E2[w]` is a **pure COA forward model — NOT
-> fused** (no `pred+K·(meas−pred)` anywhere); the Kalman hypothesis is refuted. 0x2B2's four wheel
-> pressures are the MODEL output, not S2–S5. Bias-bar observation = S1's port teed to the rear circuit
-> (plumbing) + the model inheriting master as supply. So the paragraph below is right that *control* uses
-> one measured pressure and models the rest, but wrong that only one sensor is read. Detail:
-> `analysis/agents/abs_full/06_pressure_sensors_recheck.md`; FACTS.md "[RESOLVED 2026-10-05]".
-
-- **ABS wheel-pressure control is NOT closed-loop on wheel pressure.** Firmware samples **one** pressure
-  sensor — master/front-line, ADC ch21 (ch6 companion), `pressure_adc_track` 0x8F344, ×0.371 → 0x404994,
-  ~0.01 bar (200 bar clamp). **No per-wheel caliper pressure is read** anywhere in the control path. [C]
-  - ⚠️ **Contradicts the owner's "4 wheel + 1 line = 5 measured" belief.** Hardware may carry wheel-pressure
-    sensors, but **this firmware consumes none of them.** Needs a bench gauge trace to settle. [open]
-- **Per-wheel caliper pressure is MODELLED**: volume-domain model `hydraulic_model_step` 0x82EF4 integrates
-  valve open-times (`valve_flow` 0x818B6: Q = isqrt(|dp|)·open·k/4096) through the **COA compliance curve**
-  (`coa_vol_to_pressure` 0x819FE → PM 0x4016E2[w]). Measured line pressure enters only as the supply head
-  (`supply_pressure` 0x84D42). No measured-pressure trim. [C]
+- **Wheel pressure is measured and closed-loop.** The firmware samples all **five** MK60E5 transducers:
+  the master/input sensor (`pressure_adc_track` 0x8F344 → `0x401FF8` → driver pressure `0x404994`, 0.01 bar,
+  200 bar clamp) and the **four wheel-output sensors** (fast SPI burst `sub_06FD90` → `sub_08FA00` →
+  `0x402198[w]`; control getter `sub_091A50`). [C]
+- **PM `0x4016E2[w]` = measured wheel pressure** in normal operation: `sub_082BC0` (inside
+  `hydraulic_model_step` 0x82EF4) overwrites PM with the sensor value each 10 ms and re-syncs the model
+  volume. The volume model (`valve_flow` 0x818B6: Q = isqrt(|dp|)·open·k/4096, COA compliance curve,
+  `coa_vol_to_pressure` 0x819FE) supplies PM only while a wheel's outlet valve is dumping, or for all
+  wheels when a wheel sensor is invalid / a pressure-sensor fault is latched. [C]
+- ABS also reads the measured value directly: `sub_046ADC` filters it into `0x408E20 + 14·w`;
+  `sub_055A84` keeps a 7-deep history; `abs_hold_entry_sync` and `abs_decision_resolve` call the getter.
+  How those feed the decisions is [open]. CAN 0x2B2 bytes 0–3 broadcast PM (÷100 → bar). Detail:
+  `analysis/agents/abs_full/06_pressure_sensors_recheck.md`.
 - COA p-V table (0x41978): pressure axis 0x41B4E {0,4,7,10,15,20,30,60,120,327 bar}; front vol 0x41B62, rear
   0x41B8A. **COA bodies byte-identical to the 1M — NOT M3-retuned.** [C]
 - Valve chain: `valve_pulse_sequencer` 0x853A8 (10-step profile/wheel); mode 0x401AA8+8w = 1 hold/2 build/4

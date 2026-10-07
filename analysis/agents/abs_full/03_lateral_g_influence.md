@@ -103,7 +103,7 @@ reference/observer only. [CONFIRMED values; physical LSBs of Cf/Cr UNCONFIRMED]
 - **Longitudinal (front/rear EBD): present, and it is decel-based, not model-based.** The decel-threshold
   builder `abs_decel_threshold_builder` **0x47BDC** uses **separate front vs rear speed-term curves**
   (front family 0x40412+0x28·variant, rear 0x405F2) plus a g-term family 0x40674, and the rear wheel's
-  pressure reference is the **same-side front wheel's modelled pressure** (rear select-low / rear
+  pressure reference is the **same-side front wheel's pressure PM** (rear select-low / rear
   request id 11). That is the EBD-equivalent and it responds to deceleration, always active. It does
   **not** consult the vehicle model. [CONFIRMED structure]
 - **Lateral left/right bias touching ABS = the inside/outside rear-wheel select-low bias in §2(c)**,
