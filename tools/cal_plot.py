@@ -142,7 +142,7 @@ def main():
     ap = argparse.ArgumentParser(description="Plot MK60E5 ABS curves to HTML")
     ap.add_argument("--in", dest="img", default=DEFAULT_IMG)
     ap.add_argument("--yaml", help="apply this cal YAML in-memory before plotting")
-    ap.add_argument("--variant", type=int, default=0, help="coding variant 0..11 for speed/g term")
+    ap.add_argument("--variant", type=int, default=0, help="coding variant 0..11 for speed/g term (0-9 identical; 10/11 = GTS)")
     ap.add_argument("--out", default="cal_plot.html")
     a = ap.parse_args()
     src = os.path.basename(a.img)

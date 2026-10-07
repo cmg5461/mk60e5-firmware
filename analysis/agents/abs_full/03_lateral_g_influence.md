@@ -90,7 +90,7 @@ Exhaustive consumer search:
 ⇒ mass/l_f/l_r/Cf/Cr/Jz influence **only** the DSC yaw target/observer and AYC brake intervention.
 They have **no path into ABS front/rear distribution, EBD, slip targets, or pressure**. [CONFIRMED]
 
-**Variant-0 model values** (first s16 of each table, byte-read from the bin):
+**Variant-0 (M3 sedan) model values** (first s16 of each table, byte-read from the bin):
 l_f = l_r = 1413 (Q10) = **1.380 m each** (wheelbase 2.76 m, modeled ~50/50); mass **1787 kg**;
 Jz **2999** kg·m²; track_f/r 1575/1573 mm; **Cf = 7527, Cr = 10596**.
 Understeer term **Cr·l_r − Cf·l_f = 10596·1413 − 7527·1413 = +4,336,497** (raw). **Sign is positive**

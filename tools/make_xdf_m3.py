@@ -35,8 +35,13 @@ VECTOR_NAMES = {0: "reset (0x6C906)", 1: "misaligned", 2: "access error", 3: "di
                 56: "WSS edge ch3 (D8 +9E)", 57: "WSS edge ch1 (F8 +9E)",
                 58: "WSS edge ch2 (D8 +8E)", 59: "WSS edge ch0 (F8 +8E)"}
 
-# 12-variant coding labels. Data shows variants 0..4 == 5..9; 10/11 are unique.
-VAR_LABELS = [f"var{i}" + (" (=var%d)" % (i - 5) if 5 <= i <= 9 else "") for i in range(12)]
+# 12-variant coding labels (coding byte 1 bits 0-4). Data shows variants 0..4 == 5..9 (5/8/9 are the
+# Competition versions of 0/3/4); 10/11 (GTS) are unique. 2/6/7 are not identified.
+VAR_NAMES = ["M3 sedan", "Custom ESM", "", "M3 coupe", "M3 convertible",
+             "M3 Comp sedan", "", "", "M3 Comp coupe", "M3 Comp convertible",
+             "M3 GTS coupe", "M3 GTS sedan"]
+VAR_LABELS = [f"var{i}" + (" " + VAR_NAMES[i] if VAR_NAMES[i] else "")
+              + (" (=var%d)" % (i - 5) if 5 <= i <= 9 else "") for i in range(12)]
 
 
 def main():
@@ -172,15 +177,15 @@ def main():
     # Variants 0-9 identical; 10/11 differ (more permissive at high speed).
     for m in range(12):
         curve_fields(c_slip, 0x40412 + 0x28 * m, f"ABS front speed-term curve [var{m}]",
-                     f"ABS front decel speed-term, coding variant {m}. x=vref 0.01 km/h; output "
-                     "subtracted from base. Variants 0-9 identical; 10/11 permissive. ",
+                     f"ABS front decel speed-term, coding variant {m}{VAR_NAMES[m] and ' (' + VAR_NAMES[m] + ')'}. x=vref 0.01 km/h; output "
+                     "subtracted from base. Variants 0-9 identical; 10/11 (GTS) permissive. ",
                      cunits="", ceq="X", cdec=0)
     curve_fields(c_slip, 0x405F2, "ABS rear speed-term curve (single)",
                  "ABS rear decel speed-term (one copy, all variants). x=vref 0.01 km/h. ")
     for m in range(12):
         curve_fields(c_slip, 0x40674 + 0x40 * m, f"ABS g-term curve [var{m}]",
-                     f"ABS decel g-term, coding variant {m}. x axis likely 0.01 g. Variants 0-9 "
-                     "identical; 10/11 differ. ", xunits="", xeq="X", xdec=0)
+                     f"ABS decel g-term, coding variant {m}{VAR_NAMES[m] and ' (' + VAR_NAMES[m] + ')'}. x axis likely 0.01 g. Variants 0-9 "
+                     "identical; 10/11 (GTS) differ. ", xunits="", xeq="X", xdec=0)
 
     # TCS base drive-slip threshold, set A/B x mode (0..2). Default = set B; set A when 0x402F6C bit4.
     tnote = ("M3 TCS base DRIVE-SLIP threshold = allowed rear-minus-front speed (0.01 km/h). x=vref "
@@ -279,7 +284,7 @@ def main():
     V4 = [f"v{v}:p{p}" for v in range(12) for p in range(4)]
     x.column(c_ayc, "AYC observer lag-blend x (variant x 4pt)", 0xD70AA, 16, 48, 2, V4, signed=True,
              units="km/h", eq="X/100", decimals=2,
-             desc="yaw_observer 0x5EBC4 front slip-angle lag curve, speed axis. Variants 10/11 differ from 0-9.")
+             desc="yaw_observer 0x5EBC4 front slip-angle lag curve, speed axis. Variants 10/11 (GTS coupe/sedan) differ from 0-9.")
     x.column(c_ayc, "AYC observer lag-blend y (variant x 4pt, Q13)", 0xD704A, 16, 48, 2, V4, signed=True,
              eq="X/8192", decimals=4, desc="Weight on the old state (Q13). Stock v0-9 = 7229/6560/5200/3014.")
 

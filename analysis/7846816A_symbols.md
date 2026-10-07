@@ -49,7 +49,8 @@ Confidence: **high** = behavior read from code and cross-checked against an exte
 ## Key calibration addresses (byte-verified)
 
 - **Vehicle-model variant table** (12 s16 per row, stride 2, indexed by coding variant 0..11;
-  variants 0–4 == 5–9, 10/11 unique): l_f 0xD6F42 (Q10 m), l_r 0xD6F5A (Q10 m),
+  variants 0–4 == 5–9 (Competition twins of sedan/Custom ESM/?/coupe/convertible),
+  10/11 unique (GTS coupe / GTS sedan)): l_f 0xD6F42 (Q10 m), l_r 0xD6F5A (Q10 m),
   mass 0xD6F72 (kg), Jz 0xD6F8A (kg·m²), Cf 0xD6ECA, Cr 0xD6EE2 (stiffness, units TBD),
   track front 0xD6FA2, track rear 0xD6FBA (mm), override-enable flag 0xD7032 (all 0).
 - **ABS entry-slip curve** 0x40DB6 (lo0,hi900,n2,bp5000,c150/115,k−4/+3; threshold ~1.3–2.0 km/h).
@@ -57,7 +58,7 @@ Confidence: **high** = behavior read from code and cross-checked against an exte
   base +0x284=−116; floor<20 +0x2A8 (12×, −127 then −120); floor<60 +0x2C0 (12×, −132×10, −140×2);
   ladder +0x76C; staged A +0xAC2 {−62,−78,−94}, staged B +0xB02 {−25,−44,−62}.
 - **ABS front speed-term curve family** 0x40412 + 0x28·m (m=0..11); **rear** single 0x405F2;
-  **g-term curve family** 0x40674 + 0x40·m. Variants 0–9 identical; 10/11 more permissive.
+  **g-term curve family** 0x40674 + 0x40·m. Variants 0–9 identical; 10/11 (GTS) more permissive.
 - **TCS drive-slip** set B 0xF625C + 0x22·mode (default), set A 0xF61F6 + 0x22·mode (mode 0..2,
   from `0x4031AA+7`); **TCS caps** 0xF654C + 0x22·j (j=0..5, ÷20). Relocated to const ROM.
 

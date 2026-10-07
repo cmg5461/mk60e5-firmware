@@ -21,7 +21,7 @@ brake code, 3b)**, **+4 (rear brake code, 3b)**, +5, +7 (DSC-mode flag from 0x40
 Row = 12 s16 (variant 0..11), stride 2; rows 24 B apart. Loaders 0x5DE44 / 0x5E424 → RAM
 0x400AA4..0x400ABA, 0x400AE8..0x400AEE.
 
-| Row | Role [conf] | Variants 0..4 (=5..9), 10, 11 |
+| Row | Role [conf] | Variants 0..4 (=5..9), 10, 11 — sedan, Custom ESM, ?, coupe, convertible (5..9 = Competition), GTS coupe, GTS sedan |
 |---|---|---|
 | 0xD6F42 | l_f (CG→front axle), 1/1024 m [med] | 1413,1418,1439,1403,1501, 1352,1362 |
 | 0xD6F5A | l_r (CG→rear axle), 1/1024 m [med] | 1413,1408,1388,1423,1325, 1475,1464 |
@@ -35,7 +35,8 @@ Row = 12 s16 (variant 0..11), stride 2; rows 24 B apart. Loaders 0x5DE44 / 0x5E4
   does not vary between M3 variants (only the split does). CG front share: 1M 51.1%; M3 v0–4 50.0–46.9%;
   v10/11 52.2/51.8% (l_f/l_r assignment is med — reversed reading flips the split).
 - **Mass/inertia [med-low]:** J/m ≈ squared radius of gyration (~1.3 m) ≈ l_f·l_r, supporting the mass/Jz
-  reading. 1M 1739 ≈ +4% over 1670 kg curb; M3 1691/1674 ≈ +1–2% over 1655 kg. Unit not proven — needs a
+  reading. 1M 1739 ≈ +4% over 1670 kg curb; M3 1691/1674 ≈ +1–2% over 1655 kg (but rows 10/11 are the GTS
+  codings, so the like-for-like rows are sedan 1787 / coupe 1731 / convertible 1947). Unit not proven — needs a
   consumer trace or a known-weight coding dump.
 
 ## Brake coding (+3 front / +4 rear) [indexing verified; meaning agent]
@@ -53,5 +54,6 @@ monitor (no vehicle model). Identical 1M↔M3 because both images ship every var
 
 ## Needs hardware
 - The car's actual coding values (+1, +3, +4) are not in flash. With +1, the 0xD6xxx row gives that car's
-  mass/CG. Variant→model mapping unknown (rows 10/11 = M3 by wheelbase + ABS rows; rest E9x families).
+  mass/CG. Variant→model mapping now known (user-supplied; `analysis/CODING_BYTES_7846816A.md`): all rows are
+  E9x M3 — 0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition, 10/11 GTS coupe/sedan.
 - Confirming 0xD6F72 as mass needs a known-weight coding dump or a trace of 0x400AA4.. consumers.

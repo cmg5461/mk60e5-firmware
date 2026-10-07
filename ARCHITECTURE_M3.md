@@ -141,8 +141,8 @@ Most of the image is the 1M relocated. The genuine M3-specific content:
 
 | Area | Difference |
 |---|---|
-| Vehicle model | 12-variant table (1M is a single scalar set); v_ch higher (105–142 vs 97.65 km/h) |
-| ABS cal block | 12-way variant duplication of speed/g-term curves; variants 10/11 more permissive at high speed; builder 0x47BDC rewritten; one scalar at 0x4063E |
+| Vehicle model | 12-variant table by body/model (sedan, coupe, convertible, their Competition twins, GTS coupe/sedan, Custom ESM; 1M is a single scalar set); v_ch higher (105–142 vs 97.65 km/h) |
+| ABS cal block | 12-way variant duplication of speed/g-term curves; variants 10/11 (GTS coupe/sedan) more permissive at high speed; builder 0x47BDC rewritten; one scalar at 0x4063E |
 | TCS | large curves relocated to const ROM 0xF61xx; gross-slip limit + entry gates hard-coded (cal on 1M) |
 | CSI / steering | block grew (+0x62); steering-ratio curve changed (15.9→12.6 vs 14.6→12.5) |
 | LVC | one scalar (0x4226A = 75 vs 50) |

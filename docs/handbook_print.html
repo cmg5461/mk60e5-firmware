@@ -82,7 +82,7 @@ Two tags carry the meaning:</p>
 <tr><td class="p">0.01 g</td><td>Decel ×100, signed. <code>-116</code> ≈ −1.16 g <span class="muted">(unit unproven)</span>.</td></tr>
 <tr><td class="p">Q10</td><td>Value ÷ 1024 — lengths (m) and curve slopes.</td></tr>
 <tr><td class="p">~0.01 bar</td><td>Modelled pressure; consistent with evidence, not pinned <span class="muted">(unproven)</span>.</td></tr>
-<tr><td class="p">variant 0–11</td><td>EEPROM field <code>0x4031AA+1</code> picks one column of the 12-wide model tables (7 distinct).</td></tr>
+<tr><td class="p">variant 0–11</td><td>EEPROM field <code>0x4031AA+1</code> picks one column of the 12-wide model tables (7 distinct): 0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/convertible (same data as 0/3/4), 10 GTS coupe, 11 GTS sedan.</td></tr>
 <tr><td class="p">curve</td><td>Piecewise-linear <code>(lo,hi,n,breaks,intercepts,slopes)</code> read by <code>0x710FC</code>: out = clamp(c + in·k/1024, lo, hi).</td></tr>
 </tbody></table>
 </section>
@@ -202,12 +202,12 @@ curve (1.3–2.0 km/h) is used only inside the pair-logic partner test.</p></div
 <tr><td class="p">decel base</td><td class="a">0x40620</td><td class="v">−116 (≈−1.16 g)</td><td class="eff">Baseline decel threshold. More negative = tolerates harder decel first.</td><td><span class="badge b-cal">CAL</span></td></tr>
 <tr><td class="p">decel floor</td><td class="a">0x4061E</td><td class="v">−240 (≈−2.4 g)</td><td class="eff">Most-negative limit.</td><td><span class="badge b-cal">CAL</span></td></tr>
 <tr><td class="p">accel gain F/R</td><td class="a">0x4061A/1C</td><td class="v">40 / 25</td><td class="eff">How strongly wheel accel feeds the threshold builder.</td><td><span class="badge b-cal">CAL</span></td></tr>
-<tr><td class="p">low-speed floors</td><td class="a">0x40644/5C</td><td class="v">12 cols</td><td class="eff">Per-variant floors &lt;20 / &lt;60 km/h. Variants 10/11 permissive.</td><td><span class="badge b-cal">CAL</span></td></tr>
-<tr><td class="p">speed/g-term curves</td><td class="a">0x40412/0x40674</td><td class="v">12 variant copies</td><td class="eff">Shape threshold vs speed and vs g. 0–9 match the 1M; 10/11 differ.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">low-speed floors</td><td class="a">0x40644/5C</td><td class="v">12 cols</td><td class="eff">Per-variant floors &lt;20 / &lt;60 km/h. Variants 10/11 (GTS) permissive.</td><td><span class="badge b-cal">CAL</span></td></tr>
+<tr><td class="p">speed/g-term curves</td><td class="a">0x40412/0x40674</td><td class="v">12 variant copies</td><td class="eff">Shape threshold vs speed and vs g. 0–9 match the 1M; 10/11 (GTS) differ.</td><td><span class="badge b-cal">CAL</span></td></tr>
 </tbody></table>
 <p class="muted">Decision code <code>0x408DDE</code> classifies each cycle: 1 no rear control · 16→8 select-low rear
 build · 2 pair-hold · 32 yaw-limited build (0–100 % lag) · 256 cornering reapply.</p>
-<div class="note"><p><b>M3 vs 1M:</b> core slip/decel targets are identical for variants 1–9; only 10/11 are more
+<div class="note"><p><b>M3 vs 1M:</b> core slip/decel targets are identical for variants 1–9; only 10/11 (GTS coupe / GTS sedan) are more
 permissive at high speed. The M-car's licence lives in the yaw/DSC-mode logic, not these numbers.</p></div>
 </section>
 

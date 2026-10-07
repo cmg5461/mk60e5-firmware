@@ -219,9 +219,9 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   (front speed-term, g-curve, floor tables), indexed by a 5-bit EEPROM coding field `0x4031AA+1` (read via
   `0x8E066(24,1)`), not present in the flash. See `analysis/agents/m3cal/REPORT.md`.
 - **[verified]** M3 vs 1M slip/decel verdict: **base drive-slip threshold identical (Δ=0)**; ABS decel
-  threshold identical for coding variants 1–9. Only variants **10/11** are more permissive (high-speed
-  ≥150 km/h by ≈3–5% at 200–300; <60 km/h floor −140 vs −132) and variant **0** differs <20 km/h
-  (−127 vs −120). Active variant is in EEPROM, unknown statically. TCS has two small opposing deltas
+  threshold identical for coding variants 1–9. Only variants **10/11** (= M3 GTS coupe / GTS sedan) are more permissive (high-speed
+  ≥150 km/h by ≈3–5% at 200–300; <60 km/h floor −140 vs −132) and variant **0** (M3 sedan) differs <20 km/h
+  (−127 vs −120). Active variant is in EEPROM (coding byte 1), not in the flash. TCS has two small opposing deltas
   (one cap +3000–3600 higher, one cap tighter) → no systematic motorsport lean in these blocks. **The
   M-car is not meaningfully more permissive in core slip/decel targets at the calibration-block level;**
   MDM-style permissiveness, if present, is more likely in DSC-mode logic / AYC / code constants.
@@ -382,8 +382,10 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
   pressure compare thresholds; AYC 349/698 = ±20°/±40° angle clamps). VMO (0x42644) is a wheel-speed
   timing/plausibility monitor, not a vehicle model.
 - **[needs-hw]** The car's actual coding bytes (+1/+3/+4) are not in flash; with +1 the 0xD6xxx row gives
-  that unit's mass/CG. Variant→model mapping unknown (M3 rows 10/11 identified by wheelbase + the
-  permissive ABS rows).
+  that unit's mass/CG. Variant→model mapping **[user-supplied]**: 0 M3 sedan, 1 Custom ESM
+  (model parameters from coding bytes 31–40), 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
+  convertible, 10 GTS coupe, 11 GTS sedan; 2/6/7 not identified. All 12 rows are E9x M3 (same 2.76 m
+  wheelbase).
 
 ## Yaw / single-track model + DSC mode (detail `analysis/agents/yawmodel/REPORT.md`)
 
@@ -523,7 +525,9 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
 - **[verified]** **M3 vehicle-model variant table**: 12 s16 per parameter, stride 2, indexed by coding
   variant `0x4031AA+1` (0..11). Loaders `vehmodel_load_singletrack_coeffs` 0x5DE44 and
   `vehmodel_load_axle_derived` 0x5E424 → RAM 0x400AA4..0x400AF8. Only **7 distinct variants**: v0–4 == v5–9,
-  v10/v11 unique. Rows (v0..v11):
+  v10/v11 unique. Meaning [user-supplied]: v0 sedan, v1 Custom ESM, v3 coupe, v4 convertible; v5/v8/v9 =
+  Competition sedan/coupe/convertible (hence the duplication); **v10 GTS coupe, v11 GTS sedan**; v2/v6/v7
+  not identified. Rows (v0..v11):
   - l_f 0xD6F42 Q10 m = {1413,1418,1439,1403,1501, ×dup, 1352,1362}; l_r 0xD6F5A Q10 m sums with l_f to
     2826/2827 (= 2.760 m wheelbase, exact E9x M3).
   - mass 0xD6F72 kg = {1787,1814,1845,1731,1947, ×dup, 1691,1674}.
@@ -1509,8 +1513,8 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
   authority; onset "bite" is the apply-ramp/slew constants (apply +400/frame, dump −8000, slew 0x584CC).
   P-V accuracy only dominates autonomous DSC/AYC/TCS build (no pedal). COA tables are 1M-identical (not
   M3-retuned). [verified/inferred]
-- **Variants:** ABS = two flavors only, 0–9 vs 10/11 (10/11 tolerate deeper decel at speed, floor −1.40g
-  <60 km/h). Only front speed-term/g-term families are variant-indexed; rest global. M3 index in EEPROM
+- **Variants:** ABS = two flavors only, 0–9 (M3 / Competition, all bodies) vs 10/11 (GTS coupe / GTS sedan;
+  tolerate deeper decel at speed, floor −1.40g <60 km/h). Only front speed-term/g-term families are variant-indexed; rest global. M3 index in EEPROM
   (coding byte[1]&0x1F), default 0. [verified]
 - **µ-split/GMA** = decision code 32 (0x54D9A→0x58FF4), **gated by lateral g**. **Low-µ** = deep-slip flag
   (0x40902E b4), no continuous µ estimator / no µ-indexed slip remap / no NVM learning. Rough-road
