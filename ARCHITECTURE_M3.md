@@ -106,9 +106,11 @@ flowchart TD
 ### Arbitration & actuation
 - Each controller submits a per-wheel pressure request via `req_arbiter_submit` 0x833DA;
   `channel_owner_select` 0x83720 resolves priority (18>5>4>6>8>1>2>3>14>13>0>11>12>17>20>16).
-- **Pressure is volume-domain**: `hydraulic_model_step` 0x82EF4 tracks wheel volume V and derives pressure PM
-  (0x4016E2) through the COA p↔V curves; valve flow Q = √Δp·open·k/4096. ABS submits CMD/RAMP/UP only; it never
-  writes the model (PM is copied back by `abs_pm_snapshot` 0x559CC).
+- **Wheel pressure PM (0x4016E2) is measured**: the four wheel-output transducers (`0x402198[w]`) overwrite PM
+  every 10 ms (`sub_082BC0`) and are broadcast on CAN 0x2B2. `hydraulic_model_step` 0x82EF4 also tracks wheel
+  volume V through the COA p↔V curves (valve flow Q = √Δp·open·k/4096); that model sizes valve pulses and stands
+  in for PM during dump phases or a wheel-sensor fault. ABS submits CMD/RAMP/UP only; it never writes the model
+  (PM is copied back by `abs_pm_snapshot` 0x559CC).
 - `valve_pulse_sequencer` 0x853A8 builds 10-step inlet-current profiles; pump via `pump_motor_control` 0x88EC0.
 - **Engine torque**: TCS/MSR/AYC requests merge in `dme_torque_request_compose` 0xCC2C2 → **CAN TX 0x0B6** to the DME.
 

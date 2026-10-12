@@ -241,7 +241,7 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   to 150/130/144/158/173/202 ·0.01 km/h at vref 0/50/100/150/200/300 km/h ≈ **1.3–2.0 km/h of slip** as the
   ABS entry/continue condition (fn 0x54F9A). Closest thing to a "slip target"; it IS in the calibratable ABS
   block. There is **no slip-% target** — the controller works in a pressure-model domain (per-wheel levels,
-  ~0.01 bar guess, −8000..25000, clamps hard-coded).
+  0.01 bar, −8000..25000, clamps hard-coded).
 - **[verified]** **vref (0x408D84, 0.01 km/h) is a rate-limited integrator**, not a max-select (writer
   sub_044BF0, once/10 ms frame, floor 0.62 km/h). Rise +44/frame (1.25 g) toward fastest front wheel, +22
   (0.62 g) toward slowest valid wheel while ABS active, up to +282 ("snap") in init/modes 1/2/4; fall
@@ -620,8 +620,8 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   steering ≈0.043 deg/LSB are **[agent, med / unverified units]**.
 - **[verified]** **Brake COA 0x41978 (0x36C) and BCO 0x41758 (0x220) bodies are byte-identical to the 1M** — brake
   calibration is NOT retuned; coding only picks code 0 vs 1 per axle (`coding_unpack_block` 0xCFDD8: front +3 =
-  (rec[2]>>3)&7, rear +4 = rec[2]&7; codes 2–7 undefined). COA p-V: shared pressure axis 0x41B4E (0..32700, ~0.01
-  bar unproven), front volume sets 0x41B62/0x41B76, rear 0x41B8A/0x41B9E; gain curves 0x41A38/0x41AA4; BCO coded
+  (rec[2]>>3)&7, rear +4 = rec[2]&7; codes 2–7 undefined). COA p-V: shared pressure axis 0x41B4E (0..32700, 0.01
+  bar), front volume sets 0x41B62/0x41B76, rear 0x41B8A/0x41B9E; gain curves 0x41A38/0x41AA4; BCO coded
   thresholds 0x41764. Rotor/piston geometry is folded into the p-V curves (confirms the 1M geom finding).
   `coa_vol_to_pressure` 0x819FE, `coa_pressure_to_vol` 0x816E8 (= 1M 0x81508), interpolator `interp_linear_xy` 0x7119E.
 - **[verified]** **M3 DDS/RPA**: the Q12 sin/cos spectral tables (1M 0xDB2D8/0xDF158/0xE6E58/0xEACD8) are present,
@@ -693,12 +693,13 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   Physical lamp↔bit mapping needs the cluster side (not statically resolvable).
 - **[verified]** **The brake-pressure control is a VOLUME-DOMAIN hydraulic model** (`hydraulic_model_step` 0x82EF4,
   dispatcher slot 8, 10 ms), not a simple pressure integrator. Per wheel it tracks a modelled volume V (RAM 0x4016DA[w])
-  and derives pressure PM (0x4016E2[w]) through the COA p↔V curves; valve flow Q = isqrt(|dp|)·open·k/4096 (clamp 2000),
+  and can derive pressure PM (0x4016E2[w]) through the COA p↔V curves; **in normal operation PM is overwritten each
+  frame with the measured wheel-output pressure and V is re-synced to it** (`sub_082BC0`; see the pressure-sensing entry); valve flow Q = isqrt(|dp|)·open·k/4096 (clamp 2000),
   with a low-pressure accumulator per circuit. **The COA block carries the model coefficients** (byte-verified, tunable):
   k_in 0x41B26 (957/421), k_cross 0x41B2A (219/421), k_back 0x41B2E (705), k_out 0x41B30 (755/465), LPA pressure/volume
   curves 0x41B16/0x41B1E, pump ramp 0x41B34 (1150)/gain 0x41B36 (100)/filter 0x41B4C (187), volume temp-comp 0x41AE4/F0.
-  **Pressure unit ~0.01 bar** is now better supported (LPA plateau 1.3-5.0 bar, pedal threshold 8 bar, request clamp
-  200 bar) but still not pinned to a sensor span. Arbiter priority order (channel_owner_select 0x83720):
+  **Pressure unit = 0.01 bar**, pinned by CAN: 0x2B2 bytes 0–3 and 0x19E byte 6 transmit the internal values ÷100 as
+  integer bar (consistent with LPA plateau 1.3-5.0 bar, pedal threshold 8 bar, request clamp 200 bar). Arbiter priority order (channel_owner_select 0x83720):
   18>5>4>6>8>1>2>3>14>13>0>11>12>17>20>16.
 - **[verified]** **CSW** block 0x41E28: only +0x18 = 1562 has a code reader (a DDS/RPA per-wheel reference, 0x954E2
   region); the other six words are vestigial (no reader, 1M-identical). **VAR** 0x41D00: empty placeholder (payload 0,
@@ -712,8 +713,8 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
 - **[verified]** **ABS per-wheel pressure pipeline** (apply/hold/dump/reapply) fully named (~40 fns,
   `analysis/agents/m3abscore/`). Phase dispatch `abs_wheel_phase_dispatch` 0x504D0 switches on `rec[0]`:
   0xC0 pre-control 0x50894, 0x80 armed 0x50580, 0x09 hold 0x4CA3C (entry 0x57200), 0x11/0x15 reapply 0x4B680
-  (step 0x581BA), 0x21 dump 0x4AAA8 (target 0x55F06). Pressure RAM per wheel: **PM 0x408F2A = copy of modelled
-  pressure 0x4016E2[ch]** (writer `abs_pm_snapshot` 0x559CC), CMD 0x408F22 (commanded), LOCKEST 0x408FD0
+  (step 0x581BA), 0x21 dump 0x4AAA8 (target 0x55F06). Pressure RAM per wheel: **PM 0x408F2A = copy of wheel
+  pressure 0x4016E2[ch]** (measured wheel-output sensor; volume model during dump/sensor fault; writer `abs_pm_snapshot` 0x559CC), CMD 0x408F22 (commanded), LOCKEST 0x408FD0
   (lock-onset estimate, `abs_lockon_pressure_estimator` 0x5862C), PMMIN 0x408FC4. **Corrects cycle 5:** 0x408FD0
   is **min**-selected with PM, not max. Apply ramp (id 19) builds CMD +400/frame to 25000; **corrects cycle 2:**
   its vref gate (0x442AC) is **4 km/h** (0.01 km/h units), not 400 km/h. ABS never writes the volume model; it only
@@ -730,7 +731,7 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
 - **[verified]** **ABS pressure cal vs code**: tunable (ABS block, all = 1M) apply ramp 0x403A8=400, dump reductions
   0x40E64=1000/1500/2000, stage thresholds 0x40E5E/0x40E9E, reapply steps 0x40D5E/0x40D60=300/500. Hard-coded code
   literals (patch-only): clamps 25000 (0x61A8), −8000 (0xE0C0), 20000, 30000, 9000; hard-coded ROM dump-cap curves
-  0xD6AFC/0xD6C76 (byte-identical to 1M). Pressure unit ~0.01 bar still assumed.
+  0xD6AFC/0xD6C76 (byte-identical to 1M). Pressure unit 0.01 bar.
 - **[verified]** **DSC inputs (input-sources map, `analysis/agents/m3rx/`... text only)**: live powertrain RX = DME
   torque 0x0A8/0x0A9/0x0AA, gear 0x0BA, CAS 0x130; live chassis RX = steering 0x0C9, yaw/lat-g 0x0CD/0x0D1/0x0D4;
   NM node 0x29 on 0x480; tester 0x6F1. **Disabled**: the external torque-limit exchange (F-CAN 0x78F/0x78E) is gated
@@ -1453,66 +1454,54 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
   (vs the single-sensor MK60E). Supplier Continental Teves. [source: BMW DSC MK60E5 training doc;
   tomazcebul/MK60e5-Standalone README; multiple standalone-swap forums] [user: confirmed 5 transducers on
   the physical PCB contacting the block]
-- **CAN pressure broadcast — CONFIRMED on 7846816A (pack routines byte-traced).** The DSC transmits all
-  five pressures, matching the external DBC (commaai/opendbc `bmw_e9x_e8x.dbc`):
-  - `0x2B2 WheelPressure` (DLC8, 20 ms periodic): **bytes 0–3 = the four per-wheel pressures.** Getters
-    0x7B490/4DE/51C/566 → `sub_08D030(idx)` read staging array `0x40499A + 4·idx` (value@+0, valid@+2 b7),
-    ÷100, clamp 254, 0xFF=invalid. Writer `sub_08CFCC` copies the per-wheel source RAM into 0x40499A.
-    Bytes 4.4–5.7 = a ×939 yaw/accel value (not pressure); bytes 6–7 = flags. [verified]
-  - `0x19E StatusDSC` byte 6 (bit 48) = master/input brake pressure. Getter 0x7AD2A → `sub_093F00(idx 2)`
-    → 0x401FF8 (copy of 0x4020E2), part of the `pressure_adc_track` 0x8F344 ADC block ⇒ **MEASURED**, ÷100
-    → ~bar. [verified source=ADC; "master/line" inferred from DBC label + adjacency]
-  - `0x1A0 Speed`: AccX/AccY/YawRate/VehicleSpeed. Scaling raw ~0.01 bar (unproven absolute; bench gauge
-    vs a 0x2B2/0x19E capture pins it). [source/verified]
-- **[RESOLVED 2026-10-05] Firmware READS 5 pressure transducers but USES only 1; per-wheel pressure is a
-  PURE forward model, NOT fused.** (Supersedes the first-pass "only one sensor" error and the Kalman
-  hypothesis.) Detail: `analysis/agents/abs_full/06_pressure_sensors_recheck.md`.
-  - **Reads 5 transducers = 10 ADC channels** (each dual-element main+redundant), acquired every 10 ms by
-    `sub_0B85EC`, conditioned `0x0B800C`, scaled `0x0B83DA` via one shared ratiometric transfer function
-    (id 190, gains 0x5EE9/0x556B — identical to the master sensor's). Raw cells: S1 0x402954 (ch6/7),
-    S2 0x4029B6 (34/44), S3 0x4029B8 (35/45), S4 0x4029BA (37/47), S5 0x4029BC (36/46). ROM cal 0x0F56F4
-    + 0x18·n. Matches the owner's 5 physical transducers; the 1M image also has 5 blocks (platform-standard).
-    [verified] (S2–S5 being *pressure* specifically is [inferred] from identical processing + the physical
-    transducers; the same dual-track path could fit another ratiometric sensor, but pressure is overwhelmingly likely.)
-  - **Only S1 (master/primary brake-line) reaches control:** 0x402954 → master 0x404994 (sole writer
-    0x8CE9E), read ~48× in the model region. **S2–S5 are MEASURED but routed ONLY to sensor-plausibility/
-    fault monitoring** (regions 0x08F/092/094/0B8/0B9); ZERO reads in control (0x081–088), `supply_pressure`
-    0x84D42, 0x4016E2, CAN-TX (0x7Axxx), or KWP (0xB1–B3xxx). **BMW reads 4 wheel-pressure sensors and uses
-    them only to check themselves.** [verified]
-  - **Per-wheel caliper pressure 0x4016E2[w] = PURE forward model.** Exactly 3 writers, all COA
-    volume→pressure (0x81A34 in `coa_vol_to_pressure`; 0x82E06/0x82E9C in model fn 0x82BC0), clamped against
-    its own prior value. **No sensor writer, no Kalman/complementary `PM=pred+K·(meas−pred)` anywhere — NOT
-    fused.** `supply_pressure` 0x84D42 = clamp(max(modeled partner PMs, measured master 0x404994), 0, 200 bar) —
-    master the only measured term, and it only bounds INLET-valve inflow. **NOTE: modeled PM is NOT clamped to
-    master.** The return PUMP injects volume directly (`circuit_volume_update` 0x826C0 → circuit vol 0x4016FE /
-    wheel vol 0x4016DA, V≤30000) and the COA p↔V curve raises PM independent of master; partner-coupling lifts
-    both circuit wheels. Ceiling = 200 bar. So **modeled PM CAN exceed measured master** during any pump-active
-    event (ABS re-apply, DSC/DTC, ASR/TCS) — where the driver's foot may be off the pedal (master≈0) while
-    calipers are pump-pressurised. [verified]
-  - **0x2B2 byte→wheel map & scaling [verified]:** byte order = wheel-index order 1:1 (`sub_08CFCC` copies
-    0x4016E2[w]→0x40499A+4·w; getters pass idx 0..3 for bytes 0..3). **byte0=w0, byte1=w1 = FRONT; byte2=w2,
-    byte3=w3 = REAR** (front=0/1, rear=2/3 confirmed via circumference-select / wss map; L/R inferred from the
-    0x0CE tool convention). All four scale clamp(s16/100, 0..254), neg→0, 0xFF=invalid — identical, and same
-    ÷100 as 0x19E byte6 master. **Consequence for datalogs: on a dual-master/bias-bar car, 0x2B2 reflects the
-    front-S1-fed control MODEL (+pump), NOT real per-circuit pressure; it never shows the true mechanical
-    front/rear bias split. "rear 0x2B2 > front/master" is expected under pump-active intervention, not a decode
-    error.** Real per-corner pressure lives in the ignored output sensors S2–S5 (0x4029B6..BC).
-  - **Bias-bar observation explained (both consistent, no measurement needed):** no firmware path selects an
-    independent rear line; the single controlling/reported pressure is S1 (sensors carry a numeric index
-    only, no front/rear tag). (1) "Reported pressure follows the bias bar" ⇒ **S1's hydraulic port is teed
-    into the rear circuit on the owner's car** (plumbing, not firmware). (2) Even the modeled 0x2B2 wheel
-    pressures track it: with valves open (normal braking) modeled caliper = supply = master = rear-teed S1.
-    The owner's inference that firmware *measures-and-uses* rear is NOT supported; the owner's "5 real
-    transducers the firmware reads" IS confirmed (4 are read-but-ignored except fault watch). [verified/inferred]
-  - **Tuning note:** because S2–S5 are already conditioned in RAM (0x4029B6..BC), a mod *could* feed real
-    wheel pressure into control/broadcast or into a measurement-update of 0x4016E2 — a deep change, not a cal
-    edit. The dry-bench 0x23 RAM watch (live cells dither on LSB; model cells dead-still) can still verify
-    the 5 channels are live without hydraulics.
-- **Owner's sluggish-brakes concern — resolved:** under braking the dominant loop is measured slip +
-  wheel-accel (10 ms), robust to P-V error. Off P-V model degrades modulation feel/precision, NOT braking
-  authority; onset "bite" is the apply-ramp/slew constants (apply +400/frame, dump −8000, slew 0x584CC).
-  P-V accuracy only dominates autonomous DSC/AYC/TCS build (no pedal). COA tables are 1M-identical (not
-  M3-retuned). [verified/inferred]
+- **CAN pressure broadcast [verified]:** the DSC transmits all five measured pressures, matching the
+  external DBC (commaai/opendbc `bmw_e9x_e8x.dbc`). Detail: `analysis/agents/abs_full/07_pressure_on_can.md`.
+  - `0x2B2 WheelPressure` (DLC8, 20 ms): **bytes 0–3 = wheel pressures LF, RF, LR, RR** (wheel index 0..3;
+    front=0/1, rear=2/3). Getters 0x7B490/4DE/51C/566 → `sub_08D030(idx)` read staging `0x40499A + 4·idx`
+    (value@+0, flags@+2), `clamp(s16/100, 0..254)` → bar, 0xFF=invalid. Writer `sub_08CFCC` copies PM
+    `0x4016E2[w]` and sets flags: b6 = wheel-sensor system enabled, **b5 = PM is measured** (`0x401719`
+    b7 front / b6 rear), b7 = valid. Bytes 4.4–5.7 = a ×939 yaw/accel value (not pressure); 6–7 = flags.
+  - `0x19E StatusDSC` byte 6 = master/input pressure: getter 0x7AD2A → `sub_093F00(2)` → `0x401FF8`
+    (validated, offset-corrected, filtered master sensor), same ÷100 → bar.
+  - `0x1A0 Speed`: AccX/AccY/YawRate/VehicleSpeed.
+- **Pressure sensing: all five transducers are sampled AND used for control [verified].** Detail:
+  `analysis/agents/abs_full/06_pressure_sensors_recheck.md`.
+  - **Master sensor** (ASIC ch 6/7, raw 0x402954, `pressure_adc_track` 0x8F344) → validated `0x401FF8`.
+    Driver pressure `0x404994` (slot 0, 0x8CE5E, sole store 0x8CE9E) = `0x401FF8` when the master sensor
+    is valid; else the mean of valid wheel pressures (`sub_08CDC4` → `0x404996`, if ≥ 1 bar); else
+    modelled circuit pressure `0x40171A`.
+  - **Four wheel-output sensors**, each dual-element. Primary element: fast SPI burst `sub_06FD90`
+    (several samples per 10 ms frame) → `sub_08FA00` (zero offset `0x40218C[w]`/16, 4-sample average) →
+    **measured wheel pressure `0x402198 + 4·w`** `{value, flags}`, 0.01 bar. Redundant element (raw
+    `0x4029B6..BC`, filtered `0x402096[w]`, offset `0x40209E[w]`) is plausibility-only. Control getter
+    `sub_091A50(w)` — 16 call sites.
+  - **PM `0x4016E2[w]` is measurement-primary.** `sub_082BC0` (in `hydraulic_model_step`, 0x82F36, 10 ms):
+    normal → **PM = measured** (store 0x82E9C) and volume `0x4016DA[w]` re-synced via `coa_pressure_to_vol`;
+    outlet/dump active (valve state `0x401A16[w]` < 0, latched `0x401715[w]`) → COA volume model until the
+    state goes positive, then the volume error is reconciled into `0x4016F2[circuit]`; inlet fully open
+    (state 20) with recent pump flow → min(model, measured) (store 0x82E06); **gate closed → pure model for
+    all four wheels**. Gate = `0x402888` b5 clear, fault ids 35/57/59/61/63 `<<15` not latched, and all
+    four sensors valid (one invalid sensor drops all four).
+  - **Other direct consumers of measured wheel pressure:** ABS `sub_046ADC` (per-wheel filters
+    `0x408E20 + 14·w`, referenced by ~15 ABS routines), `sub_055A84` (7-deep history `0x403296`),
+    `abs_hold_entry_sync` 0x57200, `abs_decision_resolve` 0x58B30, `valve_pulse_sequencer` via `sub_084620`
+    (cell `0x40206A[w]`), `coa_wheel_gain_apply` 0x84E38, 0x69992/0x89D8A/0x8A90C/0x8B9E0 (role open),
+    KWP 0x21 via `sub_0946D0`. How the ABS routines use the value in their decisions is open.
+  - `supply_pressure` 0x84D42 = clamp(max(partner PMs, driver pressure 0x404994), 0, 200 bar) — both
+    terms measured in normal operation. The return pump still injects volume into the model
+    (`circuit_volume_update` 0x826C0), which matters for PM only in model phases.
+  - **Consequence for datalogs:** 0x2B2 is real per-wheel output pressure and 0x19E byte 6 is the input
+    side — different transducers. Front/rear circuits are separate (wheel→circuit ROM 0xDA1B4 = 0,0,1,1),
+    so on a dual-master/bias-bar car 0x2B2 shows the true front/rear split, and rear above master is
+    physical. During an ABS dump the affected wheel's byte is the model estimate until re-sync.
+  - **Bench unit:** if the wheel sensors are faulted or disconnected the gate closes and PM/0x2B2
+    become pure model; otherwise they read the (zero) block pressure. [inferred] Watch `0x401719` b7/b6 and
+    `0x402198 + 4·w` vs `0x4016E2 + 2·w` over the 0x23 RAM peek.
+- **Owner's sluggish-brakes concern:** under braking the dominant loop is measured slip + wheel-accel
+  (10 ms), and pressure metering is closed on measured wheel pressure, so a P-V error mis-sizes single
+  pulses rather than accumulating. Onset "bite" is the apply-ramp/slew constants (apply +400/frame, dump
+  −8000, slew 0x584CC). P-V accuracy dominates only in dump phases and in sensor-fault fallback. COA
+  tables are 1M-identical (not M3-retuned). [verified/inferred]
 - **Variants:** ABS = two flavors only, 0–9 (M3 / Competition, all bodies) vs 10/11 (GTS coupe / GTS sedan;
   tolerate deeper decel at speed, floor −1.40g <60 km/h). Only front speed-term/g-term families are variant-indexed; rest global. M3 index in EEPROM
   (coding byte[1]&0x1F), default 0. [verified]
@@ -1529,7 +1518,7 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
 - **Unmapped global cal to add to XDF:** 0x40C40, 0x40C5A, 0x40D24, 0x40D40(=50), 0x40D42(=7000),
   0x40DD2(=1748)+0x40DD8, rough-road 0x40D66..0x40D7E (CPU; file +0x8000).
 
-## [verified 2026-10-05] ST_CLCTR control-state bitfield + the "model > reported master" anomaly
+## [verified 2026-10-05] ST_CLCTR control-state bitfield
 
 - **ST_CLCTR = CAN 0x19E (StatusDSC) byte 0** — a BITFIELD (getter `can_tx_19E_status_flags` 0x7AEAA),
   assembled from the ABS control-state block 0x408DA0/0x408DA2 + intervention flags:
@@ -1547,21 +1536,12 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
   - **The getter sets only bits 0–5 (≤63); it NEVER emits bit6=64.** The `64 = rear-control` value exists
     only in the *internal* decision code 0x408DDE, which is NOT broadcast (0 CAN getters read it). A logged
     ST_CLCTR=64 ⇒ the DBC byte/bit offset is wrong.
-- **"ST_CLCTR=0 (ABS off), modeled rear 0x2B2 > reported master 0x19E (~10 bar)" — explained, NOT an
-  error.** The reported master and the model's supply are DIFFERENT cells: 0x19E byte6 = `0x401FF8`
-  (filtered ADC master, = what a log calls S1); the model supply (`supply_pressure` 0x84D42) clamps to
-  `0x404994`, a LEADING/ESTIMATED master that slot-0 selection (0x8CE5E, flag 0x408DA1 b4) can set to the
-  sensor OR a *modeled* circuit pressure `0x40171A[0/4]`. So modeled PM is bounded by 0x404994 (and
-  ultimately 200 bar), NOT by the slower 0x19E cell — on a fast ramp the estimate leads the filtered reading
-  by a few 10 ms frames ≈ ~10 bar (+ minor volume-integration overshoot). [verified cells differ; leading-
-  estimate magnitude inferred] **Corrects the earlier loose claim that modeled PM is clamped to the reported
-  S1.** (Note: 0x404994 writer attribution — ADC-only 0x8CE9E vs sensor/model-selected 0x8CE5E — is a small
-  open nuance to reconcile.)
+- **"ST_CLCTR=0 (ABS off), rear 0x2B2 > master 0x19E" is physical.** 0x2B2 rear bytes are the measured
+  rear wheel-output pressures; 0x19E byte 6 is the master/input sensor. On a car with independent
+  front/rear master cylinders they are different circuits. [verified sources; plumbing inferred]
 - **Pump is NOT gated by the slip-control state.** `pump_motor_control` 0x88EC0 is gated by 0x401981 bit5,
   set in the actuation/arbiter pipeline (0x8428C/0x843BC), so the pump CAN run while ST_CLCTR=0 (precharge/
   autonomous build). [verified]
-- **Bench confirmation (dry/live): peek 0x404994 vs 0x401FF8 and pump-gate 0x401981 b5 during a pressure
-  ramp** — the model's estimated master should lead the filtered one by ~the observed margin.
 
 ## [verified 2026-10-05] Cornering lateral-g pressure-term curves 0x40E0A/0x40E26 (decoded + in XDF/cal)
 

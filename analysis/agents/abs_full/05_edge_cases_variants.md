@@ -2,7 +2,7 @@
 
 CPU addresses; file offset = CPU + 0x8000 = XDF address. Curve record `[lo,hi,n, x[n-1], c[n], k[n]]` s16,
 `y = clamp(c[i] + (x*k[i])>>10, lo, hi)`, reader `0x710FC`. Units: speed/slip 0.01 km/h, decel/g 0.01 g,
-pressure ~0.01 bar (unproven). Evidence tags: **CONFIRMED** (read from bytes/opcodes here) /
+pressure 0.01 bar (pinned by CAN 0x2B2 ÷100 = bar). Evidence tags: **CONFIRMED** (read from bytes/opcodes here) /
 **INFERRED** (interpretation) / **UNCONFIRMED** (not resolved). Scope: **ABS only** — kept distinct from
 DSC/TCS/AYC except where an AYC signal explicitly feeds the ABS pressure loop.
 
@@ -145,9 +145,11 @@ gates are the event prefilter `0x4FFF6` (E+24=vref/33, E+26=vref/50) and `abs_gr
 - **(b) Voltage monitoring:** a supply monitor exists among `monitoring_main 0xB3FC0`'s ~26 sub-monitors; the
   exact function/threshold not isolated. Any such fault gates ABS through the same `0x4009BC`/`0x401FF2`
   chain. Gate mechanism CONFIRMED; specific fn LOW/UNCONFIRMED.
-- **(c) Pressure-sensor fault:** only the **master-cylinder** sensor is real (`0x8CE8E`, `pressure_adc_track
-  0x8F344` → `0x404994`); wheel pressures are **modelled** (COA p↔V), so no wheel pressure-sensor faults. An
-  MC-pressure plausibility fault is raised in the ADC path; exact id not pinned. INFERRED/partial.
+- **(c) Pressure-sensor fault:** five sensors are monitored (master + four wheel outputs, each dual-element
+  with a plausibility cross-check). A master fault makes driver pressure `0x404994` fall back to the mean of
+  the wheel sensors; a wheel-sensor fault (per-wheel invalid flag, `0x402888` b5, or fault ids 35/57/59/61/63
+  `<<15`) switches all four wheel pressures PM to the COA volume model (`sub_082BC0`). BMW DTC numbers not
+  pinned. CONFIRMED mechanism (see `06_pressure_sensors_recheck.md`).
 - **(d) Missing/invalid wheel signal → fallback:** a wheel-speed sensor fault does **not** quietly exclude one
   wheel — it raises group-1 faults + sets `0x4009BC` → **ABS/DSC disabled entirely + lamp** (status on TX
   0x19E; no GPIO lamp). Predictable BMW behavior. CONFIRMED.

@@ -78,7 +78,7 @@ if vref < 2000 (20 km/h):  thr = max(thr, floor20[var] = −127)
 Secondary adjustments in the same function:
 - **|wheel accel| < 15 (±0.15 g) ⇒ thr forced to −99** (−0.99 g), a shallow default (also taken for a rear
   wheel when `[0x408DEB]` bit5 set). 0x047DE6–0x047E00. **[C]**
-- **Front split-μ / pressure-imbalance term** (front only, 0x047D44–0x047DA0): when own modelled pressure
+- **Front split-μ / pressure-imbalance term** (front only, 0x047D44–0x047DA0): when own wheel pressure
   `PM 0x408F2A` far exceeds the same-axle partner's, `thr -= clamp(ΔPM/300, ≥8)` (deepens). Conditional,
   bytes read; physical intent inferred. **[I]**
 - **Special fixed override −130 / −135** (0x047CE0–0x047CE8) when a wheel phase byte (`[0x40902E+…]` bit1)
