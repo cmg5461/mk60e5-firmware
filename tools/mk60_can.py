@@ -63,6 +63,10 @@ SESSION_ADJUST  = 0x87                    # ECUAdjustmentMode (where 0x27 auth i
 SESSION_PROG    = 0x85                    # ECUProgrammingMode (flash; needs further preconditions)
 FLASH_SEED_LEVEL = 0x03
 FLASH_ALGO       = "seedrev"
+# .0pa pseudo-bank holding the EEPROM default image (logical offset = addr - 0xDF8000;
+# see analysis/EEPROM_MAP_7846816A.md). Writing it zeroes coding + learned/valve-cal blocks.
+EEPROM_IMG_LO = 0xDF0000
+EEPROM_IMG_HI = 0xE00000
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -664,6 +668,12 @@ def cmd_flashplan(args):
             sys.exit("segment %d size mismatch (declared 0x%X, blob %d)" % (i, s["size"], len(seg)))
         total += len(seg)
 
+    skipped = []
+    if args.skip_eeprom:
+        skipped = [s for s in segs if EEPROM_IMG_LO <= s["addr"] < EEPROM_IMG_HI]
+        segs = [s for s in segs if not EEPROM_IMG_LO <= s["addr"] < EEPROM_IMG_HI]
+        total -= sum(s["size"] for s in skipped)
+
     print("=" * 70)
     print("FLASH PLAN: %s   (%d segments, %d bytes, maxblock 0x%02X)"
           % (plan.get("name"), len(segs), total, maxblk))
@@ -674,6 +684,11 @@ def cmd_flashplan(args):
     for i, s in enumerate(segs):
         nframes = (s["size"] + chunk - 1) // chunk
         print("  [%2d] 0x%06X  %7d B  %4d frames" % (i, s["addr"], s["size"], nframes))
+    if skipped:
+        print("--skip-eeprom: NOT writing %d EEPROM default-image segment(s) (coding, valve cal,"
+              " learned values and ident block 24 keep their current contents):" % len(skipped))
+        for s in skipped:
+            print("       0x%06X  %7d B  (EEPROM 0x%03X)" % (s["addr"], s["size"], s["addr"] - 0xDF8000))
     print("=" * 70)
 
     if not args.arm:
@@ -988,6 +1003,9 @@ def main():
                     help="skip app-level auth: ECU already in bootloader (0x85 opens directly)")
     fp.add_argument("--probe-finalize", action="store_true", dest="probe_finalize",
                     help="after writing, enumerate 31 09 sub-functions instead of verify+reset (diagnostic)")
+    fp.add_argument("--skip-eeprom", action="store_true", dest="skip_eeprom",
+                    help="don't write the 0xDF8xxx EEPROM default-image segments: keeps coding, "
+                         "valve calibration and learned values (minor revision of the same firmware)")
     fp.add_argument("--uid", default="273c", help="auth USER_ID (any 4 chars; default 273c)")
     fp.add_argument("--w564", default=None, help="override w564 (default = per-unit last 4 of 0x1A 0x89)")
     fp.add_argument("--erase-timeout", type=float, default=60.0, dest="erase_timeout")
