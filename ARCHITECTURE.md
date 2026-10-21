@@ -4,6 +4,8 @@ A top-down map of the application image. Confidence follows FACTS.md: anything n
 as **[verified]** is an inference. Details: `analysis/agents/*/REPORT.md`,
 `analysis/7846411A_symbols.md`, `analysis/7846411A_can_map.md`. CPU addresses (file offset =
 CPU + 0x8000).
+Covers the late, **M·CORE** MK60E5 flavor. Early MK60E5 units are ARM (TMS471) and are not described here;
+see FACTS.md, *Two MK60E5 hardware flavors*.
 
 ## Hardware view
 ```
@@ -18,7 +20,7 @@ CPU + 0x8000).
   valves / pump: probably driven through SPI output images (unconfirmed)
 ```
 
-**Update 2026-10-06:** the sensor-interface ASIC also has a 2-level (7/14 mA) mode, selected per channel by ASIC register
+Besides VDA, the sensor-interface ASIC has a 2-level (7/14 mA) mode, selected per channel by ASIC register
 0x28C (M3 init table, file 0xDF22C). With both-edge timer capture, E46-type sensors work. See
 `docs/E46_SENSOR_FIRMWARE_PATCH.md`.
 

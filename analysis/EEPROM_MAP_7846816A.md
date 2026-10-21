@@ -73,8 +73,8 @@ pass did not resolve (ids built at run time).
 | 0x433 | 1 | Diag-module flag, loaded to 0x40954D at boot, saved by 0xAF7F0 | desc 0xF2ED0 | low |
 | 0x434–0x44A | 23 | unreferenced | – | ? |
 
-Correction to earlier notes: descriptor word `00A3` is `(blk 10 << 4) | 3`, not "EEPROM offset
-0xA3", and `0030` is the length (48), not a block id. The coding lives at **0x400**.
+In the descriptor, word `00A3` is `(blk 10 << 4) | 3` (block id, not an EEPROM offset) and `0030` is the
+length (48). The coding lives at **0x400**.
 
 ## Block 7 — active coding image, 0x44B–0x4E0
 
@@ -151,9 +151,8 @@ given for the `1A` ids; BMW may use them differently.
 | 0x3FE | 1 | – | unreferenced | ? |
 | 0x3FF | 1 | write desc 0xF3364 (from 0x403324) | – | ? |
 
-Correction: FACTS says `0x409564` comes from "logical NVM 0x0322". The loader call is
-`0x6E41E(blk 24, off 0x98, 0x409564, 4)` → **0x3BA–0x3BD**, i.e. the tail of the `1A 89` string, which
-agrees with the later finding that `w564` = last 4 bytes of the `1A 89` response.
+`0x409564` is loaded by `0x6E41E(blk 24, off 0x98, 0x409564, 4)` → **0x3BA–0x3BD**, the tail of the `1A 89`
+string, so `w564` = the last 4 bytes of the `1A 89` response.
 
 ## Other DIDs seen that do *not* touch the EEPROM
 
@@ -212,7 +211,7 @@ Caveat: the dump used here (`flash/bin/7846816A_00DF0000.bin`) is reconstructed 
 so it confirms the shipped *defaults*, not a real post-production bench EEPROM.
 
 
-## Block 16: valve self-calibration (traced 2026-10-16)
+## Block 16: valve self-calibration
 
 Written by the unit itself when the tester runs SID `31` routine `28` (`ABGLEICH_ANALOG_EV`, inlet valves)
 or `29` (`ABGLEICH_ANALOG_MCI_V`, the USV / master-cylinder isolation valves). Both start through

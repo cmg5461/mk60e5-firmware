@@ -1,7 +1,7 @@
 # AK protocol bits the stock firmware expects (7846816A, M3)
 
 What a VDA/AK sensor, or a converter that emulates one, has to send so the **stock** firmware raises no
-direction or presence DTC. Derived from the disassembly, 2026-10-15. Function and RAM names are in
+direction or presence DTC. Derived from the disassembly. Function and RAM names are in
 `analysis/7846816A_symbols.md`, section "Wheel direction".
 
 ## How the firmware sees AK frames

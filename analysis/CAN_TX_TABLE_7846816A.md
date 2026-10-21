@@ -9,7 +9,7 @@ against the packer code. PT-CAN header 0xD7F45 (20 TX), F-CAN header 0xF59C3 (14
   mailbox-3 software queue (0x40157C → 0x40146C) · +6 period ×10 ms (0xFF = event) · +10 n_signals ·
   +11 u16 first signal · +13 mailbox.
 - **Signal** (5 B, PT 0xD839E / F 0xF5CBD; base = hdr+0x0D + u16 hdr+0x0C, index ×5):
-  +0 b0..4 length · b5 flag (older notes call it "signed"; the TX packer never reads it) · **b6 pack mode** ·
+  +0 b0..4 length · b5 flag (not read by the TX packer; not a sign flag) · **b6 pack mode** ·
   +1 low nibble start byte, high nibble start bit · +3 u16 variable id.
 - **Variable** (8 B, PT 0xD88C0 / F 0xF5ED0): +0 b0..2 type · +1 default · +4 u32 handler.
 
@@ -33,7 +33,7 @@ against the packer code. PT-CAN header 0xD7F45 (20 TX), F-CAN header 0xF59C3 (14
   is TX-confirmed. F-CAN also has **type 1** (direct RAM read through +4) and **type 3** (+4 is a constant).
   No TX signal uses types 1, 3 or 4 in this image.
 
-## Frames suppressed at run time (added 2026-10-19) [C, bench-confirmed for 0x0BF / 0x0E1]
+## Frames suppressed at run time [C, bench-confirmed for 0x0BF / 0x0E1]
 
 A frame is sent when its counter `0x4015F8[i]` reaches the period (+6). `0x7E7A4`, called every CAN cycle from
 `can_stack_cycle` 0x793FC **before** the scheduler, zeroes some counters, so those frames never come due:
@@ -169,8 +169,8 @@ DBC name: drivetrain wheel torque (`torq_wheel_drivetrain`). This image sends on
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 66 | 0.0 | 12 | Intel (LE) | 0x02D | 0 value getter | 0x07B906 | can_tx_1A3_ax_raw | accelerometer (cluster sig 5) RAW 0x404A00 (`ax_signal_get(3)`; unfiltered, no offset correction; 1 mg inferred) ×251/256 → 0.01 m/s²/bit, signed, clamp ±2047; 0x800 invalid (2026-10-15, units 2026-10-19) |
-| 67 | 1.4 | 12 | Intel (LE) | 0x027 | 0 value getter | 0x07B96E | can_tx_1A3_ax_offset | learned ax zero offset 0x4049FD (`ax_signal_get(2)`; s8, 2 mg, ±119) ×251/128 → 0.01 m/s²/bit, same scale as sig 66 (corrected ax = sig 66 − sig 67), signed, clamp ±2047; 0x800 invalid. (2026-10-19: not a low-passed accel as first noted) |
+| 66 | 0.0 | 12 | Intel (LE) | 0x02D | 0 value getter | 0x07B906 | can_tx_1A3_ax_raw | accelerometer (cluster sig 5) RAW 0x404A00 (`ax_signal_get(3)`; unfiltered, no offset correction; 1 mg inferred) ×251/256 → 0.01 m/s²/bit, signed, clamp ±2047; 0x800 invalid |
+| 67 | 1.4 | 12 | Intel (LE) | 0x027 | 0 value getter | 0x07B96E | can_tx_1A3_ax_offset | learned ax zero offset 0x4049FD (`ax_signal_get(2)`; s8, 2 mg, ±119) ×251/128 → 0.01 m/s²/bit, same scale as sig 66 (corrected ax = sig 66 − sig 67), signed, clamp ±2047; 0x800 invalid. Not a low-passed accel |
 | 68 | 3.0 | 2 | Intel (LE) | 0x049 | 0 value getter | 0x07B9B2 |  |  |
 | 69 | 3.2 | 2 | Intel (LE) | 0x045 | 0 value getter | 0x07B9F0 |  |  |
 | 70 | 3.4 | 4 | Intel (LE) | 0x010 | 0 value getter | 0x07BA1C |  |  |
@@ -178,7 +178,7 @@ DBC name: drivetrain wheel torque (`torq_wheel_drivetrain`). This image sends on
 
 #### PT-CAN 0x1A6  DLC 8  100 ms  mbox 3 · via TX queue (+5 b6)
 
-Wheel-tick odometry (2026-10-18). `0x7F22C` adds per-wheel tick deltas into u16 accumulators 0x4046FE (a rear wheel, by
+Wheel-tick odometry. `0x7F22C` adds per-wheel tick deltas into u16 accumulators 0x4046FE (a rear wheel, by
 0x400952 status), 0x404700 (wheel 0) and 0x404702 (wheel 1) while 0x4046D7 b6 is set, and counts u8 0x404704 up to 255;
 `0x7F88C` zeroes them. Each getter returns 0xFFFF when its wheel's 0x400952 b0 or 0x40288C b2 is set. The getters
 have side effects: sig 75 sets 0x4046D7 b6 (enables the accumulation) and sig 72 resets 0x4046FE on a 0x4046D7 b6 /
@@ -213,10 +213,10 @@ have side effects: sig 75 sets 0x4046D7 b6 (enables the accumulation) and sig 72
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 89 | 1.4 | 12 | Intel (LE) | 0x00C | 0 value getter | 0x07B7F4 | can_tx_2B3_ax_raw | same source as 0x1A3 sig 66 (raw 0x404A00) ×201/512 **+2048** (offset binary) → 0.025 m/s²/bit, clamp 0..4095; 0xFFF invalid (2026-10-15) |
-| 90 | 3.0 | 12 | Intel (LE) | 0x00B | 0 value getter | 0x07B83C | can_tx_2B3_ax_offset | same source as 0x1A3 sig 67 (learned ax offset 0x4049FD) ×201/256 +2048 → 0.025 m/s²/bit, same scale as sig 89; clamp 0..4095; 0xFFF invalid (2026-10-15, corrected 2026-10-19) |
-| 91 | 4.4 | 2 | Intel (LE) | 0x033 | 0 value getter | 0x07B8B6 | can_tx_2B3_ax_status | `ax_signal_get(3)` out[3]: b5 or b6 → 2 (invalid), else 0. 1 needs b2 clear, which this path never produces (2026-10-19) |
-| 92 | 1.0 | 4 | Intel (LE) | 0x00F | 0 value getter | 0x07B8E2 | can_tx_2B3_alive | alive counter 0..14, 0x40471D low nibble (2026-10-19) |
+| 89 | 1.4 | 12 | Intel (LE) | 0x00C | 0 value getter | 0x07B7F4 | can_tx_2B3_ax_raw | same source as 0x1A3 sig 66 (raw 0x404A00) ×201/512 **+2048** (offset binary) → 0.025 m/s²/bit, clamp 0..4095; 0xFFF invalid |
+| 90 | 3.0 | 12 | Intel (LE) | 0x00B | 0 value getter | 0x07B83C | can_tx_2B3_ax_offset | same source as 0x1A3 sig 67 (learned ax offset 0x4049FD) ×201/256 +2048 → 0.025 m/s²/bit, same scale as sig 89; clamp 0..4095; 0xFFF invalid |
+| 91 | 4.4 | 2 | Intel (LE) | 0x033 | 0 value getter | 0x07B8B6 | can_tx_2B3_ax_status | `ax_signal_get(3)` out[3]: b5 or b6 → 2 (invalid), else 0. 1 needs b2 clear, which this path never produces |
+| 92 | 1.0 | 4 | Intel (LE) | 0x00F | 0 value getter | 0x07B8E2 | can_tx_2B3_alive | alive counter 0..14, 0x40471D low nibble |
 | 93 | 0.0 | 8 | raw | 0x06C | 2 payload writer | 0x07D7D8 |  | checksum: can_tx_checksum8 0x7D24C |
 
 #### PT-CAN 0x31D  DLC 2  event  mbox 3 · via TX queue (+5 b6)
@@ -315,7 +315,7 @@ have side effects: sig 75 sets 0x4046D7 b6 (enables the accumulation) and sig 72
 | 20 | 3.0 | 8 | Intel (LE) | 0x011 | 0 value getter | 0x0C6C5C |  |  |
 | 21 | 4.0 | 2 | Intel (LE) | 0x012 | 0 value getter | 0x0C6C88 |  |  |
 
-## Frame 0x19E (StatusDSC) — signal decode (2026-10-14)
+## Frame 0x19E (StatusDSC) — signal decode
 
 All positions Intel. Values are what the getter returns. Sources were traced to their writers. Names marked
 (inferred) come from how a value is used, not from a BMW name.
@@ -368,7 +368,7 @@ All positions Intel. Values are what the getter returns. Sources were traced to 
   0x0C9 status 0x40164D and fault ids 0x1200xx. 0x402009 b6 is set in its fault state. The DSC-status latch
   0x4046D9 b3 = 0x402009 b6 && (vref 0x408DA8 > 18 km/h, or already latched).
 
-## Frame 0x1A0 (Speed) — signal decode (2026-10-14)
+## Frame 0x1A0 (Speed) — signal decode
 
 All positions Intel. Bit 1.7 is not packed, so it stays 1 (the payload is pre-filled with 0xFF). The 12-bit
 signed fields use 0x800 (−2048) as the invalid value. Internal LSBs are from FACTS "Cycle 7": yaw 1/20000 rad/s,
@@ -391,7 +391,7 @@ lateral 1 mg, wheel accel 0.01 g. CAN LSBs follow from the getter scale factors.
   0x402E50/51 are written by the F-CAN code (0xC5948 / 0xC6354 / 0xC70A0); the cluster sends on F-CAN 0x0CD/0x0D1.
 - **Not** on `sensor_reaction_word` 0x402888 b2/b3: that only sets out[3] b4, which the encoders ignore. A missing
   steering frame (0x0C9) sets exactly those bits, so 0x1A0 keeps sending live ay/yaw while the ABS has them invalid
-  (2026-10-15, FACTS "Steering-sensor loss").
+  (FACTS "Steering-sensor loss").
 
 **Drive-direction inputs**
 - **Standstill detector** `vehicle_standstill_update` 0xD381C → 0x40328C. b5 = valid: fewer than 2 wheels faulted,
@@ -412,7 +412,7 @@ lateral 1 mg, wheel accel 0.01 g. CAN LSBs follow from the getter scale factors.
 **Not confirmed:** the absolute sign of ay and yaw, the BMW names of the enum values in 1.4, and the meaning of
 0x402884 / 0x4029BE bits beyond their role here.
 
-## Frame 0x0CE (wheel speeds) — signal decode (2026-10-15)
+## Frame 0x0CE (wheel speeds) — signal decode
 
 Four identical getters, one per wheel. Order = wheel index 0..3 = **FL, FR, RL, RR** (same as 0x2B2; FL confirmed on
 the bench, FACTS "Results"). Each is a signed 16-bit Intel field at bytes 0/2/4/6 with 1 bit = **1/16 km/h**.

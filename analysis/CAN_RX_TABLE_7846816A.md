@@ -1,6 +1,6 @@
 # CAN RX frame table — 7846816A (M3)
 
-Companion to `CAN_TX_TABLE_7846816A.md`. Decoded 2026-10-15 from the same config tables (image
+Companion to `CAN_TX_TABLE_7846816A.md`. Decoded from the same config tables (image
 `flash/bin/7846816A_00000000.bin`, CPU = file − 0x8000) and checked against the RX code. RX messages follow the TX
 messages in the message table: PT-CAN header 0xD7F45 has 20 TX + **27 RX**; F-CAN header 0xF59C3 has 14 TX + **18 RX**.
 
@@ -103,7 +103,7 @@ Every PT-CAN timeout/alive/checksum reporter above checks **0x401163 b4** (`can_
 4. **0x401163 b7 clear.** This is set and cleared from the diagnostic-routine dispatcher 0x8E144 / 0x8E6E2 (via 0x78FCA),
    so a tester can switch CAN fault monitoring off.
 
-**Where ignition comes from (revised 2026-10-15).** 0x400956 b6 is written by the power state machine
+**Where ignition comes from.** 0x400956 b6 is written by the power state machine
 `power_state_update` 0x72020 (state 0x4009C0: 4 = on, 5 = off, 1/2 transitional; debounce counter 0x4009BE, 0–7).
 Its source is picked by **`ign_source_hw` 0x4009FF b0**, recomputed at the end of every pass:
 b0 = 0x401134 b7 (`terminal_state` invalid), or (0x401162 b7 and the previous b0). 0x401134 b7 is set at CAN init
@@ -116,11 +116,10 @@ b0 = 0x401134 b7 (`terminal_state` invalid), or (0x401162 b7 and the previous b0
   the counter counts up to 7; when it goes off, the counter counts down and ignition goes off at 0 (≈ 70 ms if
   this runs every 10 ms). Off → on also follows the input.
 
-**[bench, 2026-10-15]** On an automatic-coded unit with only power applied (no 0x130; 0x310/0x330 sent), the DSC
+**[bench]** On an automatic-coded unit with only power applied (no 0x130; 0x310/0x330 sent), the DSC
 logs **D35A, D354, D355, D356, D357**. D35A can only be reported with `ignition_on` set, so the hardware input
-reads "on" with power alone on that unit. Which pin or chip state drives bit 8 is not known. An earlier note
-(no D354 until 0x130 was sent) came from a setup that was not recorded; a valid 0x130 with ignition off would
-explain it.
+reads "on" with power alone on that unit. Which pin or chip state drives bit 8 is not known. A setup that sends
+a valid 0x130 reporting ignition off would show no D354 until ignition on.
 
 **Consequence.** With a valid 0x130 reporting ignition off, the DSC raises **no** PT-CAN message DTCs, not even
 D35A. With no 0x130 at all, it depends on the hardware input. Either way, once ignition is on, monitoring starts
@@ -138,7 +137,7 @@ Many single signals in live frames are stubs too (marked "(stub)" below).
 ## Not identified
 
 PT 0x226, 0x316, 0x319 carry 2–4-bit states into 0x401108 / 0x401111 / 0x40482E–0x404830. I could not tie
-them to a BMW message name. 0x398 and 0x399 are now known to carry driver-mode requests into 0x401139–0x40113B
+them to a BMW message name. 0x398 and 0x399 carry driver-mode requests into 0x401139–0x40113B
 (0x398 byte 1 bits 2–4: 0 = DSC on, 1 = DSC off, 4 = MDM; see FACTS "DSC driver mode"). The BMW message names are
 still unknown, and so is the meaning of the 0x398 byte 0 slot. 0x797, NM (0x480/0x580) and tester (0x6F1)
 handlers are summarised only. "Probably terminal R/15/50" for 0x130 is inferred from use (the BLS state on 0x19E
@@ -549,8 +548,7 @@ gatewayed to PT-CAN (one-shot)
 Cruise-control / ACC stalk frame (`STATUS_F_CAN_TEMPOMAT_ACC` in DSC_87.prg), from the SZL. The payload is only
 gatewayed to PT-CAN; nothing is decoded. Its DTC **D364** "Operator_Key_Tempo" (ids 0x3046 timeout / 0x3047
 checksum / 0x3048 alive, F-CAN mask 0x40040/0x40100/0x40080) has **no reporter**: the timeout handler is a bare
-return, and none of the eight F-CAN report sites (all via 0xBFA2A) can produce group 4 bits 6–8 (re-checked
-2026-10-15).
+return, and none of the eight F-CAN report sites (all via 0xBFA2A) can produce group 4 bits 6–8.
 
 | sig | pos | len | pack | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|

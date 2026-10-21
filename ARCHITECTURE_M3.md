@@ -26,11 +26,13 @@ Coding/calibration RAM (`0x4031xx`, `0x4020xx`) is **unshifted**.
   coding EEPROM <-- QSPI 0xDB0000 CS2 ;  digital-valve latch CS4 ;  pump motor = timer-PWM 0xF80000
 ```
 
-**Update 2026-10-06:** the wheel-sensor channels are not VDA-only. ASIC register **0x28C** is a per-channel VDA/2-level mode mask
+The wheel-sensor channels are not VDA-only: ASIC register **0x28C** is a per-channel VDA/2-level mode mask
 (stock 0x00F). The timer capture edge is set per channel by `sub_0D569C(ch, mode)` (0x91 = single edge,
 0xA1 = both edges). The E46 sensor patch uses both: `docs/E46_SENSOR_FIRMWARE_PATCH.md`.
 
 - MCU: Freescale **SC560002MVF92** (custom M·CORE ABS IC, no public datasheet). 80 MHz inferred; 1 µs timer tick.
+  This is the late MK60E5 flavor. Early MK60E5 units use an ARM TMS471 with a different flash layout; see
+  FACTS.md, *Two MK60E5 hardware flavors*.
 - Reset handler **0x6C906**; app CPU range 0x40000–0xF6A23; vector table at 0x40000 (128 × u32).
 - Valve actuation: 12 solenoid channels — ch0-3 inlet (analog current via CS5 ASIC `asic_reg_xfer32` 0xD4A30),
   ch4-7 outlet (digital via CS4 latch 0xD4BF4), ch8-11 USV/HSV (roles inferred). Return pump is a timer-PWM.
@@ -45,7 +47,7 @@ Coding/calibration RAM (`0x4031xx`, `0x4020xx`) is **unshifted**.
 |   -> monitoring_main 0xB3FC0 -> CAN stacks -> diagnostics -> NVM/fault manager 0xB427C    |
 | Fast loops: T1 0x70BFC (4/frame)  T2 0x70C58 (10/frame, SPI/valve engine)                 |
 +------------------------------------------------------------------------------------------+
-| Services: PT-CAN tables 0xD7F45 | F-CAN 0xF59C3 | KWP2000 0xF30A0 | coding 0xCFC00/0x8E25E |
+| Services: PT-CAN tables 0xD7F45 | F-CAN 0xF59C3 | KWP2000 0xF30A0 | coding 0xCFC00, validator 0xCF432 |
 +------------------------------------------------------------------------------------------+
 | Runtime wrapper 0x77xxx: ROM object 0xD7B84 -> 5 objects -> OS tasks                      |
 | OSEK OS 0x42000-0x44000: 5 tasks, events, scheduler 0x42B84 (IRQ 32)                       |
@@ -101,7 +103,7 @@ flowchart TD
   decision code 0x408DDE classifies the control (`abs_decision_classify` 0x51B54).
 - **TCS** — rear drive-slip vs target (`tcs_driveslip_curve` 0xC795E), PI torque-reduction loop 0xCD1E8.
 - **AYC** — yaw error vs per-mode entry threshold (`ayc_threshold_stage` 0x602DA), PD moment 0x5F7BA; DSC mode
-  m∈{0,1,2} (`dsc_mode_select` 0xCF2EA) scales thresholds/ceilings. m1 is the most permissive.
+  m∈{0,1,2} (`dsc_mode_select` 0xCF2E8) scales thresholds/ceilings. m1 is the most permissive.
 
 ### Arbitration & actuation
 - Each controller submits a per-wheel pressure request via `req_arbiter_submit` 0x833DA;
@@ -111,7 +113,9 @@ flowchart TD
   volume V through the COA p↔V curves (valve flow Q = √Δp·open·k/4096); that model sizes valve pulses and stands
   in for PM during dump phases or a wheel-sensor fault. ABS submits CMD/RAMP/UP only; it never writes the model
   (PM is copied back by `abs_pm_snapshot` 0x559CC).
-- `valve_pulse_sequencer` 0x853A8 builds 10-step inlet-current profiles; pump via `pump_motor_control` 0x88EC0.
+- Inlets: `valve_pulse_sequencer` 0x853A8 (10 ms feed-forward) + `inlet_fast_loop` 0x85282 (5 ms, closed loop on measured
+  wheel pressure) → 10 × 1 ms output steps; reapply is a metered (proportional) current, hold/dump closed. See
+  `analysis/INLET_VALVE_CONTROL_7846816A.md`. Pump via `pump_motor_control` 0x88EC0.
 - **Engine torque**: TCS/MSR/AYC requests merge in `dme_torque_request_compose` 0xCC2C2 → **CAN TX 0x0B6** to the DME.
 
 ## External interfaces
@@ -122,7 +126,7 @@ flowchart TD
 - **F-CAN** 0xF59C3 (14 TX / 18 RX). Live: steering 0x0C9, yaw/lat-g cluster 0x0CD/0x0D1/0x0D4. The DSC gateways
   0x0C8/0x194/0x1D6/0x2A6/0x1D9 onto PT-CAN. The aux torque-limit exchange (0x78F/0x78E) is disabled (cal 0x4182A=0).
 - **Diagnostics**: KWP2000 table 0xF30A0 (23 SIDs); SecurityAccess 0x27 seed = `(u16@0x40095C) XOR 0x1B09`
-  (ECU "AZ1RAE00008"); coding via `coding_field_read` 0xCFC00 / `coding_field_read_geom` 0x8E25E → RAM 0x4031F4.
+  (ECU "AZ1RAE00008"); coding via `coding_field_read` 0xCFC00 → RAM 0x4031F4; active image 0x4030DC / 0x4031AA / 0x4031B6 built by the `2E 30 00` validator 0xCF432 (`CODING_BYTES_7846816A.md`).
   Warning-lamp state is broadcast on CAN only — no GPIO lamp output.
 
 ## Integrity & re-signing

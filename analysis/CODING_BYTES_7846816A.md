@@ -206,7 +206,7 @@ shows for that column of the variant-indexed tables (vehicle model 0xD6ECA.., AB
   0xF6496 (30000, except 2000 for 5/8/10/11) at 0xCB952; that role is not decoded.
 - The masses fit the names: convertible heaviest, coupe lighter than sedan, GTS lightest.
 
-## Limits of this pass
+## Limits
 
 - No reader was found for the custom-parameter words (w11–w19, w22–w28) beyond the non-zero
   checks (validator and 0xCF32C). No literal pointer to 0x4031CC–0x4031DC exists and the model

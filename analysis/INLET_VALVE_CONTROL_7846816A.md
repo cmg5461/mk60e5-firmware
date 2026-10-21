@@ -1,4 +1,4 @@
-# Inlet valve control, 7846816A (traced 2026-10-17)
+# Inlet valve control, 7846816A
 
 How a wheel's pressure request becomes inlet-valve current on the wire. CPU addresses. Names and
 signatures are in `7846816A_symbols.md` ("Hydraulic actuation"). Confidence is high unless marked.
