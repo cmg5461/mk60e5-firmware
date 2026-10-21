@@ -434,8 +434,11 @@ Scaling restores the loop gain, not the latency: with faster wheel dynamics, the
 ## 10. Limits and open items
 
 - **Without the steering sensor:** lateral and yaw are invalid, so µ-split pair logic, cornering step cuts,
-  the rear cornering latch and the independent-rears shortcut are all off. The core dump / hold / reapply
-  loop is unaffected (`analysis/agents/abs_full/09_chassis_sensor_use.md`).
+  the rear cornering latch and the independent-rears shortcut are all off. The accelerometer is never trusted
+  either (initial trust needs lateral, pressure and the yaw-stable flag), so the decel-threshold g-term and the
+  vref fall limiter run on the wheel-derived decel estimate `0x408DAF`, the 60 km/h decel floor is never
+  skipped, and the rear decel-gate latch cannot fire. The core dump / hold / reapply loop is unaffected
+  (`analysis/agents/abs_full/09_chassis_sensor_use.md`, `10_vref_and_ax.md` §1.1).
 - **Reapply:** a few first-step rate variants and the step-boost threshold are only partly decoded.
 - **The exact dump → hold release** (EV0.b3) is summarised, not fully reduced.
 - **Logging:** KWP `0x23` cannot read RAM, so the per-wheel breakdown record `0x40912E + 10·w`
