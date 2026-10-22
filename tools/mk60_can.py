@@ -82,6 +82,8 @@ NRC = {
     0x13: "incorrectMessageLengthOrInvalidFormat", 0x22: "conditionsNotCorrect",
     0x24: "requestSequenceError", 0x31: "requestOutOfRange", 0x33: "securityAccessDenied",
     0x35: "invalidKey", 0x36: "exceedNumberOfAttempts", 0x37: "requiredTimeDelayNotExpired",
+    0x40: "downloadNotAccepted", 0x41: "improperDownloadType",
+    0x42: "canNotDownloadToSpecifiedAddress", 0x43: "canNotDownloadNumberOfBytesRequested",
     0x72: "generalProgrammingFailure", 0x78: "responsePending (0x78)",
 }
 
