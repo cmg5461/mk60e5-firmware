@@ -604,6 +604,38 @@ def authenticate(uds, uid="273c", w564_override=None, open_prog=True, key=AUTH_K
     return True
 
 
+PROG_STATUS = {
+    0x00: "Anlieferzustand (delivery state)",
+    0x01: "Normalbetrieb (normal operation)",
+    0x03: "Speicher geloescht (memory erased)",
+    0x05: "Signaturpruefung PAF nicht durchgefuehrt (program signature not checked)",
+    0x06: "Signaturpruefung DAF nicht durchgefuehrt (data signature not checked)",
+    0x07: "Programmprogrammiersitzung aktiv (program programming session active)",
+    0x08: "Datenprogrammiersitzung aktiv (data programming session active)",
+    0x09: "Hardwarereferenzeintrag fehlerhaft (hardware reference entry bad)",
+    0x0A: "Programmreferenzeintrag fehlerhaft (program reference entry bad)",
+    0x0B: "Referenzierungsfehler Hardware -> Programm",
+    0x0C: "Programm nicht vorhanden oder nicht vollstaendig (program missing/incomplete)",
+    0x0D: "Datenreferenzeintrag fehlerhaft (data reference entry bad)",
+    0x0E: "Referenzierungsfehler Programm -> Daten",
+    0x0F: "Daten nicht vorhanden oder nicht vollstaendig (data missing/incomplete)",
+}
+
+
+def cmd_status(args):
+    bus, uds = make_uds(args)
+    try:
+        r = uds.raw(bytes([0x31, 0x0A]), timeout=5.0)
+        if not r:
+            print("31 0A -> no response")
+        elif r[0] == 0x71 and len(r) >= 3:
+            print("31 0A -> %s : 0x%02X %s" % (r.hex(" "), r[2], PROG_STATUS.get(r[2], "unknown")))
+        else:
+            print("31 0A -> %s" % r.hex(" "))
+    finally:
+        bus.shutdown()
+
+
 def cmd_auth5(args):
     bus, uds = make_uds(args)
     try:
@@ -1003,6 +1035,9 @@ def main():
     ul.add_argument("--seed-only", action="store_true", dest="seed_only",
                     help="fetch+print the seed + all candidate keys; send NO key (no lockout risk)")
     ul.set_defaults(func=cmd_unlock)
+
+    st = sub.add_parser("status", help="read flash programming status 0x31 0x0A (SAFE)")
+    st.set_defaults(func=cmd_status)
 
     a5 = sub.add_parser("auth5", help="level-5 Authentisierung (keyed MD5) - M3-validated flash auth")
     a5.add_argument("--uid", default="273c", help="USER_ID: any 4 chars (tester-chosen; default 273c)")
