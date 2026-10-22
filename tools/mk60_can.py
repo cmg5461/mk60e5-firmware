@@ -403,10 +403,29 @@ class Uds:
 
 
 # ---------------------------------------------------------------- bus setup
+AUTO_INTERFACES = ["socketcan", "kvaser"]   # tried in this order when --interface is unset
+
+
+def find_bus(args):
+    """First detected bus config matching --interface/--channel (either may be unset)."""
+    import can
+    ifaces = AUTO_INTERFACES if args.interface is None else [args.interface]
+    for iface in ifaces:
+        for cfg in can.detect_available_configs(interfaces=[iface]):
+            if args.channel is None or str(cfg["channel"]) == args.channel:
+                return cfg
+    if args.interface is not None and args.channel is not None:
+        return {"interface": args.interface, "channel": args.channel}   # trust the user
+    raise SystemExit("no CAN interface found (tried %s%s)"
+                     % ("/".join(ifaces), "" if args.channel is None else ", channel " + args.channel))
+
+
 def open_bus(args):
     import can
-    return can.Bus(interface="kvaser", channel=args.channel, bitrate=args.bitrate,
-                   receive_own_messages=False)
+    cfg = find_bus(args)
+    args.interface, args.channel = cfg["interface"], str(cfg["channel"])
+    print("Using %s channel %s" % (args.interface, args.channel))
+    return can.Bus(**cfg, bitrate=args.bitrate, receive_own_messages=False)
 
 
 def make_uds(args):
@@ -995,7 +1014,10 @@ def cmd_flash(args):
 # ---------------------------------------------------------------- CLI
 def main():
     p = argparse.ArgumentParser(description="Kvaser MK60E5 DSC diagnostic / flash client")
-    p.add_argument("--channel", type=int, default=0, help="Kvaser channel index (default 0)")
+    p.add_argument("--interface", default=None,
+                   help="python-can backend (default: first of %s found)" % "/".join(AUTO_INTERFACES))
+    p.add_argument("--channel", default=None,
+                   help="Kvaser channel index or socketcan netdev, e.g. 0 or can0 (default: first found)")
     p.add_argument("--bitrate", type=int, default=BITRATE)
     p.add_argument("--ecu", type=lambda x: int(x, 0), default=DSC_ADDR, help="ECU diag address (default 0x29)")
     p.add_argument("--req-id", type=lambda x: int(x, 0), default=REQ_ID, dest="req_id")
