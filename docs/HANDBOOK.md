@@ -4,6 +4,10 @@ What each calibration parameter in the M3 stability-control firmware actually ch
 subsystem, with the algorithm it feeds and the direction of its effect.
 
 - **Image:** `7846816A` (DSCM90), 1 MiB. CPU: Freescale **M·CORE**, big-endian. Control frame: **10 ms**.
+- **Hardware flavor:** MK60E5 comes in two flavors. **Early** units (for example E60 `7841983A`) use an ARM
+  **TMS471** with a different `.0pa` layout: application at file 0x10000, not 0x48000. **Late** units and the
+  M3 use M·CORE. This handbook covers the M·CORE flavor only. Details and the per-ZB list are in `FACTS.md`
+  (*Two MK60E5 hardware flavors*).
 - **Addressing:** everything below is a **CPU address**; file offset in the `.bin` = CPU + `0x8000`.
 - **Maps to:** `xdf/MK60E5_7846816A.xdf` (TunerPro) · symbols `analysis/7846816A_symbols.md` · facts `FACTS.md`.
 - **Status:** all values byte-verified against the image unless marked *med*/*low*.
@@ -130,7 +134,7 @@ The Stock column above is variant 0. The variant is coding byte 1 (bits 0–4) a
 | Variant | Car | Mass | Notes |
 |---|---|---|---|
 | 0 | M3 sedan | 1787 kg | |
-| 1 | Custom ESM | 1814 kg | model parameters come from coding bytes 31–40 instead of a fixed car |
+| 1 | Custom ESM | 1814 kg | NCS name says the model comes from coding bytes 31–40, but this firmware only checks those bytes are non-zero (fault 0xC0002) and still loads the ROM column |
 | 3 | M3 coupe | 1731 kg | |
 | 4 | M3 convertible | 1947 kg | |
 | 5 / 8 / 9 | M3 Competition sedan / coupe / convertible | as 0 / 3 / 4 | same model columns as the non-Competition body |
@@ -154,6 +158,19 @@ from them. Tyre circumference is the scale factor. The M3 ships the **same geome
 | tooth count F / R | `0x41CF8`/`FA` | 48 / 48 | Encoder teeth per rev; sets the per-edge angle. Must match the physical tone ring. | CAL · high |
 | standstill threshold | `0x41CF2` | 72 (0.72 km/h) | Speed below which a wheel counts as stopped. Higher = calls the car stationary sooner. | CAL · high |
 
+> **Reference speed and broadcast speed (2026-10-06, disassembly read, not bench-verified).**
+>
+> - `vref` only falls when it is above every wheel. With all wheels slipping it is extrapolated, not measured.
+> - The fall rate then comes from the longitudinal accelerometer in the F-CAN sensor cluster (`0x0D1` bytes 4–5)
+>   plus a 0.1–0.4 g margin, capped at 1.25 g. Without a valid cluster it uses fixed steps limited by a
+>   speed-derived decel estimate.
+> - The vehicle speed on CAN `0x1A0` is the **mean of the two front wheels**, not `vref`. It dips with front slip
+>   under ABS and reads zero with both fronts locked.
+> - The 1.25 g cap and the ±1.27 g byte-wide accel signals are **CODE**, not CAL. A car that brakes harder than
+>   that outruns `vref`.
+>
+> Detail: `FACTS.md`, "[disasm 2026-10-06]".
+
 > **Sensor type.** Stock M3 and 1M images configure all four channels for VDA active (encoded) sensors. There is no
 > coding or calibration selector. **E46-type 2-level (7/14 mA) sensors work with a 4-byte firmware patch**
 > (bench-verified on all four wheels, 2026-10-06):
@@ -171,6 +188,7 @@ from them. Tyre circumference is the scale factor. The M3 ships the **same geome
 
 ABS arms a wheel when its slip (vref − wheel speed) or its deceleration crosses a speed- and
 grip-dependent threshold. The per-wheel **phase state machine** then cycles dump → hold → reapply.
+How each phase sizes its pressure change, and every parameter involved, is in `docs/ABS_TUNING.md`.
 
 ```mermaid
 stateDiagram-v2
@@ -202,8 +220,11 @@ the primary arming threshold.
 
 **Decision code `0x408DDE`** classifies the control action each cycle (`abs_decision_classify` `0x51B54`,
 resolved by `0x58B30`): `1` no rear control · `16→8` stepped/select-low rear build · `2` pair-hold
-complete · `32` yaw-limited build (0–100 % lag, see AYC) · `256` cornering reapply. (`64`/`128` are
-transient within a cycle.)
+complete · `32` cornering build (pct from the lateral-g curves, see AYC) · `256` cornering reapply · `64`
+rear select-low (the default while a rear is in control) · `128` special. Code `1` also comes from a
+straight-and-stable shortcut and from light pedal in a corner. The cornering and straight-line codes need the
+steering sensor and yaw cluster; without them a controlling rear is always `64` (`FACTS.md`, "ABS with and without
+the SZL").
 
 > **M3 vs 1M.** The core slip and decel targets are **identical** to the 1M for coding variants 1–9. Only
 > variants 10/11 — the GTS coupe and GTS sedan codings — are measurably more permissive (high-speed, ≥150 km/h). The M-car's extra licence lives
@@ -237,13 +258,15 @@ flowchart LR
 
 | Parameter | Addr | Stock | Raise it → | Tag · Conf |
 |---|---|---|---|---|
-| apply ramp / cycle | `0x403A8` | 400 | Pressure built per 10 ms during reapply. Higher = faster, harsher re-clamp. | CAL · high |
-| dump reductions | `0x40E64` | 1000 / 1500 / 2000 | Pressure released per dump stage. Higher = bigger release, quicker wheel recovery, softer ABS. | CAL · high |
-| reapply nudge | `0x40D90` | 80 | Small pressure step entering reapply. | CAL · high |
+| apply ramp | `0x403A8` | 400 | Rate of the ABS apply request (id 19, `abs_apply_ramp` `0x443F4`), per 10 ms. The in-cycle reapply ramps at `0x40D5E` / `0x40D60` (3 / 5 bar per frame) instead (`docs/ABS_TUNING.md` §7). | CAL · high |
+| front staged-dump ladder | `0x40E64` | 1000 / 1500 / 2000 | How far the *other* front is pulled below the dumping front's lock pressure when one front dumps very hard early in a stop (yaw limiting). Not the per-wheel dump size, which is computed per cycle (`docs/ABS_TUNING.md` §4–5). | CAL · high |
+| pair reapply nudge | `0x40D90` | 80 | Step of the rear-pair stepped reapply (decision code 16). | CAL · high |
 | k_in build flow F/R | `0x41B26` | 957 / 421 | Inlet-valve flow gain. Higher = pressure builds faster for a given Δp. | CAL · high/unit-med |
 | k_out dump flow F/R | `0x41B30` | 755 / 465 | Outlet-valve flow gain. Higher = dumps faster. | CAL · high/unit-med |
-| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (0.01 bar: 1.3–5.0 bar). | CAL · high |
-| pump ramp / gain | `0x41B34`/`36` | 1150 / 100 | Return-pump delivery model. | CAL · med |
+| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (0.01 bar: 1.3–5.0 bar), full at volume 15000. Volume unit about 0.1–0.3 mm³ per count (estimate, FACTS.md), so full is about 1.5–4.5 cm³. | CAL · high |
+| pump supply-store cap | `0x41B34` | 1150 | The model's limit on the volume that each circuit's pump supply can hold (volume units, not pressure). Pump demand = volume shortfall − this store, so raising it lowers pump demand once the store is full. The 335 images use 650. | CAL · med |
+| pump supply-store fill rate | `0x41B36` | 100 | How fast that store fills while the pump runs (%). Same in the 335 image. | CAL · med |
+| pump flow vs pressure | `0x41B38` | 4300 / 2600 | Modelled pump flow at 0 / 250 bar circuit pressure (axis in ROM 0xDA604). Same in the 335 image. | CAL · med |
 | pressure clamps | *code* | −8000 / 25000 | Hard min/max on the pressure request. | CODE · high |
 | valve hold/boost current | *code* | 1100 / 1524 / 1532 | Solenoid currents for hold/boost/release steps. | CODE · high |
 
@@ -293,7 +316,7 @@ flowchart LR
 | P-gain % per mode | `0x41460` | 30→100 (m0/1), 70→100 (m2) | How hard the controller pushes once triggered. | CAL · high |
 | speed factor per mode | `0x41490`/`F0` | curves ÷128 | Scales the entry threshold with speed. | CAL · high |
 | feature enable per mode | `0xD6DA4` | 1 / 0 / 0 | A feature active only in m0 (restricted mode). | CAL · high |
-| active DSC mode | `0x4031B1` | live | **Chosen at runtime** from DSC-button state (`0x4030A4`) + one coding bit (`0x4031F4 & 0x80`). | EEPROM · high |
+| active DSC mode | `0x4031B1` | live | **Chosen at runtime**: m = 0 unless the driver mode is MDM (`0x4030A2` = 3) and the diag state `0x4030A4` is not 1/4/5; then one coding bit (`0x4031F4 & 0x80`) picks m2 over m1. | EEPROM · high |
 
 > **Where "MDM" lives.** The AYC tables are byte-identical to the 1M. The M-specific permissiveness is not
 > a different number — it is *which mode* the coding bit selects (m1 vs m2) as the driver cycles
@@ -304,7 +327,26 @@ flowchart LR
 `0x4155E`, stock rear-only). Pressure is ≈0.1 bar per moment-count. The AYC's engine-torque cap min-merges into
 the same `TX 0x0B6` request as TCS. During cornering the ABS and AYC couple through the yaw-limited build
 (decision code `32`): the pressure on a rebuilding wheel is held back from its reference by `pct%` of its
-partner's deficit — `pct` from the lateral-accel value (`0x408ECA`) between the `0x40E26`/`0x40E0A` curves.
+partner's deficit. **Update (2026-10-15):** `pct` (byte `0x408DE0`) comes from the `0x40E26`/`0x40E0A`
+curves after all, but as pressure thresholds that **rise** with |lateral g| (14→40 / 26→49 bar). In a corner with a
+rear cornering latch, P_lo = 100·`0x40E26`(|lat|) and P_hi = 100·`0x40E0A`(|lat|) (+5 bar above 0.8 g); driver
+pressure below P_lo gives code `1`, above it code `32` with pct = 100·(P_drv − P_lo)/(P_hi − P_lo). Raising the
+curves lowers pct for the same pedal, so less rear knockdown (inferred). All of this needs a working steering
+sensor and yaw cluster. See `FACTS.md`, "ABS with and without the SZL".
+
+**Driver mode (DSC on / off / MDM)** is a separate RAM state, `0x4049B4[0]`: 1 on, 0 off, 4 MDM. It is not
+stored: every power-up starts in "on". Two inputs set it:
+- **The hardwired DSC button** (active-low). Held for 0.5 s from on (or MDM) → off. Held for 0.15 s from off → on.
+  Held for 10 s → stuck fault 5E5B.
+- **PT-CAN `0x398`**, byte 1 bits 2–4: 0 on, 1 off, 4 MDM.
+
+Off sets the traction-control mode to 2 and drops yaw control to its passive state. In mode 2 traction channels A and
+B are off; channel C (the MSR-like engine-drag controller) stays enabled (`FACTS.md`, "DSC-off and the traction
+channels"). MDM gives traction-control mode 3,
+which is the only route to m1/m2. ABS is unaffected in every mode, including its use of the yaw cluster and steering sensor. How to use this on a car without the rest of its
+network: `docs/PTCAN_FRAMES_EXPECTED.md`, "Turning DSC off". Missing DME torque frames are the other way to stop
+DSC: they put it into "failed" through the fault reaction and leave ABS running (D354–D356). Detail: `FACTS.md`,
+"DSC driver mode".
 
 New distribution knobs: understeer rear-share `0x4155E` (256 = rear-only), front-outer pre-fill `0x411B4`
 (5 bar), request rate caps `0x41552`/`54` (300/500). The yaw **observer** (`0x5EBC4`) is a nonlinear single-track
@@ -323,8 +365,8 @@ block bodies are byte-identical to the 1M; coding picks code 0 vs 1 per axle (co
 | p–V pressure axis | `0x41B4E` | 0 … 32700 | Shared breakpoints for the volume curves. | CAL · high |
 | front volume set 0/1 | `0x41B62`/`76` | 10-pt curve | Front caliper fluid intake vs pressure — the effective front brake "size". Code `+3` selects. | CAL · high |
 | rear volume set 0/1 | `0x41B8A`/`9E` | 10-pt curve | Rear equivalent; code `+4`. | CAL · high |
-| BCO thresholds | `0x41764…` | pairs 0/1 | Brake pressure-compare thresholds, per code. | CAL · med |
-| brake coding F / R | `0x4031AA+3`/`+4` | EEPROM | Selects which curve set each axle uses. | EEPROM · high |
+| BCO thresholds | `0x41764…` | pairs 0/1 | Front-code tuning of the BCO pedal-release prefill (debounce, thresholds, wait, pressure scale); rear code not used. Detail: `analysis/CODING_BYTES_7846816A.md`. | CAL · med |
+| brake coding F / R | `0x4031AA+3`/`+4` | EEPROM | Selects which curve set each axle uses: 0 = M3, 1 = M3 GTS (coding byte 2). Does not change brake torque per pressure, which is a constant on the M3. | EEPROM · high |
 
 ---
 
@@ -339,6 +381,21 @@ curve, then fed to the yaw reference. This block is one of the **few genuinely M
 | steer-ratio curve | `0x40ECC` | 15.9:1 → 12.6:1 | Road-wheel angle per steering angle vs lock. Re-scales the yaw-reference input. | CAL · high |
 | ratio breakpoints | `0x40EB4` | 0 … 10880 counts | Steering-angle axis (3 coding-selectable sets). | CAL · high |
 | sensor sign tables | `0x40EE4`/`F14` | −1 (all) | Per-variant polarity for the yaw/lat-g channels. | CAL · high |
+
+**How steering reaches ABS.** ABS gets the offset-corrected steering-wheel angle (`0x408EDE`), the road-wheel
+angle (`0x408EE4`) and the steering rate (`0x408EE6`), valid bit `0x408E6D` b5. Mostly it is a **validity
+switch**: without it the yaw-stable flag, the rear cornering latch, µ-split GMA, the countersteer test and the
+ax-based vref step are all off. The steering ratio curve above hardly matters to ABS (only the road-wheel sign is
+used), so for ABS the signal has to be valid, correctly signed and zeroed; the scale matters less. Steering
+counts ≈ 0.044° of steering wheel (unverified); yaw 1/20000 rad/s. Detail: `analysis/agents/abs_full/09_chassis_sensor_use.md` §7.
+
+| Parameter | Addr | Stock | Raise it → | Tag · Conf |
+|---|---|---|---|---|
+| yaw-stable steering limit | `0x4040E` | 2971 (≈130°) | Yaw-stable flag survives more steering lock. Generous already; low sensitivity. | CAL · med |
+| yaw-stable calm yaw / frames | `0x40404`/`0x4040C` | 1047 (3 °/s) / 63 | More yaw tolerated / longer wait before the car counts as "stable" (gates GMA and the straight-line rear logic). | CAL · med |
+| GMA base hold / step | `0x40D8E`/`0x40DB0` | 7 frames / 3 bar | µ-split high-grip wheel rebuilds +3 bar every 7 + score frames. Raise hold → slower rebuild, less pull, longer stop. | CAL · med |
+| GMA steering-angle term | `0x40D8A`/`0x40D92` | 2286 (≈100°) / 14 | Steering added since the event slows the rebuild by up to 14 frames at 100°; past 100° with > 5 bar split the rebuild stops. | CAL · med |
+| GMA steering-rate term | `0x40D88`/`0x40D86` | 1143 / 457 (≈50 / 20 °/s, units unverified) | Fast steering toward a rear's side slows that rear's rebuild (+1 frame per ≈20 °/s). | CAL · med |
 
 ---
 
@@ -367,12 +424,18 @@ the chassis bus (F-CAN). Sender names are inferred from the IDs; the RAM destina
 | `0x0AA` (PT) | DME | Driver-demand torque, pedal, RPM | `0x401144`/`42`/`0x40113E` | live |
 | `0x0BA` (PT) | EGS / M-DCT | Gear (7-speed table) | `0x4010F7` | live · med |
 | `0x130` (PT) | CAS | Terminal / state | `0x4015ED` … | live |
+| `0x398` (PT) | unknown | DSC driver-mode request (on / off / MDM) | `0x401139` → `0x4049B4` | live · no timeout |
 | `0x0C9` (F) | steering sensor | Steering angle | `0x401644` (relayed on TX `0x0C4`) | live |
 | `0x0CD`/`0x0D1`/`0x0D4` (F) | DSC sensor cluster | Yaw rate, lateral accel (raw) | `0x402F1C…` | live |
 | `0x480` (PT) | NM ring | Network management, node 0x29 | `0x404874` | live |
 | `0x6F1` (PT) | diagnostic tester | UDS/KWP | handler `0x7CC02` | live |
 | `0x78F`/`0x78E` (F) | aux partner | 14-bit torque limits | `0x404634`/`36` | **disabled** (cal `0x4182A`=0) |
 | `0x0AC`,`0x0B4`,`0x0D5`,`0x1B4`,`0x388` (PT); `0x118`,`0x11F` (F) | — | all signals discarded | — | **dead** (stub setters) |
+
+The DME values are never checked against anything: every DME DTC (5E18/5E19/5E1A/5E1B) comes from an invalid
+marker or a DME status bit. ABS itself doesn't read torque, rpm or pedal; traction, yaw control, hill-start assist,
+ready-alert brake and RPA do. How to fake these frames safely on a bench or a different car:
+`docs/PTCAN_FRAMES_EXPECTED.md`.
 
 The DSC also acts as a raw **F-CAN→PT-CAN gateway** for `0x0C8`/`0x194`/`0x1D6`/`0x2A6`/`0x1D9`. Every
 PT-CAN frame it transmits carries a checksum (`Σ payload + CAN-id`, low byte) and a 0–14 alive counter.
@@ -384,8 +447,12 @@ PT-CAN frame it transmits carries a checksum (`Σ payload + CAN-id`, low byte) a
 | Symbol | Address | Meaning |
 |---|---|---|
 | vref | `0x408DA8` | Reference speed, 0.01 km/h (rate-limited integrator). |
+| longitudinal accel | `0x408E80` | ABS copy, 0.01 g, ±1.27 g; from F-CAN `0x0D1` via `0x4049FC`. Valid flag `0x408E6D` b3, but it is cleared again in the same gather pass (FACTS "Steering-sensor loss"); ax validity is in `0x408E1B` b4. |
+| decel estimate | `0x408DAF` | Speed-derived vehicle decel, signed byte, 0.01 g. Fallback when the accel signal is invalid. |
+| broadcast speed | `0x404720` | CAN `0x1A0` speed, 0.1 km/h = mean of the front wheels. |
 | decision code | `0x408DDE` | Per-cycle ABS control classification. |
 | DSC mode | `0x4031B1` | 0/1/2, shared by TCS and AYC (= coding `0x4031AA+7`). |
+| driver mode | `0x4049B4` | 1 DSC on, 0 off, 4 MDM, 2 button stuck. Set by the DSC button and CAN `0x398`. → TCS mode `0x4030A2`. |
 | coding block | `0x4031AA` | Variant +1, brake front +3 / rear +4, DSC-mode bit via `0x4031F4 & 0x80`. |
 | target yaw | `0x400B1A` | Model reference yaw rate. |
 | vehicle-model RAM | `0x400AA4…` | Single-track coefficients loaded per variant. |

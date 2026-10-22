@@ -86,6 +86,8 @@ def decode(h, pc, rd32):
         return (f"{reg} r{rx}" if imm5 == 0 else f"{imm} r{rx},{imm5}"), None, None, None
     if 0x60 <= top <= 0x67:
         return f"movi r{rx},{(h >> 4) & 0x7F}", None, None, None
+    if top == 0x68:  # M340 extension: signed 16x16 -> 32 multiply
+        return f"mulsh r{rx},r{ry}", None, None, None
     if 0x70 <= top <= 0x7F:
         rz = (h >> 8) & 15
         lit = (pc + 2 + (h & 0xFF) * 4) & ~3
