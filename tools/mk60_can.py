@@ -207,7 +207,19 @@ class IsoTp:
         import can
         data = bytes([self.ecu]) + bytes(payload7)
         data = data + b"\x00" * (8 - len(data))
-        self.bus.send(can.Message(arbitration_id=self.req_id, data=data, is_extended_id=False))
+        msg = can.Message(arbitration_id=self.req_id, data=data, is_extended_id=False)
+        # socketcan raises ENOBUFS (105) when the netdev tx queue is full (STmin 0
+        # bursts outrun a USB adapter with qlen 10). Back off and resend the same
+        # frame - it was never queued, so this can't duplicate or skip an SN.
+        end = time.time() + 2.0
+        while True:
+            try:
+                self.bus.send(msg)
+                break
+            except can.CanOperationError as e:
+                if getattr(e, "error_code", None) != 105 or time.time() > end:
+                    raise
+                time.sleep(0.001)
         if self.verbose:
             print("  TX %03X %s" % (self.req_id, data.hex(" ")))
 
