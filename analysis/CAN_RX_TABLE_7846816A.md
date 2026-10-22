@@ -4,6 +4,21 @@ Companion to `CAN_TX_TABLE_7846816A.md`. Decoded from the same config tables (im
 `flash/bin/7846816A_00000000.bin`, CPU = file − 0x8000) and checked against the RX code. RX messages follow the TX
 messages in the message table: PT-CAN header 0xD7F45 has 20 TX + **27 RX**; F-CAN header 0xF59C3 has 14 TX + **18 RX**.
 
+## F-CAN table sizes
+
+Measured from the image (u16 fields in the records are big-endian). Entry counts come from the message records
+(summed signal counts, highest first-signal + count) and the highest variable id any signal references.
+
+| Table | Start | Entry | Entries | Size |
+|---|---|---|---|---|
+| `fcan_message_table` | 0xF59DD | 23 B | 32 (14 TX + 18 RX) | 736 B (0x2E0), ends 0xF5CBD = signal table start |
+| `fcan_signal_table` | 0xF5CBD | 5 B | 90 (indices 0–89) | 450 B (0x1C2), ends 0xF5E7F |
+| `fcan_variable_table` | 0xF5ED0 | 8 B | ≥ 81 (ids 0x00–0x50) | ≥ 648 B (0x288), ends ≥ 0xF6158 |
+
+- No end marker was found for the variable table; 81 is the highest referenced id + 1.
+- 81 bytes (0xF5E7F–0xF5ED0) sit between the signal and variable tables, the same count as the variables. Possibly a
+  per-variable byte array; not checked.
+
 ## Record layout (RX side)
 
 - **Message** (23 B, same table as TX): +2 u16 CAN id · +4 low nibble DLC · +5 b6 = masked id (then +16 u16 =
