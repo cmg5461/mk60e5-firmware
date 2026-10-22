@@ -1,6 +1,6 @@
 # MK60E5 non-M (DSC90, 6862873A) — pressure model and friction radius coding
 
-Scope: only the coding fields traced so far (byte 2 pressure model, byte 17 friction radius) and
+Scope: only the coding fields traced so far (byte 2 pressure model, byte 13 steering curve, byte 17 friction radius) and
 what they feed. The rest of the 48-byte record has not been mapped for this image. Byte numbering
 `c[n]` is the same as in `CODING_BYTES_7846816A.md`.
 
@@ -104,6 +104,30 @@ large-caliper displacement above ~60 bar. The piston-diameter entries and coeffi
 distinct from the sliding-caliper codes (see above).
 
 **No BCO reader.** The front-code BCO prefill tuning found on the M3 has no equivalent reader here.
+
+## Byte 13: steering-ratio curve (f+5)
+
+Read 2026-10-22 from the listing. Compare the M3 (`DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §3).
+
+- 0xD1818: `f+5 = c[13] & 7` (stored at 0x403241), as on the M3. Limit table 0xE1710[5] = **5**, so 0–4 are
+  accepted (M3: 0–2).
+- Five ROM sets, x at 0xDCEB4 + 8·k, y at 0xDCEDC + 8·k (4 × s16; y = ratio × 1024):
+
+| Set | x (counts) | ratio y/1024 |
+|---|---|---|
+| 0, 1 | 0, 457, 1874, 12274 | 18.50, 17.61, 16.14, 14.55 |
+| 2, 3 | 0, 1902, 5028, 10514 | 16.20, 15.20, 13.97, 12.10 |
+| 4 | 0, 594, 5668, 12480 | 18.28, 16.23, 16.46, 14.92 |
+
+  Which NCS option each set belongs to has not been looked up.
+- Unlike the M3, the curve is precomputed (fn around 0x96394, after 0xD1D38): for f+5 ≠ 1, all five sets are
+  turned into road-wheel breakpoints `0x40240E[8k + 2i] = 29360·x / y` with the clamp `0x402436[k] = x[3]`.
+- **f+5 = 1 is a real custom curve here.** Breakpoints come from coding words w22–w24 (0x403276 / 78 / 7A;
+  word array base 0x40324A) scaled by 0x5B6C / 256 = 91.42 counts per unit, ratios from w26–w28 (0x40327E / 80 / 82):
+  `0x40240E[0] = 0`, `[i] = (w(21+i)·23404 >> 8)·29360 / w(25+i)`, clamp = the scaled w24. So on a non-M car a
+  custom steering curve is codable without flashing. [inferred] If the 0x0C9 LSB is the commonly quoted
+  0.04395°/bit, the internal LSB (after ·1029/1024) is 0.04374°/count and one coding unit is 4.00° of steering
+  wheel, a round number that supports both figures.
 
 ## Byte 17: effective friction radius
 

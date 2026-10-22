@@ -50,7 +50,7 @@ checksum but fails most of the M3 field rules below, so it is not an M3 test vec
 | 10 | 7 | B.3 | lane-change logic (LCL) | |
 | 11 | all | w21 | signed trim ×7.5 (0x6A462…) | |
 | 12 | all | w20 | signed trim ×10 (0x69BD8) | |
-| 13 | 0–2 | f+5 | steering-ratio curve select for `steer_ratio_convert` (0x9033C; sets 0x40EB4/0x40ECC + 8·f5). Sets 0 and 1 are identical in this image, set 2 differs. Value 1 = "custom", needs c[41..47] ≠ 0, but nothing reads those words | < 3 |
+| 13 | 0–2 | f+5 | steering-ratio curve select for `steer_ratio_convert` (0x9033C; sets 0x40EB4/0x40ECC + 8·f5). NCS: **0 = E90 M3, 2 = E92/E93 M3**, 1 unused. Set 1 is a copy of set 0. Value 1 = "custom", needs c[41..47] ≠ 0, but nothing reads those words. Only 3 sets fit: a set 3 would read y set 0 as x and the sign tables (−1) as y. Detail `DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §3 | < 3 |
 | 13 | 3 | A.9 | soft-stop assist | |
 | 13 | 4 | A.10 | ready-alert brake | |
 | 13 | 5 | – (feature check only) | brake-disc drying | |
@@ -96,7 +96,7 @@ stage 2 and at boot after block 7 is loaded (0xCFB14 → 0xCFBA6; failure zeroes
 | f+1 | c1 b0–4 | 12 | vehicle variant |
 | f+2 | c2 b6–7 | 3 | gearbox (1 rejected separately) |
 | f+3 / f+4 | c2 b3–5 / b0–2 | 2 / 2 | pressure model front / rear |
-| f+5 | c13 b0–2 | 3 | steering-ratio curve set |
+| f+5 | c13 b0–2 | 3 | steering-ratio curve set (0 E90, 2 E92/E93) |
 | f+6 | derived (stage 5) | 49 | feature row for `coded_feature` |
 | f+7 | run time | 3 | DSC mode m, written every cycle by `dsc_mode_select` 0xCF2E8 |
 | f+8 | c14 b6–7 | 4 | RPA threshold |
