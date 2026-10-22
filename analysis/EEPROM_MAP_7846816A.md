@@ -39,13 +39,13 @@ memory, learned/adaptation values and DDS (tyre-pressure) data.
 | 0x122–0x12B | 10 | 30 | no consumer found | – | – | ? |
 | 0x12C–0x14B | 32 | 9 | DDS/RPA parameters: 10 fields from +0 (field table 0xDA994), 7 fields from +24 (0xDA9E4) | via field tables | 0x94C76 (load), 0x95230 / 0x95294 (save) | med |
 | 0x14C–0x15F | 20 | 4 | +1: NVM-manager status (0x6EBDC); +2 (1 B): wheel-speed/ASIC module byte | 0x4033DB | 0x71BEC, desc 0xD7418 | low |
-| 0x160–0x181 | 34 | 8 | 34-byte learned record (16 + 16 + 2) | 0x4020AE | 0x8F1F8 (load), 0x92796 (save) | low |
+| 0x160–0x181 | 34 | 8 | **sensor zero-offset record**: word 0 = XOR checksum of words 1–16 (`xor16_checksum` 0x920D8); word 1 → 0x4020FA; words 2–5 → steering 0x4020A6 (Q6), lateral 0x4020A8, master pressure 0x4020AA / 0x4020AC, each clamped by 0xDA974 on restore (`sensor_offset_record_sm` 0x92104; mismatch → fault 0x81000); words 8+ → 0x4049FD / 0x404A04 (not decoded). `DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §2.3 | 0x4020AE | 0x8F1F8 (load), 0x92796 (save) | med |
 | 0x182–0x18F | 14 | 2 | 10-byte record (TCS-area RAM) | 0x403029 | 0xCE99A (load), 0xCEA0E (save) | low |
 | 0x190–0x1A8 | 25 | 32 | 14-byte record (next to vref 0x408D84) | 0x408D8E | 0xD2BD8 (load), 0xD3238 (save) | low |
 | 0x1A9–0x1BA | 18 | 11 | 0x1B7–0x1B9: **Prüfstempel** (test stamp), DID 0x1000 r/w; rest unreferenced | – | desc 0xF31E4 / 0xF325C | med |
 | 0x1BB–0x1C8 | 14 | 12 | 4-byte value | 0x400D3E | 0x67B24 (load), 0x67E42 (save) | low |
 | 0x1C9–0x268 | 160 | 42 | no consumer found | – | – | ? |
-| 0x269–0x26E | 6 | 22 | 6-byte value | 0x403255 | 0xD26AC (load), 0xD24F6 (save) | low |
+| 0x269–0x26E | 6 | 22 | learned per-wheel tyre factors (4 bytes used at start-up; `TYRE_TOLERANCE_LEARNING_7846816A.md` §5) | 0x403255 | 0xD26AC (load), 0xD24F6 (save) | med |
 | 0x26F–0x280 | 18 | 47 | 0x26F–0x279 (11 B): DID 0x1603 | – | desc 0xF31F0 | high addr, ? meaning |
 | 0x281–0x2D4 | 84 | 16 | **Valve self-calibration** (SID 31 routines 0x28 / 0x29), see "Block 16" below; 1 B at 0x2CD | 0x40493D, 0x401D70/0x401D90, 0x401E70, 0x401F52 | 0x86FA0, 0x8B16C (load); 0x8ACD0, 0x8B5FA (save) | high (layout) |
 | 0x2D5–0x2E4 | 16 | 28 | Fault-manager slot (FSF id 0x1C1) | – | 0xB433A | med |

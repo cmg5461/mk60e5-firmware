@@ -172,7 +172,7 @@ shows for that column of the variant-indexed tables (vehicle model 0xD6ECA.., AB
 | Value | Vehicle | Model mass (0xD6F72) | Tables |
 |---|---|---|---|
 | 0 | M3 sedan | 1787 kg | base set; only variant with the −127 floor below 20 km/h |
-| 1 | **Custom ESM** – vehicle model taken from coding bytes 31–40 | 1814 kg (ROM column) | validator requires c31–c34, c37, c38 ≠ 0; observer µ-term 17854 (others 11905) |
+| 1 | **Custom ESM** – NCS takes the vehicle model from coding bytes 31–40; this image ignores them and loads ROM column 1 | 1814 kg (ROM column) | validator requires c31–c34, c37, c38 ≠ 0; observer µ-term 17854 (others 11905) |
 | 2 | not identified | 1845 kg | |
 | 3 | M3 coupe | 1731 kg | |
 | 4 | M3 convertible | 1947 kg | |
