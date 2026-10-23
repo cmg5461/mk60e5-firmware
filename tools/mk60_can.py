@@ -63,6 +63,10 @@ SESSION_ADJUST  = 0x87                    # ECUAdjustmentMode (where 0x27 auth i
 SESSION_PROG    = 0x85                    # ECUProgrammingMode (flash; needs further preconditions)
 FLASH_SEED_LEVEL = 0x03
 FLASH_ALGO       = "seedrev"
+# .0pa pseudo-bank holding the EEPROM default image (logical offset = addr - 0xDF8000;
+# see analysis/EEPROM_MAP_7846816A.md). Writing it zeroes coding + learned/valve-cal blocks.
+EEPROM_IMG_LO = 0xDF0000
+EEPROM_IMG_HI = 0xE00000
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -78,6 +82,8 @@ NRC = {
     0x13: "incorrectMessageLengthOrInvalidFormat", 0x22: "conditionsNotCorrect",
     0x24: "requestSequenceError", 0x31: "requestOutOfRange", 0x33: "securityAccessDenied",
     0x35: "invalidKey", 0x36: "exceedNumberOfAttempts", 0x37: "requiredTimeDelayNotExpired",
+    0x40: "downloadNotAccepted", 0x41: "improperDownloadType",
+    0x42: "canNotDownloadToSpecifiedAddress", 0x43: "canNotDownloadNumberOfBytesRequested",
     0x72: "generalProgrammingFailure", 0x78: "responsePending (0x78)",
 }
 
@@ -203,7 +209,19 @@ class IsoTp:
         import can
         data = bytes([self.ecu]) + bytes(payload7)
         data = data + b"\x00" * (8 - len(data))
-        self.bus.send(can.Message(arbitration_id=self.req_id, data=data, is_extended_id=False))
+        msg = can.Message(arbitration_id=self.req_id, data=data, is_extended_id=False)
+        # socketcan raises ENOBUFS (105) when the netdev tx queue is full (STmin 0
+        # bursts outrun a USB adapter with qlen 10). Back off and resend the same
+        # frame - it was never queued, so this can't duplicate or skip an SN.
+        end = time.time() + 2.0
+        while True:
+            try:
+                self.bus.send(msg)
+                break
+            except can.CanOperationError as e:
+                if getattr(e, "error_code", None) != 105 or time.time() > end:
+                    raise
+                time.sleep(0.001)
         if self.verbose:
             print("  TX %03X %s" % (self.req_id, data.hex(" ")))
 
@@ -361,7 +379,7 @@ class Uds:
     def read_data_by_id(self, did):        return self.request(bytes([0x22, did >> 8, did & 0xFF]))
     def read_local_id(self, lid):          return self.request(bytes([0x21, lid]))
     def read_mem_by_addr23(self, logaddr, n):
-        return self.request(bytes([0x23, (logaddr >> 8) & 0xFF, logaddr & 0xFF, n]))
+        return self.request(bytes([0x23, 0x00, (logaddr >> 8) & 0xFF, logaddr & 0xFF, 0x03, n]))
 
     def security_access(self, level_seed=0x01, algo="afb10", seed_only=False):
         seed_resp = self.request(bytes([0x27, level_seed]))
@@ -385,10 +403,41 @@ class Uds:
 
 
 # ---------------------------------------------------------------- bus setup
+# tried in this order when --interface is unset. only backends whose detection
+# reports hardware actually present (not e.g. serial, which lists every tty)
+AUTO_INTERFACES = ["socketcan", "kvaser", "pcan", "vector", "ixxat", "etas", "nixnet", "cantact"]
+
+
+def find_bus(args):
+    """First detected bus config matching --interface/--channel (either may be unset)."""
+    import can
+    if args.interface is not None and args.interface not in can.VALID_INTERFACES:
+        raise SystemExit("unknown CAN interface '%s' (valid: %s)"
+                         % (args.interface, ", ".join(sorted(can.VALID_INTERFACES))))
+    ifaces = AUTO_INTERFACES if args.interface is None else [args.interface]
+    for iface in ifaces:
+        for cfg in can.detect_available_configs(interfaces=[iface]):
+            if args.channel is None or str(cfg["channel"]) == args.channel:
+                return cfg
+    if args.interface is not None and args.channel is not None:
+        return {"interface": args.interface, "channel": args.channel}   # trust the user
+    raise SystemExit("no CAN interface found (tried %s%s)"
+                     % ("/".join(ifaces), "" if args.channel is None else ", channel " + args.channel))
+
+
 def open_bus(args):
     import can
-    return can.Bus(interface="kvaser", channel=args.channel, bitrate=args.bitrate,
-                   receive_own_messages=False)
+    cfg = find_bus(args)
+    args.interface, args.channel = cfg["interface"], str(cfg["channel"])
+    print("Using %s channel %s" % (args.interface, args.channel))
+    try:
+        return can.Bus(**cfg, bitrate=args.bitrate, receive_own_messages=False)
+    except Exception as e:
+        # a backend whose vendor library failed to load (e.g. kvaser) dies with a
+        # NameError on the first missing symbol rather than saying so
+        hint = " (vendor driver/library not installed?)" if isinstance(e, NameError) else ""
+        raise SystemExit("couldn't open %s channel %s: %s%s"
+                         % (args.interface, args.channel, e, hint))
 
 
 def make_uds(args):
@@ -586,6 +635,38 @@ def authenticate(uds, uid="273c", w564_override=None, open_prog=True, key=AUTH_K
     return True
 
 
+PROG_STATUS = {
+    0x00: "Anlieferzustand (delivery state)",
+    0x01: "Normalbetrieb (normal operation)",
+    0x03: "Speicher geloescht (memory erased)",
+    0x05: "Signaturpruefung PAF nicht durchgefuehrt (program signature not checked)",
+    0x06: "Signaturpruefung DAF nicht durchgefuehrt (data signature not checked)",
+    0x07: "Programmprogrammiersitzung aktiv (program programming session active)",
+    0x08: "Datenprogrammiersitzung aktiv (data programming session active)",
+    0x09: "Hardwarereferenzeintrag fehlerhaft (hardware reference entry bad)",
+    0x0A: "Programmreferenzeintrag fehlerhaft (program reference entry bad)",
+    0x0B: "Referenzierungsfehler Hardware -> Programm",
+    0x0C: "Programm nicht vorhanden oder nicht vollstaendig (program missing/incomplete)",
+    0x0D: "Datenreferenzeintrag fehlerhaft (data reference entry bad)",
+    0x0E: "Referenzierungsfehler Programm -> Daten",
+    0x0F: "Daten nicht vorhanden oder nicht vollstaendig (data missing/incomplete)",
+}
+
+
+def cmd_status(args):
+    bus, uds = make_uds(args)
+    try:
+        r = uds.raw(bytes([0x31, 0x0A]), timeout=5.0)
+        if not r:
+            print("31 0A -> no response")
+        elif r[0] == 0x71 and len(r) >= 3:
+            print("31 0A -> %s : 0x%02X %s" % (r.hex(" "), r[2], PROG_STATUS.get(r[2], "unknown")))
+        else:
+            print("31 0A -> %s" % r.hex(" "))
+    finally:
+        bus.shutdown()
+
+
 def cmd_auth5(args):
     bus, uds = make_uds(args)
     try:
@@ -664,6 +745,12 @@ def cmd_flashplan(args):
             sys.exit("segment %d size mismatch (declared 0x%X, blob %d)" % (i, s["size"], len(seg)))
         total += len(seg)
 
+    skipped = []
+    if args.skip_eeprom:
+        skipped = [s for s in segs if EEPROM_IMG_LO <= s["addr"] < EEPROM_IMG_HI]
+        segs = [s for s in segs if not EEPROM_IMG_LO <= s["addr"] < EEPROM_IMG_HI]
+        total -= sum(s["size"] for s in skipped)
+
     print("=" * 70)
     print("FLASH PLAN: %s   (%d segments, %d bytes, maxblock 0x%02X)"
           % (plan.get("name"), len(segs), total, maxblk))
@@ -674,6 +761,11 @@ def cmd_flashplan(args):
     for i, s in enumerate(segs):
         nframes = (s["size"] + chunk - 1) // chunk
         print("  [%2d] 0x%06X  %7d B  %4d frames" % (i, s["addr"], s["size"], nframes))
+    if skipped:
+        print("--skip-eeprom: NOT writing %d EEPROM default-image segment(s) (coding, valve cal,"
+              " learned values and ident block 24 keep their current contents):" % len(skipped))
+        for s in skipped:
+            print("       0x%06X  %7d B  (EEPROM 0x%03X)" % (s["addr"], s["size"], s["addr"] - 0xDF8000))
     print("=" * 70)
 
     if not args.arm:
@@ -934,7 +1026,10 @@ def cmd_flash(args):
 # ---------------------------------------------------------------- CLI
 def main():
     p = argparse.ArgumentParser(description="Kvaser MK60E5 DSC diagnostic / flash client")
-    p.add_argument("--channel", type=int, default=0, help="Kvaser channel index (default 0)")
+    p.add_argument("--interface", default=None,
+                   help="python-can backend (default: first of %s found)" % "/".join(AUTO_INTERFACES))
+    p.add_argument("--channel", default=None,
+                   help="Kvaser channel index or socketcan netdev, e.g. 0 or can0 (default: first found)")
     p.add_argument("--bitrate", type=int, default=BITRATE)
     p.add_argument("--ecu", type=lambda x: int(x, 0), default=DSC_ADDR, help="ECU diag address (default 0x29)")
     p.add_argument("--req-id", type=lambda x: int(x, 0), default=REQ_ID, dest="req_id")
@@ -975,6 +1070,9 @@ def main():
                     help="fetch+print the seed + all candidate keys; send NO key (no lockout risk)")
     ul.set_defaults(func=cmd_unlock)
 
+    st = sub.add_parser("status", help="read flash programming status 0x31 0x0A (SAFE)")
+    st.set_defaults(func=cmd_status)
+
     a5 = sub.add_parser("auth5", help="level-5 Authentisierung (keyed MD5) - M3-validated flash auth")
     a5.add_argument("--uid", default="273c", help="USER_ID: any 4 chars (tester-chosen; default 273c)")
     a5.add_argument("--w564", default=None,
@@ -988,6 +1086,9 @@ def main():
                     help="skip app-level auth: ECU already in bootloader (0x85 opens directly)")
     fp.add_argument("--probe-finalize", action="store_true", dest="probe_finalize",
                     help="after writing, enumerate 31 09 sub-functions instead of verify+reset (diagnostic)")
+    fp.add_argument("--skip-eeprom", action="store_true", dest="skip_eeprom",
+                    help="don't write the 0xDF8xxx EEPROM default-image segments: keeps coding, "
+                         "valve calibration and learned values (minor revision of the same firmware)")
     fp.add_argument("--uid", default="273c", help="auth USER_ID (any 4 chars; default 273c)")
     fp.add_argument("--w564", default=None, help="override w564 (default = per-unit last 4 of 0x1A 0x89)")
     fp.add_argument("--erase-timeout", type=float, default=60.0, dest="erase_timeout")
