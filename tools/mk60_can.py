@@ -403,7 +403,7 @@ class Uds:
 
 
 # ---------------------------------------------------------------- bus setup
-AUTO_INTERFACES = ["socketcan", "kvaser"]   # tried in this order when --interface is unset
+AUTO_INTERFACES = ["socketcan", "kvaser", "pcan"]   # tried in this order when --interface is unset
 
 
 def find_bus(args):
