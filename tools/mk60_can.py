@@ -379,7 +379,7 @@ class Uds:
     def read_data_by_id(self, did):        return self.request(bytes([0x22, did >> 8, did & 0xFF]))
     def read_local_id(self, lid):          return self.request(bytes([0x21, lid]))
     def read_mem_by_addr23(self, logaddr, n):
-        return self.request(bytes([0x23, (logaddr >> 8) & 0xFF, logaddr & 0xFF, n]))
+        return self.request(bytes([0x23, 0x00, (logaddr >> 8) & 0xFF, logaddr & 0xFF, 0x03, n]))
 
     def security_access(self, level_seed=0x01, algo="afb10", seed_only=False):
         seed_resp = self.request(bytes([0x27, level_seed]))
