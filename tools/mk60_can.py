@@ -403,12 +403,17 @@ class Uds:
 
 
 # ---------------------------------------------------------------- bus setup
-AUTO_INTERFACES = ["socketcan", "kvaser", "pcan"]   # tried in this order when --interface is unset
+# tried in this order when --interface is unset. only backends whose detection
+# reports hardware actually present (not e.g. serial, which lists every tty)
+AUTO_INTERFACES = ["socketcan", "kvaser", "pcan", "vector", "ixxat", "etas", "nixnet", "cantact"]
 
 
 def find_bus(args):
     """First detected bus config matching --interface/--channel (either may be unset)."""
     import can
+    if args.interface is not None and args.interface not in can.VALID_INTERFACES:
+        raise SystemExit("unknown CAN interface '%s' (valid: %s)"
+                         % (args.interface, ", ".join(sorted(can.VALID_INTERFACES))))
     ifaces = AUTO_INTERFACES if args.interface is None else [args.interface]
     for iface in ifaces:
         for cfg in can.detect_available_configs(interfaces=[iface]):
@@ -425,7 +430,14 @@ def open_bus(args):
     cfg = find_bus(args)
     args.interface, args.channel = cfg["interface"], str(cfg["channel"])
     print("Using %s channel %s" % (args.interface, args.channel))
-    return can.Bus(**cfg, bitrate=args.bitrate, receive_own_messages=False)
+    try:
+        return can.Bus(**cfg, bitrate=args.bitrate, receive_own_messages=False)
+    except Exception as e:
+        # a backend whose vendor library failed to load (e.g. kvaser) dies with a
+        # NameError on the first missing symbol rather than saying so
+        hint = " (vendor driver/library not installed?)" if isinstance(e, NameError) else ""
+        raise SystemExit("couldn't open %s channel %s: %s%s"
+                         % (args.interface, args.channel, e, hint))
 
 
 def make_uds(args):
