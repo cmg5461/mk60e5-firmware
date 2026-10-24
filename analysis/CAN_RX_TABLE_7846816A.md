@@ -151,8 +151,9 @@ Many single signals in live frames are stubs too (marked "(stub)" below).
 
 ## Not identified
 
-PT 0x226, 0x316, 0x319 carry 2–4-bit states into 0x401108 / 0x401111 / 0x40482E–0x404830. I could not tie
-them to a BMW message name. 0x398 and 0x399 carry driver-mode requests into 0x401139–0x40113B
+PT 0x226, 0x316, 0x319 carry 2–4-bit states into 0x401108 / 0x401111 / 0x40482E–0x404830. 0x226 byte 0 (0xAA / 0xFD / 0x55)
+is very probably wiper status: the BCO brake-disc drying code reads it (`BCO_PREFILL_7846816A.md` §9). I could not tie
+the rest to a BMW message name. 0x398 and 0x399 carry driver-mode requests into 0x401139–0x40113B
 (0x398 byte 1 bits 2–4: 0 = DSC on, 1 = DSC off, 4 = MDM; see FACTS "DSC driver mode"). The BMW message names are
 still unknown, and so is the meaning of the 0x398 byte 0 slot. 0x797, NM (0x480/0x580) and tester (0x6F1)
 handlers are summarised only. "Probably terminal R/15/50" for 0x130 is inferred from use (the BLS state on 0x19E
@@ -308,7 +309,7 @@ not identified. Software timeout 0x4046F8 = 4000 (handler 0x7D116 sets invalid f
 |---|---|---|---|---|---|---|---|---|
 | 178 | 3.0 | 4 | Intel | 0x0C1 | 0 value | 0x07C904 | `can_rx_226_nibble` | 4-bit → 0x404709 (15 = invalid → 0x4046D8 b7). Reloads the software timeout 0x4046F8 = 4000 |
 | 179 | 1.0 | 16 | Intel | 0x087 | 0 value | 0x07C932 | `can_rx_226_state` | u16 combined with 0x404709 into 0x401111 b7:5: 0 if either is 0, 2 if 0x404709 < 5, else 3; b1 = invalid |
-| 180 | 0.0 | 8 | Intel | 0x088 | 0 value | 0x07C974 | `can_rx_226_byte0` | u8 → u32 0x404714; 0xFF → invalid (0x404718 b5) |
+| 180 | 0.0 | 8 | Intel | 0x088 | 0 value | 0x07C974 | `can_rx_226_byte0` | u8 → u32 0x404714; 0xFF → invalid (0x404718 b5). **Read by the BCO disc-drying code** (0x6BBBE via `rx_sig_fetch(2)` 0x7F70E): 0xAA / 0xFD / 0x55 = wiper level 1 / 2 / 3, 0 = off (probable wiper status) |
 
 #### PT-CAN 0x2A6  DLC 2 · mailbox 16
 
@@ -589,7 +590,7 @@ gatewayed to PT-CAN + byte-0 state machine
 | sig | pos | len | pack | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
 | 75 | — | — | Intel | 0x044 | 2 payload | 0x0C56D0 | `fcan_rx_queue_push` | gateway, as 0x1D6 |
-| 76 | 0.0 | 8 | Intel | 0x04E | 0 value | 0x0C630A | `fcan_rx_2A6_byte0` | u8 with a large state machine (0xC630A, 3-bit field, faults incl. 0xB0400); not traced |
+| 76 | 0.0 | 8 | Intel | 0x04E | 0 value | 0x0C630A | `fcan_rx_2A6_byte0` | u8 with a large state machine (0xC630A, 3-bit field, faults incl. 0xB0400); not traced. Result in `0x402E4C` (b7:5 = 3-bit state, b2 received, b1 invalid). **Read by the BCO disc-drying code** (0x6BBBE): 2 = wiper level 1, 3 = level 2, 1 = use PT-CAN 0x226 byte 0, 0 = off |
 
 #### F-CAN 0x1D9  DLC 3 · mailbox 24 · gateway → PT-CAN 0x1D9
 

@@ -7,3 +7,7 @@ Thumbs.db
 # Python cache
 __pycache__/
 *.pyc
+
+fw/
+flash/
+logs/

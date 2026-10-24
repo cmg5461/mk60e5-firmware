@@ -129,6 +129,13 @@ flowchart LR
 | track front / rear | `0xD6FA2`/`BA` | 1.538 / 1.536 m | Track geometry — **Q10 metres** (= the real M3 track), not mm | CAL · med |
 | active variant | `0x4031AA+1` | EEPROM | Selects *which column* of all the above is used | EEPROM · high |
 
+**Fitting another car.** There is no coding route to custom geometry (variant 1 still reads its ROM column), so
+patch the column of the coded variant and keep the variant in 0–9 (the ABS decel curves are variant-indexed too).
+Set l_f / l_r and track in Q10 m, mass, Jz (stock Jz ≈ 0.75–0.99 × m·l_f·l_r), then fit Cf / Cr to the car's
+measured v_ch. Also set the steering-ratio curve and the tyre circumference (BFU `0x41CF4` / `0x41CF6`), and check
+by overlaying target yaw `0x400B1A` on measured yaw `0x402100` in steady cornering.
+Procedure: `analysis/DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §4.
+
 The Stock column above is variant 0. The variant is coding byte 1 (bits 0–4) and names the car:
 
 | Variant | Car | Mass | Notes |
@@ -149,14 +156,16 @@ are user-supplied; the per-column data is from the image.
 ## Wheel speed & tyres
 
 The four wheel speeds are the root of everything — vref, slip, and the broadcast vehicle speed all derive
-from them. Tyre circumference is the scale factor. The M3 ships the **same geometry as the 1M**.
+from them. Tyre circumference is the scale factor. The M3 ships the **same geometry as the 1M**. The learned
+tyre-tolerance factor is only a ratio trim between wheels (vref and `rec+0x1C`). It cannot correct a wrong
+circumference. Full chain: `analysis/WHEEL_SPEED_CHAIN_7846816A.md`; learning: `analysis/TYRE_TOLERANCE_LEARNING_7846816A.md`.
 
 | Parameter | Addr | Stock | Raise it → | Tag · Conf |
 |---|---|---|---|---|
 | circumference front | `0x41CF4` | 2073 mm | ECU reads a **higher road speed** for the same wheel rpm — shifts vref and the speedo. The knob to match a different rolling radius. | CAL · high |
-| circumference rear | `0x41CF6` | 2073 mm | Same, rear axle. Front≠rear biases the undriven/driven comparison TCS uses. | CAL · high |
-| tooth count F / R | `0x41CF8`/`FA` | 48 / 48 | Encoder teeth per rev; sets the per-edge angle. Must match the physical tone ring. | CAL · high |
-| standstill threshold | `0x41CF2` | 72 (0.72 km/h) | Speed below which a wheel counts as stopped. Higher = calls the car stationary sooner. | CAL · high |
+| circumference rear | `0x41CF6` | 2073 mm | Same, rear axle. Front≠rear biases the undriven/driven comparison TCS uses. Speed **and** wheel acceleration scale with it, and so does a stopped wheel's reading (2K/60000). | CAL · high |
+| tooth count F / R | `0x41CF8`/`FA` | 48 / 48 | **Not used for speed.** Speed uses K = 900·C, which assumes 48 teeth. This field only feeds a plausibility check (0x6EC18) and the RPA tyre-pressure monitor. To run a different ring, rescale K (patcher `basic/tone_ring_teeth`). | CAL · high |
+| standstill threshold | `0x41CF2` | 72 (0.72 km/h) | Speed below which a wheel counts as stopped, in `count_standstill_wheels` only (`vehicle_standstill_update` has its own hard-coded 72). Must stay above a stopped wheel's reading, 2K/60000 (0.62 km/h stock). | CAL · high |
 
 > **Reference speed and broadcast speed (2026-10-06, disassembly read, not bench-verified).**
 >
@@ -242,6 +251,7 @@ Alongside that runs a **volume model**: each wheel's fluid volume is tracked, co
 the COA p–V curves, and changed by valve flow `Q = √Δp · opening · k`. The model sizes valve pulses, is
 re-synced to the measurement every frame, and replaces PM only while a wheel is dumping or when a wheel
 pressure sensor is faulted. A low-pressure accumulator per circuit holds dumped fluid; a return pump drains it.
+Full description with a circuit diagram: `analysis/HYDRAULIC_MODEL_7846816A.md`.
 
 ```mermaid
 flowchart LR
@@ -365,21 +375,25 @@ block bodies are byte-identical to the 1M; coding picks code 0 vs 1 per axle (co
 | p–V pressure axis | `0x41B4E` | 0 … 32700 | Shared breakpoints for the volume curves. | CAL · high |
 | front volume set 0/1 | `0x41B62`/`76` | 10-pt curve | Front caliper fluid intake vs pressure — the effective front brake "size". Code `+3` selects. | CAL · high |
 | rear volume set 0/1 | `0x41B8A`/`9E` | 10-pt curve | Rear equivalent; code `+4`. | CAL · high |
-| BCO thresholds | `0x41764…` | pairs 0/1 | Front-code tuning of the BCO pedal-release prefill (debounce, thresholds, wait, pressure scale); rear code not used. Detail: `analysis/CODING_BYTES_7846816A.md`. | CAL · med |
+| BCO thresholds | `0x41764…` | pairs 0/1 | Front-code tuning of the BCO mode-A pedal-release prefill (debounce, thresholds, wait, pressure scale); rear code not used. Pedal-lift speed window 60–500 km/h (`0x417C0`/`0x417A6`). Detail: `analysis/BCO_PREFILL_7846816A.md`. | CAL · med |
+| BCO disc drying | `0x417C2…`, `0x41800…` | scalars / curves | Mode B wiper-driven drying: enable `0x417C2` (0/1/2), exposure thresholds `0x417C4`/`CC`/`0x41828`, speed curve `0x417D0` (1.0 bar at 82 km/h up to 1.4 bar from 150 km/h, over a 3 s profile), time curve `0x41802`, hold `0x41800` = 3000 ms. Front wheels only. Detail: `analysis/BCO_PREFILL_7846816A.md` §9. | CAL · med |
 | brake coding F / R | `0x4031AA+3`/`+4` | EEPROM | Selects which curve set each axle uses: 0 = M3, 1 = M3 GTS (coding byte 2). Does not change brake torque per pressure, which is a constant on the M3. | EEPROM · high |
 
 ---
 
 ## Steering (CSI)
 
-Steering angle (F-CAN `0x0C9`) is converted to a road-wheel angle through a variable steering-ratio
-curve, then fed to the yaw reference. This block is one of the **few genuinely M3-specific calibrations**
-— it grew vs the 1M and the ratio curve differs.
+Steering angle (F-CAN `0x0C9`) is zero-corrected by a learned offset, then converted to a road-wheel angle
+through a 4-point steering-ratio curve and fed to the yaw reference. The curve is the overall (secant)
+steering-wheel / road-wheel ratio; its fall with lock is steering linkage geometry on a constant-ratio rack. This
+block is one of the **few genuinely M3-specific calibrations**: it grew vs the 1M and the ratio curve differs.
+Data flow, learner and fitting to another car: `analysis/DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md`.
 
 | Parameter | Addr | Stock | Raise it → | Tag · Conf |
 |---|---|---|---|---|
 | steer-ratio curve | `0x40ECC` | 15.9:1 → 12.6:1 | Road-wheel angle per steering angle vs lock. Re-scales the yaw-reference input. | CAL · high |
-| ratio breakpoints | `0x40EB4` | 0 … 10880 counts | Steering-angle axis (3 coding-selectable sets). | CAL · high |
+| ratio breakpoints | `0x40EB4` | 0 … 10880 counts | Steering-angle axis (3 coding-selectable sets). Last point also clamps the input. | CAL · high |
+| ratio set select | `0x4031AA+5` | coding byte 13 b0–2 | 0 = E90, 2 = E92/E93 (NCS); 1 = unused copy of 0; 3 is rejected (only 3 sets fit). | EEPROM · high |
 | sensor sign tables | `0x40EE4`/`F14` | −1 (all) | Per-variant polarity for the yaw/lat-g channels. | CAL · high |
 
 **How steering reaches ABS.** ABS gets the offset-corrected steering-wheel angle (`0x408EDE`), the road-wheel
@@ -388,6 +402,18 @@ switch**: without it the yaw-stable flag, the rear cornering latch, µ-split GMA
 ax-based vref step are all off. The steering ratio curve above hardly matters to ABS (only the road-wheel sign is
 used), so for ABS the signal has to be valid, correctly signed and zeroed; the scale matters less. Steering
 counts ≈ 0.044° of steering wheel (unverified); yaw 1/20000 rad/s. Detail: `analysis/agents/abs_full/09_chassis_sensor_use.md` §7.
+
+**Zero offset.** `steer_offset_learn` 0x9020C tracks the steering zero slowly (every 100 calls, slower with more
+lateral load) and saves it in EEPROM (block 8). Usable range is about **±10° of steering wheel**: past that
+`0x120001` sets. Mount the sensor centred and run `31 21 00` with the wheels straight; don't rely on the learner.
+
+| Parameter | Addr | Stock | Raise it → | Tag · Conf |
+|---|---|---|---|---|
+| learner step clamp | code `0x902AC`/`0x902B0` (+228), literal `0x903D0` (−228) | 228 counts (≈10°) | Larger step per update toward the measured zero. +228 is `movi`/`bseti`, not a literal. | CODE · high |
+| learner hard clamp | literal `0x903D4` | 0x7249 Q6 (457 counts ≈20°) | Allows a larger stored offset. | CODE · high |
+| offset fault limit | literal `0xBF8D0` | 0x3924 Q6 (228.6 counts ≈10°) | Larger offset before fault 0x120001. | CODE · high |
+| learner rate curves | `0xDA8FA`–`0xDA90A` | lat {299, 3199} → {3000, 9000}; residual {1745, 6981} → {3000, 700} | Larger y = slower learning (divisor). | CAL · med |
+| restore clamps | `0xDA974` | 29257 / 30581 / 16000 / 21600 | Limits on the steering / lateral / pressure offsets loaded from EEPROM. | CAL · med |
 
 | Parameter | Addr | Stock | Raise it → | Tag · Conf |
 |---|---|---|---|---|

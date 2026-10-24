@@ -18,15 +18,16 @@ downstream — the valve sequencer's pressure error, ABS PM `0x408F2A`, `supply_
 from that measured value.
 
 The **volume-domain model** (fluid volume integrated from valve open-times, converted to pressure by the
-COA pressure↔volume compliance curves) has two jobs: **feed-forward** (sizing how many valve-open steps a
-given pressure error needs) and **fallback** (supplying PM while a wheel's outlet valve is dumping, and
+COA pressure↔volume compliance curves) has two jobs: **feed-forward** (the brake compliance term in the
+reapply current, and the outlet dump time) and **fallback** (supplying PM while a wheel's outlet valve is dumping, and
 whenever the wheel sensors are faulted or invalid).
 
 The dominant ABS regulation loop is still **slip + wheel-acceleration**, measured and closed every 10 ms.
 Dump/hold/build *decisions* come from that loop; pressure feedback governs *metering*.
 
 **Would an off P-V model make braking sluggish/soft?** With healthy sensors, little: a wrong curve
-mis-sizes an individual pulse, and the measured pressure corrects the error on the next frame. It matters
+mis-sizes the feed-forward current or dump time, and the measured pressure corrects the error (the 5 ms
+inlet loop's learned offset, and PM re-sync each frame). It matters
 during dump phases (PM is modelled until the inlet side is active again) and matters fully in sensor-fault
 fallback, where the model is the only wheel-pressure source. Onset "bite" is set by the apply-ramp/slew
 constants (§4), not the P-V curve. See §6.
@@ -35,25 +36,28 @@ constants (§4), not the P-V curve. See §6.
 
 ## 1. Valve driver outputs + pump (CONFIRMED structure, roles INFERRED)
 
-Dispatcher slot 32 `hydraulic_actuation_pipeline` 0x843BC → `valve_pulse_sequencer` 0x853A8 builds a
-**10-step current profile per wheel channel** each frame. Verified flow of 0x853A8:
+Full decode of the inlet side: `analysis/INLET_VALVE_CONTROL_7846816A.md`. Fluid model, LPA and pump (supersedes the loose
+pump/accumulator notes below): `analysis/HYDRAULIC_MODEL_7846816A.md`. Three rates:
 
-- Front/rear split at `cmplti r2,2` (r2 = wheel 0..3). Per-wheel **start offset** loaded from COA:
-  front `0x41A72` = **40**, rear `0x41A74` = **20** (bytes `00 28 / 00 14`, CONFIRMED). Base profile
-  slots preloaded with hold/boost current literals (`125<<4`=2000, `125<<6`=8000 seen at 0x853BE/0x853C6).
-- **Inlet mode byte** read at `0x401AA8 + 8*wheel` (0x85402): **1 = hold**, **2 = build**, **4 = release**
-  (`cmpnei r7,1/2/4` at 0x8540E..0x85418). Mode written by `inlet_mode_select` 0x84460 (INFERRED: from
-  sign of pressure error).
-  - **Hold (1)** 0x8541C: 10-step profile held at the last value, clamped to `0x604`=**1540**
-    (literal `0x5F4`=1524 fallback).
-  - **Build (2)** 0x854AC: computes pressure error = supply − PM (measured wheel pressure, §3), interpolates the COA p-V curve
-    (front coding `0x4031AA+3`/table `0x41B62`, rear `+4`/`0x41B8A`, shared pressure axis `0x41B4E`) and
-    scales by the **build gain** front `0x41A76`=**800**, rear `0x41A78`=**350** (bytes `03 20 / 01 5E`,
-    CONFIRMED). Result → number of valve-open steps (`r14`, clamped 0..10 at 0x856C8).
-  - **Release (4)** 0x857B8: profile forced to dump current `0x5FC`=**1532** (clamp `0x604`=1540), counters
-    reset, PM snapshotted to `0x401C08`.
-- A per-wheel temperature/compensation value is read at `0x401FF7` (byte, sign-extended, clamped to
-  [−30,+100]) and folded into the profile (0x853E6..0x85402). (INFERRED: valve-current temp comp.)
+- **10 ms** — dispatcher slot 32 `hydraulic_actuation_pipeline` 0x843BC → `inlet_mode_select` 0x84460 and
+  `valve_pulse_sequencer` 0x853A8. The mode byte at `0x401AA8 + 8*wheel` comes from the sign of the
+  arbitrated request rate: **1 = hold** (rate 0), **2 = build** (> 0), **4 = release** (< 0). For build the
+  sequencer computes a feed-forward current `I_build` = the valve's calibrated hold current for the present
+  Δp (supply − PM), lowered by up to 40 % (front) / 20 % (rear) (COA `0x41A72` = 40 / `0x41A74` = 20) in
+  proportion to the requested rate over `D = C·Δp/(G + temp)`, where C is the brake compliance from the COA
+  p-V curve and **G** = COA `0x41A76` = **800** front / `0x41A78` = **350** rear (bytes `03 20 / 01 5E`,
+  CONFIRMED); temp = byte `0x401FF7`, clamped [−30, +100]. Rate 9000 (full build) instead opens the inlet
+  fully for a counted number of steps.
+- **5 ms** — `inlet_fast_loop` 0x85282 closes the loop on the measured wheel pressure: a setpoint ramps
+  toward the target at the requested rate (1–6 bar/frame), and the build current `I_build − learn` adapts
+  `learn` when the pressure lags or overshoots the ramp. Hold and release keep the inlet closed: peak
+  1524 mA (hold) / 1532 mA (release) for two half-frames, then 1100 mA hold-in. Release also snapshots PM
+  to `0x401C08`.
+- **1 ms** — `valve_output_1ms` 0x741F4 clocks one of 10 steps per wheel to the valve ASIC.
+
+So reapply is a **proportional (partly energised) inlet**, not a count of open/closed pulses. The outlet
+side is open-loop timed: `outlet_dump_time_calc` 0x85A42 books outlet-open time from the p-V volume
+difference and orifice flow.
 
 **Output stages (INFERRED from CS usage, per existing symbols):** 12 solenoid channels (mask table
 0xD7634; actuator-test order 0xF2EF0 = [0,4,1,5,2,6,3,7,8,9,10,11]). ch0-3 = inlet (analog current via
@@ -137,12 +141,15 @@ between model and reality persists only within a dump phase or in sensor-fault f
 
 ## 4. Pulse timing & slew limiting (CONFIRMED values)
 
-- **Build:** valve-open step count = f(pressure error vs measured PM, COA p-V) × build gain (front 800 / rear 350), 0..10
-  steps per 10 ms frame. So build is **pressure-gradient / P-V based**, not a fixed pulse width.
-- **Dump:** release forces dump current, with the *amount* set upstream by `abs_dump_stage` 0x5424C →
-  `abs_dump_entry_target` 0x55F06: target = `max(LOCKEST − R, 0)`, R from the staged ladder (−10/−15/−20 bar
-  of lock-onset pressure), emitted at rate literal **−8000** (max dump rate, hard-coded).
-- **Reapply/apply ramp** `abs_apply_ramp` 0x443F4: CMD **+400/frame** (cal ABS+0x0C), cap 25000; small nudges.
+- **Build:** metered inlet current (§1), feed-forward from the calibrated hold current and the compliance,
+  corrected every 5 ms on measured pressure. The requested rate is clamped to 1–6 bar/frame in the fast loop.
+- **Dump:** the *amount* is set upstream by `abs_dump_entry_target` 0x55F06 (entry: lock pressure minus
+  R ≈ 8 % of it plus decel terms, capped at wheel pressure − `0x401D00[w]`) and the later dump stages
+  (`08_phase_control.md` §5.2–5.3), emitted at rate literal **−8000** (max dump rate, hard-coded). The outlet
+  time to reach it is booked by `outlet_dump_time_calc`.
+- **ABS reapply:** a staircase of steps sized from the dump depth, ramped at cal 0x40D5E = 3 bar/frame (front)
+  / 0x40D60 = 5 bar/frame (rear) with a 7-frame wait (`08_phase_control.md` §5.4).
+- **Apply ramp** `abs_apply_ramp` 0x443F4 (request id 19): CMD **+400/frame**, cap 25000; dropped below 4 km/h.
 - **Slew limiter** `abs_cmd_slew_limiter` 0x584CC: `CMD=min(CMD,TGT); RAMP=min(RAMP, CMD−SNAP)` — this is
   the onset rate limit that shapes how fast commanded pressure can move. Expressed in **pressure-level
   units**, so it is *independent of P-V accuracy*. **Onset "softness" is set by these ramp/slew constants,
@@ -157,8 +164,9 @@ No standalone EBD module; EBD-like rear limiting is folded into the same ABS con
 - `abs_rear_lead_select` 0x5184C: rear-axle **select-low** behavior; a rear wheel's pressure reference is
   the **same-side front wheel's pressure PM** (per ABS_ALGORITHM §5). Rear reapply uses arbiter
   **id 11** (rear-only; loses priority to the driver's master-cylinder id 0).
-- `abs_pair_logic` 0x54D9A pairs front(0,1)/rear(2,3), runs the axle-pair S0..S3 cycle, and a cornering
-  clause (lateral-accel term) relaxes rear pressure in corners.
+- With valid lateral, the lead rear follows the lateral sign and the classifier's lateral-g curves
+  switch the rears between independent and select-low / knock-down (`03_lateral_g_influence.md` §2).
+  `abs_pair_logic` 0x54D9A is µ-split yaw-moment limiting, active only after a yaw kick.
 - Distribution is therefore **referenced to front wheel pressure PM**, which is the measured front
   output pressure in normal operation.
 
@@ -169,9 +177,9 @@ No standalone EBD module; EBD-like rear limiting is folded into the same ABS con
 | | ABS (pedal down, wheel locking) | DSC/AYC/TCS active build (no pedal) |
 |---|---|---|
 | Decision loop | **Slip + wheel accel, measured, closed** | Yaw/slip error, measured, closed |
-| Pressure metering | Target pressure-level + P-V-sized pulses | P-V-sized pulses toward the requested pressure |
+| Pressure metering | Target pressure + rate; metered inlet current, timed outlet | Same, toward the requested pressure |
 | Wheel pressure feedback | **Measured** (model during dump phases) | **Measured** |
-| Effect of wrong P-V | Pulse mis-sized for one frame; dump-phase estimate off until re-sync | Pulse mis-sized for one frame |
+| Effect of wrong P-V | Feed-forward off until the 5 ms loop corrects it; dump-phase estimate off until re-sync | Feed-forward off until corrected |
 | Sensor-fault fallback | Pure volume model: P-V error accumulates | Pure volume model: build sluggish or overshoots |
 
 - With healthy sensors the P-V curves are a feed-forward term inside a measured-pressure loop; they
@@ -183,6 +191,5 @@ No standalone EBD module; EBD-like rear limiting is folded into the same ABS con
 
 
 ## 7. Open / unconfirmed
-- `inlet_mode_select` 0x84460 exact predicate (hold vs build vs release thresholds) — INFERRED from error sign.
 - How each ABS routine that reads the measured wheel pressure (`sub_046ADC` filters `0x408E20+14w`,
   `abs_hold_entry_sync`, `abs_decision_resolve`) uses it in its decisions.

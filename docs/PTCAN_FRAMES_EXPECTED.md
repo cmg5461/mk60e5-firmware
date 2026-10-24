@@ -123,7 +123,7 @@ not confirmed.
 | byte 3 | 0 | accelerator pedal. Never 0xFF |
 | bytes 4–5 | **≈ 3200** (0x0C80) | u16 engine speed. Probably 0.25 rpm/bit as on other BMWs, so 3200 ≈ 800 rpm (scaling not confirmed). Never 0xFFFF. **Don't send 0** (see below) |
 | 6.0–6.1 | **0** | rpm error. Any other value makes rpm invalid |
-| 6.4–6.7 | ≠ 15 | 4-bit value, purpose unknown |
+| 6.4–6.7 | **8** (9 or 11 also work) | 4-bit DME status, stored in 0x40470C (15 is stored as 8). Only the BCO pre-fill looks at it: it resets itself about once a second while the value stays outside {8, 9, 11} (`analysis/BCO_PREFILL_7846816A.md` §15). Nothing else was found that reads it |
 | rest | any | not read |
 
 ### 0x0BA gearbox (DCT coding only)
@@ -158,8 +158,13 @@ in a fallback mode, and there 0 means "pedal released". What the fake values do 
   them; the DSC only notices if the DME sets "torque not adjustable" itself, which you don't send.
 - **Hill-start assist** detects drive-off from rpm and engine torque. With torque stuck at 0 it may never see the
   car pulling away and could hold brake pressure for longer. How it releases has not been traced. **Code it off.**
-- **Ready-alert brake** (brake pre-fill on a fast throttle lift) never triggers with the pedal stuck at 0. You just
-  lose it.
+- **Ready-alert brake** (BCO mode A, brake pre-fill on a fast throttle lift) never triggers with the pedal stuck at 0. You just
+  lose it. It also needs DSC mode "on", so it does not work with DSC switched off, and it is inhibited while the steering,
+  lateral or yaw signal is invalid. If it does trigger, the code as read asks for about 20 bar on all four wheels
+  (suspect, see `analysis/BCO_PREFILL_7846816A.md` §7), so code it off (A.10) unless you have checked it on the bench.
+- **Brake-disc drying** (BCO mode B) needs wiper status from F-CAN 0x2A6 (byte 0) and PT-CAN 0x226 (byte 0), plus outside
+  temperature 0x310. Without them it never starts, and no timeout DTC exists for 0x226. It applies about 1.0–1.4 bar (peak) to the front
+  wheels for up to 3 s after sustained wet driving above 70 km/h, and does not depend on the DSC mode.
 - **Soft-stop assist** also reads these values (not traced). Code it off if you want to be safe.
 - **RPA** (tyre-pressure warning) uses torque and rpm to decide when it compares wheels. Fake values may give
   false warnings. Code it off if you don't use it.

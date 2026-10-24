@@ -99,7 +99,7 @@ def main():
     # 12 s16 per parameter, indexed by EEPROM coding variant (0x4031AA+1, 0..11).
     # Loaders: VehModel_LoadSingleTrackCoeffs 0x5DE44, VehModel_LoadAxleDerived 0x5E424.
     vn = ("M3 single-track (bicycle) model parameter, one value per 5-bit coding variant "
-          "(EEPROM 0x4031AA+1, read via 0x8E066(24,1); not in flash). row[v] = base + 2*v. "
+          "(EEPROM 0x4031AA+1, read directly by ld.b; not in flash). row[v] = base + 2*v. "
           "Loaded into RAM 0x400AA4.. by 0x5DE44/0x5E424. ")
     vrow = dict(rows=12, stride_bytes=2, labels=VAR_LABELS, signed=True)
     x.column(c_veh, "l_f  front axle -> CG", 0xD6F42, 16, units="m", eq="X/1024", decimals=4,
@@ -115,7 +115,7 @@ def main():
     x.column(c_veh, "Cr  rear cornering stiffness", 0xD6EE2, 16,
              desc=vn + "Cr>Cf every variant (understeer). UNITS TBD. Verified bytes.", **vrow)
     x.column(c_veh, "track width front", 0xD6FA2, 16, units="m", eq="X/1024", decimals=3,
-             desc=vn + "Q10 m (1575/1024 = 1.538 m = M3 front track). NOT mm (corrected cycle 7).", **vrow)
+             desc=vn + "Q10 m (1575/1024 = 1.538 m = M3 front track), not mm.", **vrow)
     x.column(c_veh, "track width rear", 0xD6FBA, 16, units="m", eq="X/1024", decimals=3,
              desc=vn + "Q10 m (1573/1024 = 1.536 m).", **vrow)
     x.column(c_veh, "override-enable flag", 0xD7032, 16, out=OUT_HEX,
@@ -392,11 +392,11 @@ def main():
     x.column(c_fcan, "F-CAN mailbox", FCAN_MSG + 13, 8, **common)
 
     # ---- CSI / steering (cycle 3; byte-verified) ---------------------------
-    cnote = ("CSI block 0x40EA8. Steering ratio y/1024 (:1); x = raw steering counts (~0.043 deg/LSB, "
-             "unverified). Curve set selected by coding byte 0x4031AA+5. ")
+    cnote = ("CSI block 0x40EA8. Steering ratio y/1024 (:1); x = offset-corrected steering-wheel counts (0x402132) (~0.043 deg/LSB, "
+             "unverified). Curve set selected by coding byte 0x4031AA+5 (NCS: 0 = E90, 2 = E92/E93; 1 = unused copy of 0; 3 rejected by the field limit). Road-wheel 0x40212E = 29360*x/y. ")
     SET3 = [f"set{s}:p{p}" for s in range(3) for p in range(4)]
     x.column(c_csi, "CSI steer-ratio x (3 sets x 4pt)", 0x40EB4, 16, 12, 2, SET3, signed=True,
-             desc=cnote + "Breakpoints (steering counts). Sets 0/1 equal; set 2 differs.")
+             desc=cnote + "Breakpoints (steering-wheel counts); x[3] also clamps the input. Sets 0/1 equal; set 2 differs.")
     x.column(c_csi, "CSI steer-ratio y (3 sets x 4pt)", 0x40ECC, 16, 12, 2, SET3, signed=True,
              eq="X/1024", decimals=3, desc=cnote + "Ratio :1. M3 ~15.9 centre -> 12.6.")
     x.column(c_csi, "CSI sensor sign idx2 (per variant)", 0x40EE4, 16, 12, 2, VAR_LABELS, signed=True,
@@ -503,6 +503,15 @@ def main():
                   "Const ROM, not a cal block. Hold/boost currents (1100/1524/1532) are code literals.")
 
     # ---- Pressure/volume model (COA block, cycle 5; byte-verified) ---------
+    PUMP_CAP_DESC = ("Cap on the per-circuit pump supply store 0x401702 (pump_supply_store_update 0x82824). "
+                     "Pump demand (pump_circuit_demand 0x88A18) = circuit volume shortfall 0x401D32 minus this "
+                     "store, so this is a volume, not a pressure. Stock 1150; 1M 1150; 335 images 650.")
+    PUMP_RATE_DESC = "Fill step of the pump supply store 0x401702 per frame, scaled by ROM 0xDA5F8. Stock 100."
+    PUMP_FLOW_DESC = ("Pump flow estimate vs circuit pressure (x = ROM 0xDA604 = 0 / 25000, i.e. 0-250 bar); "
+                      "low-passed by 0x41B4C into 0x40170C (pump_flow_estimate_update 0x81782). Stock 4300/2600; "
+                      "same in the 335 image.")
+    PUMP_AXIS_DESC = ("x axis on pump flow 0x40170C for the delivered-volume curve 0x41B44 (0/340) and the "
+                      "demand-divisor curve 0x41B48 (0/265). Stock 0/4300.")
     pm = ("Volume-domain hydraulic model (hydraulic_model_step 0x82EF4). Pressure ~0.01 bar (unproven: "
           "LPA plateau 130-500 => 1.3-5.0 bar); volume units unknown; valve-flow Q=isqrt(dp)*open*k/4096. ")
     x.column(c_pm, "LPA pressure curve (y)", 0x41B16, 16, 4, 2, [f"p{i}" for i in range(4)], signed=True,
@@ -517,12 +526,12 @@ def main():
                desc=pm + "Reverse (return) inlet flow gain. Stock 705.")
     x.column(c_pm, "Valve flow coeff k_out (front, rear)", 0x41B30, 16, 2, 2, ["front", "rear"], signed=True,
              desc=pm + "Outlet/dump-flow gain. Stock 755/465.")
-    x.constant(c_pm, "Pump ramp cap", 0x41B34, 16, signed=True, desc=pm + "Stock 1150.")
-    x.constant(c_pm, "Pump gain %", 0x41B36, 16, signed=True, desc=pm + "Stock 100.")
-    x.column(c_pm, "Pump-rate curve (y)", 0x41B38, 16, 2, 2, ["y0", "y1"], signed=True,
-             desc=pm + "Stock 4300/2600.")
-    x.column(c_pm, "Pump-rate curve (x)", 0x41B3C, 16, 2, 2, ["x0", "x1"], signed=True,
-             desc=pm + "Stock 0/4300.")
+    x.constant(c_pm, "Pump supply-store cap", 0x41B34, 16, signed=True, desc=pm + PUMP_CAP_DESC)
+    x.constant(c_pm, "Pump supply-store fill rate %", 0x41B36, 16, signed=True, desc=pm + PUMP_RATE_DESC)
+    x.column(c_pm, "Pump flow vs pressure (y)", 0x41B38, 16, 2, 2, ["y0", "y1"], signed=True,
+             desc=pm + PUMP_FLOW_DESC)
+    x.column(c_pm, "Pump flow axis (x)", 0x41B3C, 16, 2, 2, ["x0", "x1"], signed=True,
+             desc=pm + PUMP_AXIS_DESC)
     x.constant(c_pm, "Pump-flow filter coeff (/256)", 0x41B4C, 16, signed=True, eq="X/256", decimals=3,
                desc=pm + "Low-pass on pump flow. Stock 187 (0.73).")
     x.column(c_pm, "Volume temp-comp front (y)", 0x41AE4, 16, 3, 2, ["y0", "y1", "y2"], signed=True,

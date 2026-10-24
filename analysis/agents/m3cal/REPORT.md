@@ -5,9 +5,9 @@ Agent-derived (Sonnet), **key claims verified by main session**: M3 relocated ba
 +0x2C0 = −132×10 then −140×2); base/floor −116/−240. Machine files in `analysis/agents/m3cal/`
 (`curves.py`, `evalall.py`, `tcs_1m_to_m3_curves.txt`, `abs_1m_m3_map.txt`, etc.). CPU addresses.
 
-## Answer first — corrects the earlier "block size" inference
-**The M3 is NOT meaningfully more permissive in the core slip or deceleration targets.** The earlier
-read ("M3 TCS 5× smaller ⇒ traction restructured/moved to ABS") was misleading:
+## Answer first
+**The M3 is NOT meaningfully more permissive in the core slip or deceleration targets.** The block sizes
+differ ("M3 TCS 5× smaller") because curves were relocated or duplicated, not because traction moved to ABS:
 
 - **M3 TCS didn't shrink by deletion — the curves were RELOCATED, byte-identical, into constant ROM at
   CPU 0xF61B4–~0xF6730** (outside the 12-entry cal directory and the 0x1D4 TCS block). 39 of the 1M's 55
@@ -15,7 +15,7 @@ read ("M3 TCS 5× smaller ⇒ traction restructured/moved to ABS") was misleadin
   via `lrw 0xF61F6` etc. [verified]
 - **M3 ABS growth (1.73×) is 12-way variant duplication** of three items (front speed-term curve 0x1E0 B,
   g-curve 0x300 B, floor tables 0x30 B ≈ 0x4A4 = 0xB0A−0x666), indexed by `0x4031AA+1`, a 5-bit EEPROM
-  coding field read via `0x8E066(24,1)` — **not in the flash image**, so the active variant is unknown
+  coding field (read directly by `ld.b`) — **not in the flash image**, so the active variant is unknown
   statically. [verified]
 
 ## Base drive-slip threshold: Δ = 0 [verified]

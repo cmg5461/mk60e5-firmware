@@ -54,7 +54,8 @@ Not a simple "fastest wheel". Writer `sub_044BF0`, once per 10 ms frame after th
 | modes 1–7, Vmin < vref | −90 | −2.5 g |
 | **during ABS** | `−(|decel est| + 20…30)·0.36`, capped −44 | decel-limited coast-down |
 
-Wheel speeds are first scaled by a per-wheel tyre-circumference factor (Q10) before the max/min picks
+Wheel speeds are first scaled by a per-wheel learned tyre-tolerance factor (Q10; a ratio trim between wheels, not
+the circumference, which is already in the speed; M3 detail in `TYRE_TOLERANCE_LEARNING_7846816A.md`) before the max/min picks
 (Cmax/Fmax/Vmin/Vmax). Invalid wheels (fault bit, or struct+0x19 & 0xC0) are excluded and force a hard
 resync to a shadow integrator 0x408E5A. So vref tracks the fastest front wheel on acceleration and
 coasts down at a brake-plausible rate during ABS, rather than following a locking wheel.
