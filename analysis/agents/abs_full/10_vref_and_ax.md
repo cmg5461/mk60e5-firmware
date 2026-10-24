@@ -279,10 +279,10 @@ The result **replaces** every selection in §2.3–2.4, including the −11 / �
 
 ## 6. Observing on CAN (patcher repo) [I]
 
-- `can_0e1_ax_trust` (0x0E1, 10 ms): byte 0 = 0x408E1C (b7 trusted), byte 1 = 0x408E1B (b4 ax valid), byte 2 =
+- `data/track/can_0e1_ax_trust` (0x0E1, 10 ms): byte 0 = 0x408E1C (b7 trusted), byte 1 = 0x408E1B (b4 ax valid), byte 2 =
   alive counter, byte 3 = DAF (s8), bytes 4–5 = 0x408E80 (s16 LE), byte 6 = 0x408E6D, byte 7 = 0x408DA1 (b4
-  regime). Mutually exclusive with `can_0e1_abs_pressure` (same hooks).
-- `can_2b2_extras`: vref and per-wheel phase; the per-frame vref change is the step `s`.
+  regime). The former `can_0e1_abs_pressure` is gone (pressures are in `data/track/can_2b2_abs_state` and `data/study/can_reapply`).
+- `data/track/can_2b2_abs_state` (0x2B2): vref, whole-bar pressures and per-wheel phase; the per-frame vref change is the step `s`.
 - Which case applies: B vs C is byte 0 b7. In C, byte 3 should stay within ±20 of bytes 4–5 while byte 7 b4 is set.
 - 60 km/h decel-threshold floor skipped ⇔ bytes 4–5 ≤ −127, byte 3 < −110, byte 0 b7.
 

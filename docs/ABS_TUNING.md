@@ -192,7 +192,7 @@ Front wheel at 100 km/h, car at 1.0 g, so *thr* ≈ −1.61 g. The wheel starts 
 
 | To make ABS start … | Change | Where |
 |---|---|---|
-| later on a car that decelerates hard | deeper *thr* (base, floors) | `0x40620`, `0x40644`, `0x4065C` (the `motorsport_abs` patch) |
+| later on a car that decelerates hard | deeper *thr* (base, floors) | `0x40620`, `0x40644`, `0x4065C` |
 | later on slow lock-ups | gross-slip curve | `0xD6CE2` (ROM); only with tyre data |
 | differently on fast lock-ups | the *X* allowance and the 7 % slip check | code (`0x477E8`, `0x52774`) |
 
