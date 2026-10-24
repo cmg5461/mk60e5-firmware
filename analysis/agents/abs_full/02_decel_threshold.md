@@ -156,8 +156,12 @@ A wheel triggers a pressure dump when its `struct+0x20` (two-frame-mean wheel ac
 - 300 km/h, 1.0 g: −116 − 80 − 35 = −231 → **−2.31 g**
 - 50 km/h, 1.0 g: −116 − 4 − 35 = −155 → clamped by floor60 to **−1.32 g** (unless ax is trusted and pegged)
 - 15 km/h, 1.0 g: → clamped by floor20 to **−1.27 g**
-- Ceiling: the g-term input is a byte, so above ~1.27 g the threshold stops deepening with decel: about −1.81 g at
-  60 km/h, −1.85 g at 100 km/h, −1.95 g at 150 km/h (var 0, no trims). A wheel tracking a harder stop crosses it.
+- Ceiling, ax untrusted: the g-term input is a byte, so above ~1.27 g the threshold stops deepening with decel:
+  about −1.81 g at 60 km/h, −1.85 g at 100 km/h, −1.95 g at 150 km/h (var 0, no trims). A wheel tracking a harder
+  stop crosses it.
+- ax trusted: the input is full width, but 0x47CB6 `sextb` wraps it above 1.27 g, giving g-term 0 (about −1.25 g at
+  100 km/h). With the wrap fixed (`sextb` → `mov`) the curve keeps going: g-term 0.96 g at 1.6 g, so about −2.21 g at
+  100 km/h, bounded by hi = 250 and the −2.40 g floor. FACTS "The decel-threshold g-term wraps above 1.27 g".
 
 ---
 
@@ -183,8 +187,10 @@ yaw thresholds, and the EBD/brake-force logic. The vehicle-decel byte feeding th
 but the curves/floors above are ABS-cal only. **[I]**
 
 ## Residual unknowns
-- Exact unit/source of the g-term x bytes `[0x408DAF]/[0x408DB8]` (inferred 0.01 g vehicle decel). **[U]**
-  0x408DAF is the vehicle decel estimate and 0x408DB8 a vref slope; see `10_vref_and_ax.md` §1.
+- ~~Exact unit/source of the g-term x bytes.~~ Resolved 2026-10-24: 0.01 g. Trusted (0x408E1C b7, tested at
+  0x47BE8): measured ax `0x408E92` = (`ax_filtered` − offset) in 1 mg, / 10. Untrusted: the harder of the
+  wheel-derived estimate `0x408DAF` and the vref slope `0x408DB8`, both bytes clamped at 1.27 g
+  (`10_vref_and_ax.md` §1).
 - Physical meaning of the `struct+6` integrator scaling at the caller (0x47318, ×104|256 /(1024−23)). **[U]**
 - Meaning of 0x408DEB b0/b5, 0x408E1E b2, 0x408E6A (frame counter while 0x401FF2 b5), 0x409014, 0x40902F b3. **[U]**
 

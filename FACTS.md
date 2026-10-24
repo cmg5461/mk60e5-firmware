@@ -1926,7 +1926,8 @@ Read directly from `analysis/7846816A_main.lst` (M3) in a single pass. **Not ben
 
 ### Motorsport consequence: a ~1.25–1.27 g ceiling runs through the ABS estimation [inferred]
 vref fall cap −44/frame (1.25 g, code literal); ax byte `0x4049FC` and lateral byte `0x408ECA` both
-saturate at ±1.27 g; decel estimate `0x408DAF` is a signed byte; g-term curve `0x40674` ends at 1.27 g.
+saturate at ±1.27 g; decel estimate `0x408DAF` is a signed byte; the g-term (curve `0x40674`, breakpoints to 1.83 g) sees a
+byte without ax trust and wraps above 1.27 g with it (see "The decel-threshold g-term wraps above 1.27 g").
 A car that really decelerates above ~1.25 g outruns the vref fall, apparent slip grows, and ABS
 over-releases. Raising it means code patches (literals 44 at 0x44DE2/0x44FEA and the −44 clamp at 0x51100)
 plus rescaling the byte signals — not a calibration edit.
@@ -2474,7 +2475,8 @@ angle? Read from code, not bench-tested. Patch: `mk60e5_patcher` `patches/perfor
   0x5BBAC, 0x5BEAC, 0x5C2CC, 0x5C594, 0x5C8B8 (`abs_side_select`). 0x55560 (0x55420) holds the closed-form reference
   0x4020EC. Every lrw is followed by a plain `ld.h (rN,0)`. Most sites compute yaw − target or compare signs, and are
   gated on 0x408E6D b4, on `0x40493A` b5 (always set by init 0x81584) or on other ABS state. None is gated on
-  steering-valid (b5) or AYC. Earlier notes said "ABS reads B1A only in 0x4A254"; that is wrong.
+  steering-valid (b5) or AYC. Earlier notes said "ABS reads B1A only in 0x4A254"; that is wrong. Per-site uses
+  (filtered error 0x408ED8, forced-dump halving, side-select thresholds): `09_chassis_sensor_use.md` §7.6.
 - **[verified] The b5 (steering-valid) users of 0x408E6D**: 0x4518C (vref route 2, mask 0x60), 0x468A2 / 0x469A6
   (0x4688C → 0x408E69 b6/b7, also 0x400B09), 0x47856 (0x477E8, also 0x400B09 b6), 0x4A276 (yaw-deviation monitor),
   0x4B556 (`abs_reapply_special_rate`), 0x4E8B6 (rear cornering latch), 0x500F0 (`abs_event_prefilter_flags`, 0xB0),

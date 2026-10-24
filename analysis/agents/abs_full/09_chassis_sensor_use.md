@@ -260,6 +260,34 @@ yaw-stable flag.
 - **Front staged dump:** `0x400A92` = peak \|angle\| while `0x400A95` b7 (0x53D3C), used by 0x540D4 (90 % test →
   `0x400A97` b0) and 0x5971C (→ `0x400A90`). Neither output has a reader, so no effect.
 - **Validity only:** cornering latch (0x4E8B6, mask 0xF0), straight latch, vref route 2, `abs_chassis_frame_init`.
+- **Through DSC:** the observer yaw target 0x400B1A and the closed-form reference 0x4020EC, built from the steering
+  angle. ABS reads them at the sites in §7.6.
+
+### 7.6 Yaw-target users in ABS [C sites, I meaning]
+
+Read 2026-10-24 from the listing. e = measured yaw `0x408ECC` − target. The thresholds are given in °/s assuming
+ABS yaw uses the cluster LSB of 1/20000 rad/s; the constants are round numbers on that scale (349 = 1°/s,
+698 = 2°/s, 1047 = 3°/s, 3490 = 10°/s). Every load is `lrw` followed by `ld.h (rN,0)`. None of these sites is gated
+on steering-valid or AYC: they need yaw valid (0x408E6D b4), `0x40493A` b5 (always set) or other ABS state. Without
+an SZL the target means "wheel straight", so e = the full measured yaw.
+
+| Pool word (loads) | Function | Use |
+|---|---|---|
+| 0x4E444 (4, 0x4E134–0x4E1B6) | event classifier `sub_04D270`, 08 §12 | yaw-deviation flag sp+68: e against the filtered error `0x408ED8` in ±1400 / ±700 bands, only with `0x408DF0` b7/b6 and \|lat\| ≥ 40 |
+| 0x4E900 (5, 0x4E69A–0x4E85C) | event classifier, 08 §14 | yaw and yaw accel in the same direction past `0x408EA0` / `0x408EA2` → E+37 b7 (yaw-limited dump) |
+| 0x4ED60 (3, 0x4EA50–0x4EB16) | event classifier, 08 §15 | rear cornering latch: snapshots e into `0x408EA2` when it sets |
+| 0x50E88 (1, 0x50B92) | pre-control handler 0x50894 | per rear (record compare against `wheel_rec` + 0x80 / + 0xC0): flag when e has grown past the latched `0x408EA2` in the same direction |
+| 0x571E0 (1, 0x570EE) | `abs_dump_forced_target` 0x57024 | with yaw valid: e > 1°/s in the same direction as yaw → forced-dump amount `0x408DC8` halved |
+| 0x59980 (1, 0x597E2) | 0x5971C | caps a value at 50 or zeroes it from e; output `0x400A90` has no reader |
+| 0x5ABF0 (1, 0x5AA8E) | `abs_corner_peak_track` 0x5A4E4 | `0x408ED8 += (e − 0x408ED8) / 35`: the filtered yaw error |
+| 0x5B828, 0x5BEAC, 0x5C594, 0x5C8B8 (9) | `abs_side_select` 0x5AEEE | e in the same direction as yaw against ±3°/s (0x5B572), a ctx threshold of at least cal 0x40A3E (0x5BC60 / 0x5BD66), −500 ≈ 1.4°/s (0x5C352 / 0x5C3D2), ±(2°/s + ctx) (0x5C610), curve 0x40A66(vref) × ctx / 100 (0x5C800 / 0x5C82C) and ⅔ ctx (0x5C88C). Feeds the inside / outside rear handling; downstream not decoded |
+| 0x5BBAC (2), 0x5C2CC (1) | `abs_side_select` | the target alone: sign and comparison with a ctx yaw quantity offset by 2°/s and capped at 10°/s (0x5B90E / 0x5BAFA); comparison with a ctx value under the AYC-active flags `0x408DEA+6` b7/b6 (0x5C028) |
+| 0x55560 (1, 0x5543E) | `sub_055420`, every ABS frame from 0x4629C | at start-up (`0x400966` b6) or controller modes 1/2/4: seeds 0x409194–0x4091A6 with r_ref 0x4020EC and `0x40919E` = yaw − r_ref. No literal reader of that block found |
+| 0x4A450 | `abs_yaw_deviation_monitor` 0x4A254 | runs only with AYC active |
+
+`abs_cluster_without_szl` points all of these except 0x4A450 at `abs_yaw`, so e = 0. The target-alone loads then
+see measured yaw, which is "the driver wants what the car is doing", not the same as e = 0. Whether they end up
+neutral depends on the undecoded ctx quantities.
 
 ### 7.5 Physical versus to-taste, and sensitivity [I]
 

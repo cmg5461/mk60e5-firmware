@@ -222,7 +222,8 @@ Ranked by expected impact for a 1.3 g race-tire car braking at/near the grip lim
    lateral grip for longitudinal.
 5. **The ~1.25 g estimation ceiling [I].** vref cannot fall faster than −44/frame (1.25 g; −49 on one branch);
    the ax byte (`0x4049FC`), lateral byte (`0x408ECA`) and decel estimate (`0x408DAF`) all saturate at ±1.27 g;
-   the g-term curve ends at 1.27 g. A slick/aero car decelerating harder than that outruns vref, apparent slip
+   the g-term input is byte-wide without ax trust and wraps above 1.27 g with it (the curve itself runs to
+   1.83 g). A slick/aero car decelerating harder than that outruns vref, apparent slip
    grows and ABS over-releases. These are code literals and byte-wide signals — a code patch, not a cal edit
    (`10_vref_and_ax.md` §5). Arguably the first thing to address on a high-grip car, ahead of 1–4.
 
