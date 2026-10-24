@@ -56,21 +56,113 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   (0x426BC) is now recomputable. **Lead:** obtaining the GT4 (and/or E85 motorsport) flash file would give
   (a) a definitive field-level motorsport-vs-stock calibration diff — the project's original question — and
   (b) a second signed image to study the BMY scheme and the bootloader if it is a full image.
-- **[verified]** 0xDF83C0–0xDF83E5 holds the ZB number 7846411 three times as BCD
-  (`00 07 84 64 11`). The surrounding 0xDF8xxx ranges are all zero, so this is a
-  programming/identification record, not code.
+- **[verified]** The `.0pa`'s `0xDF0000` "bank" is **not a CPU memory bank** — it is the factory
+  **EEPROM default image**, addressed as `logical_EEPROM_offset + 0xDF8000`. Proof: subtract 0xDF8000
+  from each DF segment and it lands exactly on the EEPROM block table (0xD7424, see
+  `analysis/EEPROM_MAP_7846816A.md`) — five exact boundary matches: 0xDF812C→0x12C (blk 9),
+  0xDF8160/0x22→0x160 len-exact (blk 8), 0xDF8281→0x281 (blk 16), 0xDF83C3→0x3C3 (`1A 91` hw number),
+  0xDF844B/0x65→0x44B len-exact = used active-coding image (blk 7). 0xDF0000 is not a valid CPU
+  address and **no code loads from 0xDF83xx**; the data is read from EEPROM via the block table / NVM
+  jobs. Bytes in the `.0pa` are *logical* (un-inverted); the SPI EEPROM stores them bit-inverted.
+- **[verified]** `1A 80` readout path: `kwp_1A_read_ecu_id` **0xB213E** reads local-id (0x409534),
+  −0x80, range-check ≤0x1F, jumps via a 32-entry table @ **0xB219C** (ids 0x80–0x9F). `1A 80` handler
+  **0xB2242** loads descriptor **0xF31D8** → `nvm_queue_job` **0x6E16C** (op=1), which reads EEPROM
+  **block 24 sub-off 0xAD len 29 = logical 0x3CF–0x3EB** into RAM 0x40943E. So the ident data comes
+  from EEPROM, not a memory load of the DF addresses. (6E16C = `nvm_queue_job`, shared by many diag
+  handlers; not the 1A dispatcher.)
+- **[verified]** Field-by-field decode of the ident bytes (INPA-confirmed, M3 7846816A). Logical
+  EEPROM offset = DF address − 0xDF8000 (all in blk 24, base 0x322):
+  - `0xDF83C0` (log 0x3C0) = `02` — block/format marker.
+  - `0xDF83C3` +0x12 (log 0x3C3–0x3D4, `1A 91` hw number) = ZB/part number **7846816** as packed BCD,
+    stored **3×** (`00 00 07 84 68 16`). 1M 7846411A = `...07 84 64 11`; DSC90 6862873A = `...06 86 28 73`.
+  - `0xDF83D6` (log 0x3D6, `1A 9B`) = `08` → **Codier-index 8** (coding index).
+  - `0xDF83D7` +2 (log 0x3D7) = `05 B3` (big-endian) = 0x5B3 = **Diagnose-index 1459**. (So the 3-byte
+    field `08 05 B3` = coding index + diagnose index packed.)
+  - `0xDF83E0` +3 (log 0x3E0, in the `1A 9F` field) = `00 24 8F` = **Nachrichtenkatalog SW 0.36.143**
+    (plain bytes major.minor.patch, not BCD).
+  - `0xDF83E3` +3 (log 0x3E3) = `0B 09 00` = **Softwarenummer Funktionsoftware 11.9.0**.
+  - These fall inside the `1A 80` table (log 0x3CF–0x3EB), so `1A 80` returns coding idx + diag idx +
+    SW versions together; the part-number copies at 0x3C3/0x3C9 belong to `1A 91`, the copy at 0x3CF
+    is where the `1A 80` table begins.
+- **[verified]** Per-unit ident NOT in the flash image (searched all 3 banks): Varianten-Index
+  (21591=0x5457), Hardwarenummer (01), Betriebssystem SW (0.0.0 = literally zero; MK60 has no
+  separate OS SW number), and Herstelldatum (26.06.2008). These live in the runtime emulated-EEPROM
+  block store (table 0xD7424), written at production, not shipped in the `.0pa`. So the `.0pa` carries
+  firmware-fixed identity (part no., coding/diagnose index, SW versions); per-unit identity is EEPROM.
+- **[verified]** M3 vs other-variant diff in the 0xDF0000 bank is confined to this ident block: the
+  3× part-number BCD, the two version fields (0xDF83D6, 0xDF83E0), and a trailing zero-fill run at
+  0xDF84B0+ (written `00` on 6862873A, left 0xFF on M3). Matches the earlier "12-byte M3-vs-1M diff".
 - **[verified]** E85 MK60E5 (`dsc_85.prg`, KWP2000) has no programming jobs in its SGBD and no
   WinKFP family in any pack on this machine.
 
 ## Hardware
 
 - **[user]** MK60E5 main MCU marking: `0994.8500 4` / `SC560002MVF92 M98A` / `DCTNP0842B`,
-  Freescale with ATE logo.
+  Freescale with ATE logo. This is the late (M·CORE) flavor. Early MK60E5 units use an ARM
+  TMS471 instead; see *Two MK60E5 hardware flavors* below.
 - **[source]** SC560002MVF92 is a customer-specific Freescale automotive ABS IC; no public
   datasheet ([NXP community](https://community.nxp.com/t5/Other-NXP-Products/Freescale-SC560002MVF92/td-p/1768891),
   [Octopart](https://octopart.com/sc560002mvf92-freescale+semiconductor-84653843)).
 
-## CPU / code (1M image 7846411A; M3 not yet examined)
+## Two MK60E5 hardware flavors: ARM (TMS471) and M·CORE (2026-10-16)
+
+- **[user]** MK60E5 comes in two hardware flavors. **Early** units use an ARM MCU, a **TMS471**
+  (a private-label TMS470 derivative). **Late** units, including the E9x M3, use the Freescale
+  M·CORE (SC560002, above). `fw/7841983A.0pa` is from an E60.
+- **[verified]** The flavor can be read from the `.0pa` alone, with no disassembly. All nine images
+  checked fall cleanly into one flavor or the other:
+
+  | Flavor | ZB (`.0pa`) |
+  |---|---|
+  | ARM / TMS471 | 4029563A, 6775387A, 6776067A, 7837326A, 7841983A |
+  | M·CORE | 6791524A, 6862873A, 7846411A, 7846816A |
+
+  Files: `fw/7841983A.0pa` and `fw/check_arch/*.0pa`. The M·CORE ZBs are 6791524A, 6862873A
+  (the `fw/` and `fw/check_arch/` copies are identical) and 7846816A. 7846411A is listed from its
+  own section below and was not re-checked in this pass.
+- **[verified]** Both flavors use the same BMW container. Each `.0pa` is Intel HEX with type-0x10
+  block ends and a CRC-16/ARC `$CHECKSUMME`. Within that container, the two layouts differ:
+
+  | `.0pa` feature | ARM / TMS471 | M·CORE |
+  |---|---|---|
+  | Flash-driver block (first block in the file) | 0x818–0x1573/0x1AA3 | 0x3AC–0x8EF |
+  | Bootloader space below the application (not shipped) | 64 KiB | 288 KiB |
+  | Application start | 0x10000 (CPU 0x8000) | 0x48000 (CPU 0x40000) |
+  | First bytes of the application | ARM `B` vector table (`EAxxxxxx` ×8; 6th = `EAFFFFFE`) | 128 × 32-bit handler pointers |
+  | Extra high block | 0xE00804–0xE0xxxx, 46–59 KiB, contents unknown | 0xFFFF00–0xFFFF07 |
+
+  Both flavors share the rest of the container:
+  - The application header: `LOCK` at +0x200, the ID/EEPROM-block-table/MISR pointers at +0x230,
+    and the BMY pointer at +0x2F4. 4029563A has no `LOCK` string, but its pointers are still there.
+  - The rule CPU = `.0pa` − 0x8000 for the application. In every image the ID and BMY pointers only
+    land on their targets with this offset.
+  - The `BMY\x01` signature block, ending 0xFF bytes before the end of the application.
+  - The 0xDF8xxx EEPROM default image. Its block table uses the same `0210 0040 0040…` record format.
+- **[verified]** Instruction-set signatures, as raw word counts over the first 1 MiB:
+
+  | Flavor | ARM `stmfd {..lr}` | ARM `ldmfd {..pc}` | ARM `BL` | M·CORE `jmp r15` (`00CF`) |
+  |---|---|---|---|---|
+  | ARM | ~1.4–1.7 k | ~1.9–3.0 k | ~6.5–7.5 k | ~30–40 (noise) |
+  | M·CORE | 0 | 0 | 2 | ~2.9 k |
+
+  The ARM code is **big-endian** (`E1 2F FF 1E` = `bx lr`, stored in that byte order), which fits
+  TMS470. Most ARM images return with `bx lr` (~1.15 k). 6775387A and 6776067A instead use
+  `mov pc,lr` (~1.3 k), which points to a different toolchain or build.
+- **[verified]** Peripheral constants in the code back up the split. The ARM images contain
+  ~140–170 constants in 0xFFF7E000–0xFFF7FFFF and none in M·CORE's 0xD80000/0xF80000 timer range.
+  The M·CORE images are the reverse: ~190–205 against at most 1. The ARM images also reference
+  0xFFFFFDxx–FFxx and 0xFFE88000–0xFFEAxxxx.
+- **[unverified]** The TI block identities are recalled from memory, not taken from a datasheet:
+  the 0xFFF7Exxx/F7Fxxx frame (GIO 0xFFF7EC00, MibADC 0xFFF7F000, SCI 0xFFF7F400, SPI 0xFFF7F800,
+  HET 0xFFF7FC00), the system module at 0xFFFFFDxx–FFxx, and flash control at 0xFFE88000. On the
+  ARM flavor the RAM constants cluster in 0x400000–0x403FFF, suggesting ~16 KiB of SRAM against
+  48 KiB on M·CORE.
+- **Scope:** everything else in this file is about the **M·CORE flavor** (1M 7846411A, M3 7846816A)
+  unless it says otherwise. `tools/mcore_dis.py` does not apply to the ARM flavor.
+  `tools/bmw_hex2bin.py` handles both. To work on the ARM flavor, use a big-endian ARMv4T
+  disassembler, for example `arm-none-eabi-objdump -EB` or Ghidra's `ARM:BE:32:v4t`.
+
+## CPU / code (M·CORE flavor; 1M image 7846411A; M3 not yet examined)
 
 - **[verified]** Instruction set is Motorola/Freescale **M·CORE**, big-endian, 16-bit opcodes.
   1264 `subi r0,N ; stm rX-r15,(r0)` prologues; `ldm … ; addi r0,N ; jmp r15` epilogues;
@@ -112,8 +204,16 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   +0x340/+0x344 and timestamps +0x80/+0x90; other modes use +0x300/+0x304 and +0x20/+0x40.
 - **[verified]** `sub_0D5CDC(case 0–6, flags)` configures these channels (jump table; flag bits
   0x80, 0x08, 0x10 select register settings).
-- **[verified]** File 0x3AC–0x8EF is a position-independent routine (addresses via r8) that
-  dispatches on a command code, masks with 0x000FFFFF, references 0x00F60000.
+- **[verified]** Segment 1, physical 0x3AC–0x8EF (0x544 B), is the **flash-programming driver**: a
+  position-independent routine (every internal address relocated via `r8`, so it runs from RAM while
+  flash is being erased/written), dispatching on a command code in r3 (cases 2, 11, …), writing the
+  flash-controller base `0x00F60000` into a RAM control block at 0x400338, and masking offsets with
+  `0x000FFFFF`. Its "very low" address is real but **not** in the app's CPU window: the app uses
+  CPU = phys − 0x8000, so phys 0x3AC would be negative — it lives in the low/bootloader flash
+  (phys 0x0–0x47FFF), just above the protected reset/vector area (0x0–0x3AB). That is why the reflash
+  erase begins exactly at 0x3AC: everything below it is never erased, and this driver is the first
+  thing reflashed. It is the only part of the 0x0–0x47FFF region present in the `.0pa`; the rest of
+  the bootloader is not shipped.
 - **[verified]** M3 vs 1M: 0xDF8xxx blocks differ in 12 bytes; 0xFFFF00 block identical.
 
 ## OS / scheduling (1M)
@@ -216,8 +316,8 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   disproven): the M3 TCS block shrank because its large curves were **relocated byte-identical into
   constant ROM at CPU 0xF61B4–~0xF6730** (outside the cal directory); 39/55 TCS curves and all six base
   slip curves match the 1M exactly. The M3 ABS growth is **12-way variant duplication** of three items
-  (front speed-term, g-curve, floor tables), indexed by a 5-bit EEPROM coding field `0x4031AA+1` (read via
-  `0x8E066(24,1)`), not present in the flash. See `analysis/agents/m3cal/REPORT.md`.
+  (front speed-term, g-curve, floor tables), indexed by a 5-bit EEPROM coding field `0x4031AA+1` (read
+  directly with `ld.b`), not present in the flash. See `analysis/agents/m3cal/REPORT.md`.
 - **[verified]** M3 vs 1M slip/decel verdict: **base drive-slip threshold identical (Δ=0)**; ABS decel
   threshold identical for coding variants 1–9. Only variants **10/11** (= M3 GTS coupe / GTS sedan) are more permissive (high-speed
   ≥150 km/h by ≈3–5% at 200–300; <60 km/h floor −140 vs −132) and variant **0** (M3 sedan) differs <20 km/h
@@ -246,10 +346,11 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   sub_044BF0, once/10 ms frame, floor 0.62 km/h). Rise +44/frame (1.25 g) toward fastest front wheel, +22
   (0.62 g) toward slowest valid wheel while ABS active, up to +282 ("snap") in init/modes 1/2/4; fall
   −22..−44 normal, −90 in modes 1–7, or decel-limited `−(|decel est|+margin)·0.36` capped −44 during ABS.
-  Inputs are the 4 filtered wheel speeds × a per-wheel tyre-circumference factor (Q10). Full algorithm:
+  Inputs are the 4 filtered wheel speeds `rec+0x1A` × the learned per-wheel tyre-tolerance factor (Q10, a ratio
+  trim; circumference is already in `rec+0x1A` via K, see "Tyre-tolerance learning"). Full algorithm:
   `analysis/agents/absvref/REPORT.md`.
 - **[verified]** Wheel accel **struct+0x20 in 0.01 g**: normal-mode writer is **sub_0D271C** (called from
-  wheel-speed update 0x752B8 @0x754DE), `+0x20 = two-frame mean of Δv·2.833` (conv literal 0xE287=58023),
+  wheel-speed update 0x752B8 @0x754DE), `+0x20 = two-frame mean of Δv·2.833` (conv literal 0xE287 = 57991, ·2.8316),
   clamped to ±2032 (±20 g) by sub_0465B0; `w.39 = a/16` spans ±127. (sub_0B65DC's ±158 is only a glitch-
   recovery path.) **So the dump stages ARE reachable**: set A −62/−78/−94 ≈ −9.9/−12.5/−15 g, set B
   −25/−44/−62 ≈ −4/−7/−9.9 g (resolves the earlier "unreachable" conflict).
@@ -308,21 +409,23 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
   switchable off per axle: direction mask (literal `60F2` @0x0B91AC) and the presence check
   (0x075E94: ASIC B-word popcount ≥3, else fault at cycle 100) both assume VDA on all four.
 - **[verified]** 0x4031F4/F6 is the packed BMW coding block (module 0x0D0000; NVM block-7 reload
-  checked vs 0x4030DC, mismatch → DTC 0xC0040). Air-gap quality bytes 0x400A3C/44/48 have no consumer.
+  checked vs 0x4030DC, mismatch → DTC 0xC0040). Air-gap quality bytes 0x400A3C/44/48 have no consumer (re-checked 2026-10-15: only `wss_ak_airgap_stats_init` 0x75B2C and `wss_ak_airgap_stats_update` 0x75B74 touch them; they hold the min/max/step of the AK air-gap gauge (AK b7:5) and a per-wheel "air-gap reserve error seen" flag, see symbols "Wheel direction").
 
 ### Missing-encoding fault gates (M3, byte-verified 2026-10-04) — for sensor-compatibility bench study
 
 Two independent checks fault when the sensors don't deliver the VDA encoded stream:
 
-- **[verified]** **Startup VDA presence check `sub_075E38`** (= 1M 0x75E94). Runs per wheel during the startup
+- **[verified]** **Startup VDA presence check `wss_startup_presence_check` 0x75E38** (= 1M 0x75E94). Runs per wheel during the startup
   window ([0x400960] cycle counter ≤ 1000). The per-wheel sensor mode comes from `sub_075A44`, which returns
   **4 for all four wheels (hard-coded — confirms no per-wheel sensor-type field)**. Mode 4 → read the wheel's
   ASIC reply word 0x400F20+4·slot (slot via table 0xD7668) and **popcount it** (`sub_075DD8`, a 32-iter
-  `lsrc`+`inct` bit-count); plus per-wheel presence bits in the ASIC status word 0x4009C6 (`sub_075DEE`:
-  wheel0 bit1, wheel1 bit5, wheel2 bit7, wheel3 bit3). If popcount **< 3** (`cmplti r2,3` at 0x75EB0; also
-  0x75F1C) it sets the per-wheel error flag 0x4010CE[w]; at **cycle 100** the failure latches into the
-  per-wheel status byte **0x400952[w] |= 0x31** (bits 0/4/5) → WSS sensor DTC (group 0x0C, the 0xC01xx/02xx/
-  08xx per-wheel ids from the 0x95526 loop). Controlling points: mode selector 0x75A44, popcount threshold
+  `lsrc`+`inct` bit-count); plus per-wheel presence bits in the ASIC status halfword 0x4009CA (= `lrw 0x4009C6` + `ld.h` offset 4; `wss_asic_present_bit` 0x75DEE:
+  wheel0 bit1, wheel1 bit5, wheel2 bit7, wheel3 bit3). If popcount is **≥ 3** (`cmplti r2,3` at 0x75EB0; mode 2 uses
+  0x75F1C) it sets the per-wheel **presence-OK** flag 0x4010CE[w] = 1 (corrected 2026-10-15: earlier text called it
+  an error flag). At **cycle 100**, a wheel whose flag is still 0, which has no 5D90 electrical fault already
+  (0x75D72) and is not inhibited by 0x400957 b5 && 0x40288C b6, latches **0x400952[w] |= 0x31** (bits 0/4/5) and
+  raises **5D96/5DA6/5DB6/5DC6 "Drehrichtungserkennung"** via `wss_dir_fault_set(w)` 0x75D3E (fault id
+  (2+w)<<16 | 0x40). Corrected 2026-10-15: earlier text said a "group 0x0C" sensor DTC. Controlling points: mode selector 0x75A44, popcount threshold
   `cmplti …,3` (0x75EB0 / 0x75F1C), status latch 0x400952[w].
 - **[verified]** **Runtime direction-invalid fault `wheel_direction_update` 0xB9330**: per-wheel invalid-direction
   counter 0x4029DB[w]; at **≥175** (`movi r10,47; bseti r10,7` @0xB9448) → `fault_set` 0xB427C with the per-wheel
@@ -346,6 +449,10 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
   - **mode 2** (latent, never selected): a *different* algorithm @0x75EC4 — reads pair `u16[0x40339E+4·w]` and
     `u16[+2]`, plausible when `(w0−w1) ∈ [6..25]`, byte `[0x40339E+4·w+16] ≥ 2`, then confidence counters
     0x4010D2[w]/0x4010D6[w] (cap 254) and status via `sub_075DEE`, before the common fault tail.
+    **Polarity (re-read 2026-10-15):** the mode-2 pass flag is 0x4010CE[w] = (0x4010D2[w] < 10 && 0x4010D6[w] < 3),
+    and the fault fires at cycle 1000 when that flag is 0. So mode 2 **fails** a wheel that shows 10+ protocol-width
+    pulses or 3+ ASIC-present cycles, and passes a plain pulse sensor (or a missing one; that is left to 5Dx0). This
+    matches the bench reading 0x4010CE = 01 01 01 01 with no latch. Names: `analysis/7846816A_symbols.md`, "Wheel direction".
   - **anything else** (incl. mode 0 for a bad index): `bt 0x75F50` → immediate WSS fault latch 0x400952[w]|=0x31.
 - **[verified]** **Mode-2 data source is live (hardware-fed), not dead.** Data chain:
   edge-capture hardware (timer/eTPU MMIO `0xF800xx` + `0xD800xx`, both above flash) → four per-wheel capture
@@ -363,7 +470,7 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
 
 ## Vehicle-model / coding-selected parameters (detail `analysis/agents/geom/REPORT.md`)
 
-- **[verified]** The EEPROM **coding field `0x4031AA+1`** (5-bit, variant 0..11, read via `0x8E066(24,1)`,
+- **[verified]** The EEPROM **coding field `0x4031AA+1`** (5-bit, variant 0..11, read directly as `ld.b 0x4031AA+1`, not via `0x8E066`,
   unpacked at 0xD0418) selects a **vehicle-model parameter set**. M3: a 12-variant ROM table at
   ~0xD6E16..0xD70FF (each parameter = 12 contiguous s16, rows 24 B apart), loaded by 0x5DE44/0x5E424 into
   RAM 0x400AA4..0x400ABA. 1M: a single fixed scalar set at 0xD7458+ (no variant index). This confirms the
@@ -371,8 +478,9 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
 - **[verified]** **Wheelbase** = l_f + l_r in 1/1024 m: 1M 1331+1393 = 2724 → **2660.2 mm** (exact 1M);
   M3 all variants sum 2826/2827 → **2760/2761 mm** (exact M3). Not stored as a scalar; only the CG split
   varies between M3 variants. Rows: l_f 0xD6F42, l_r 0xD6F5A, **mass 0xD6F72** (M3 1691–1947 kg; 1M 1739),
-  yaw inertia Jz 0xD6F8A, stiffness 0xD6ECA/0xD6EE2. Mass/inertia units **[agent, med-low]** (J/m ≈ radius
-  of gyration² supports it; 1M 1739 ≈ +4% over 1670 kg curb).
+  yaw inertia Jz 0xD6F8A, stiffness 0xD6ECA/0xD6EE2. Roles fixed by the single-track model (next section); mass /
+  inertia units consistent (J/m ≈ radius of gyration² ≈ l_f·l_r; 1M 1739 ≈ +4% over 1670 kg curb) but not proven
+  absolutely; Cf / Cr units open.
 - **[verified]** **Brake coding is separate**: fields `0x4031AA+3` (front) / `+4` (rear), 3-bit each,
   select COA pressure↔volume curves (front +0x1EA/+0x1FE, rear +0x212/+0x226; reader 0x81508), COA offset
   tables, and BCO threshold sets. **Rotor diameter and piston area are NOT stored as scalars** — folded
@@ -383,7 +491,7 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
   timing/plausibility monitor, not a vehicle model.
 - **[needs-hw]** The car's actual coding bytes (+1/+3/+4) are not in flash; with +1 the 0xD6xxx row gives
   that unit's mass/CG. Variant→model mapping **[user-supplied]**: 0 M3 sedan, 1 Custom ESM
-  (model parameters from coding bytes 31–40), 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
+  (NCS: model from coding bytes 31–40; this image only non-zero-checks them and the loaders use ROM column 1), 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
   convertible, 10 GTS coupe, 11 GTS sedan; 2/6/7 not identified. All 12 rows are E9x M3 (same 2.76 m
   wheelbase).
 
@@ -403,11 +511,12 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
   = {3490,3490,3013,2378,1952,1396}·0.01-units for m0/m1 vs {2420,1861,1396,…} for m2 (by speed); P-gain
   30→60% (m0/1) vs 73→100% (m2); torque ceiling @0.8 g m0=400/m1=2000/m2=330; feature-enable +0xF2 = [1,0,0].
   **m=1 is the most permissive** (loose yaw + largest TCS slip + highest torque ceiling); m=2 tightest; m=0
-  tight-traction/loose-yaw. The car selects m=1 vs m=2 via one EEPROM coding bit while TCS state is 2/3.
+  tight-traction/loose-yaw. m ≠ 0 only in MDM (`tcs_mode` 0x4030A2 = 3); there one EEPROM coding bit picks m1 vs m2.
   **This is where the "motorsport permissiveness" lives — DSC-mode logic, not the ABS/TCS slip-target bytes.**
   M3 AYC block is byte-identical to the 1M (mode tables are not M-specific).
-- **[needs-hw]** Which driver-visible mode (DSC / DTC / MDM / OFF) maps to each m needs live values while
-  cycling the DSC button + coding byte 10 bit5. Sensor LSB scales need a bench/CAN capture.
+- **[verified, M3]** Driver mode → m: 0x4049B4 → 0x4030A2 (off → 2, on → 1, MDM → 3), so DSC on and DSC off run
+  m = 0 and MDM runs m1 or m2 by coding byte 10 bit 5 ("DSC driver mode" near the end). **[needs-hw]** Which of m1 /
+  m2 a stock M3 coding selects needs its EEPROM value.
 
 ## F-CAN (1M)
 
@@ -437,11 +546,14 @@ BMY signature), as the XDF warns.
   RX includes 0x0A8/0x0A9/0x0AA, 0x130, 0x1B4, 0x330, 0x380 (DLC 7), 0x3B0 (DLC 2),
   0x480/0x580 (mask 0x780), 0x6F1 (tester, mask 0x7F0).
 - **[verified]** 0x0CE value = wheel speed (s16 at 0x0040BF1A + 0x40·w, 0.01 km/h) × 4/25,
-  clamped to 4800 (300 km/h at 1/16 km/h), 0x8000 when the wheel is faulted, and **negated when
-  direction is valid and reverse**.
-- **[verified]** Direction state in 0x004029D9 (bits 0–3 valid, 4–7 direction). It is only
-  reported when 0x004029DA bit 5 is set, 0x004029D6 (wheel mask) is **non-zero**, and wheel
-  speed ≤ 70.00 km/h. Sole writer: `sub_0B9118`. (Corrected: an earlier entry said D6 == 0.)
+  clamped to 4800 (300 km/h at 1/16 km/h), 0x8000 when the wheel is faulted (0x400952[w] b0 or 0x40288C b2), 0
+  at or below the floor 0x4032D0 (≈0.6 km/h), and **negated when direction is valid and reverse** (direction bits
+  update only below 55 km/h; above 70 km/h the latched bit is used unchecked). Order FL, FR, RL, RR. Decode: `analysis/CAN_TX_TABLE_7846816A.md`, "Frame 0x0CE".
+- **[verified]** Direction state in 0x004029D9 (bits 0–3 valid, 4–7 forward). `wheel_direction_valid` needs
+  0x004029DA bit 5 set, fewer than 2 direction-faulted wheels, 0x004029D6 (wheel mask) **non-zero** and the wheel
+  not faulted. Then it returns 1 outright above 70.00 km/h, else the valid bit (corrected 2026-10-15: an earlier
+  entry said direction is only reported ≤ 70 km/h). Sole writer: 1M `sub_0B9118` / M3 0xB9330. Full M3 decode:
+  `analysis/7846816A_symbols.md`, "Wheel direction". (Corrected: an earlier entry said D6 == 0.)
 - Named functions/variables: `analysis/7846411A_symbols.md`.
 
 ## Diagnostics / coding storage (1M)
@@ -481,6 +593,8 @@ BMY signature), as the XDF warns.
   - Direction mask stored as 0 (file 0xC13C4).
   - Presence mode 2 (file 0x7DA57).
   - Exact bytes, rationale and procedure: **`docs/E46_SENSOR_FIRMWARE_PATCH.md`**.
+  - For the stock firmware with an AK-emulating converter instead (no patches): the AK bits to send, plus the
+    timing rules, are in **`docs/AK_BITS_EXPECTED.md`** (2026-10-15).
   - Older entries saying non-VDA sensors need hardware are superseded.
 - **[user]** The 1M uses E9x wheel-speed sensors: active, with encoded data.
 - **[user, corrected 2026-10-05]** The user does NOT own an E85 Z4 unit. E85 Z4 MK60E5 units work with
@@ -519,6 +633,44 @@ Byte-verified against the M3 image by the main session. Symbols: `analysis/78468
 XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `analysis/7846816A_main.lst`.
 
 - **[verified]** M3 reset handler 0x6C906 (vs 1M 0x6C9B2). App CPU 0x40000–0xF6A23. Same M·CORE platform.
+- **[verified]** **SRAM = 48 KB @ 0x400000–0x40C000.** Startup zero loop 0x6C9CC spans exactly
+  [0x400000,0x40C000) (0x3000 words); topmost global struct ends at 0x40C000; same bound reused at
+  0x6F7E6/0x737A8/0x77794. Separate peripheral RAM zeroed next: 0xFFF82000 (4 KB), 0xFFF84000 (16 KB),
+  reg 0xFFF80000 (IPSBAR aperture, not CPU SRAM). MMC2114 relative has 8 KB → SC560002 ~6×.
+- **[verified]** **Unallocated SRAM hole: [0x40959C, 0x40BF00) = 0x2564 = 9572 B (~9.3 KB), no refs.**
+  Globals stack up from 0x400000 to 0x40959B (last = the `31 08` auth scratch: challenge [0x40957C,+16)
+  + digest [0x40958C,+16), live only inside `sub_0B3F3E`); the lone top struct (wheel data, pinned by
+  `sub_043DF0` via ptr 0x400978) sits at 0x40BF00 and grows up to 0x40C000. Hole confirmed 3 ways:
+  Ghidra ref analysis (resolves computed bases), literal scan (zero lands inside), and M·CORE 4-bit
+  scaled offsets (~60 B max, can't reach across 9 KB). **Zeroed every reset (0x6C9CC) → runtime scratch
+  only, not NVM-backed; not stack-adjacent (stacks at bottom, top struct grows up), no heap.** 7846816A
+  (M3) only. Doc: analysis/BOOTLOADER_SERVICES_7846816A.md §Unallocated SRAM hole.
+- **[verified]** **BL allowlist (0x19BB4) permits sectors to 0x180000**, per full decode (19 sectors):
+  one 16 KB @0x10000, eight 16 KB 0x20000–0x40000, two 128 KB 0x40000–0x80000, eight 128 KB
+  0x80000–0x180000. **BUT [corrected 2026-10-14]** the allowlist is the BL firmware's permit table, not
+  proof of silicon: the OEM .0pa uses only **bank 0 (~1 MB, phys 0x0–0xFFFFF)**, app fills it to phys
+  0xFEA23 (CPU 0xF6A23); cal/EEPROM live in separate banks phys 0xDF0000/0xFF0000; **no OEM content at
+  0x100000–0x180000**. Confirmed free & flashable = only ~5.6 KB (CPU 0xF6A24–0xF7FFF, end of bank 0,
+  not in any stock segment) + reclaimable feature space. The ~544 KB CPU 0xF8000–0x180000 the allowlist
+  implies is **[open/unconfirmed]** — bench test before use. (Earlier "~560 KB free to 0x180000" was an
+  overstatement from the allowlist alone.)
+- **[verified]** LOCK header 0x40200–0x40300 (fixed-offset, 0xFF-padded): ptr 0x40230→ID record 0xF68FC;
+  ptr 0x40234→block/var table 0xD77C8; ptr 0x40238→MISR range table 0xD71EC (entries at 0xD71F4);
+  ptr 0x402F4→BMY block 0xF6924; u32 0x402F8=stored checksum; 0x40300=cal directory. BMY & MISR ranges
+  are image-located via these pointers. Appended code stays verifiable with no new secret: BMY RSA range
+  = [0x40000:marker@0x402F4]; app MISR via in-image table 0xD71F4; SBL boot MISR (sub 0x4ce8) hardcoded
+  to 0x180000. All recomputable via tools/bmy_resign.py + rsa-sig.json. Map:
+  analysis/BOOTLOADER_SERVICES_7846816A.md.
+- **[verified 2026-10-14, static]** Boot-time integrity enforcement = the lightweight **boot-descriptor
+  MISR**, not the full image. Reset 0x2D8 MISRs the 0x200–0x248 descriptor vs [0x244]=0x42E5BD74
+  (mismatch → params→0xFFFFFFFF); SBL driver 0x4690 MISRs the 0x8000 copy vs [0x802C]=0xF7C43DF9. Launch
+  = validated descriptor → sub 0x4f2c → sub 0x4da6 (mtcr cr1; jmp). Live vectors route to 0x14000 (BL
+  diag): [0x234]=0xFFEC, [0xFFEC]=0x66666666, [0xFFE8]=0x00014000, app slots [0x801C/20/24]=0xFFFFFFFF.
+  Full 0x40000–0x180000 MISR engine (sub 0x4ce8/0x417e) exists + result read back (0x4B64), but **no
+  RSA/BMY modexp on the reset→launch path** — supports "BMY not enforced at load." Likely: app runs only
+  via a descriptor blessed after a programming-time verify; failure → fall back to BL diag (reroute, not
+  brick). [open] whether the full scan runs unconditionally every boot vs. only on a flash/verify command
+  (needs tracing SBL entry ptrs [0x400C]/[0x4004], or bench).
 - **[verified]** M3 calibration directory at 0x40300 (ver 2, 12 blocks): ABS 0x4039C/0xB0A, CSI 0x40EA8/0x114,
   TCS 0x40FBC/0x1D4, AYC 0x41190/0x5C6, BCO 0x41758/0x220, COA 0x41978/0x36C, BFU 0x41CE4/0x1C,
   VAR 0x41D00/0xE, DDS 0x41D10/0x118, CSW 0x41E28/0x1A, LVC 0x41E44/0x5E0, VMO 0x42424/0x6C.
@@ -535,7 +687,7 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   - Cf 0xD6ECA / Cr 0xD6EE2 cornering stiffness (Cr·l_r−Cf·l_f understeer term in 0x5E424 fixes the roles;
     **units unresolved** — N/deg gives v_ch≈41 m/s (plausible), N/rad too low). Cr>Cf every variant → understeer.
   - track front 0xD6FA2 = **1.538 m** (Q10: 1575/1024; = the real M3 front track), track rear 0xD6FBA = 1.536 m
-    (1573/1024). **Corrected cycle 7: these are Q10 metres, not mm** as first read.
+    (1573/1024). Q10 metres, not mm.
   - override-enable flag 0xD7032 = 0 for all 12 → the 0xD6E3A.. override rows are dead on this ROM.
 - **[verified]** **M3 ABS entry/continue slip threshold** curve at 0x40DB6 (reader `curve_interp_s16` 0x710FC;
   `abs_entry_slip_eval` 0x54F4A/55062/552DA): lo0,hi900,n2,bp5000,c=150/115,k=−4/+3 (Q10). x = vref
@@ -569,8 +721,23 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   the packed coding block at unshifted RAM 0x4031F4/F6; `nvm_queue_job` 0x6E16C, `nvm_read_sync` 0x6E9C4; SPI
   drivers 0x0D4DC0/0x0D4F50 on the 0xDB0000 queued-SPI block (CS2 = coding EEPROM). 0x22 DIDs checked are the
   same 0x2501/0x1601/0x2502 as the 1M. Active coding variant is EEPROM/RAM state, not in the flash image.
-  (The geometry/variant field accessor used by the vehicle-model loaders is a separate fn `coding_field_read_geom`
-  M3 0x8E25E = 1M 0x8E066.)
+- **[verified, static]** **EEPROM layout**: block table 0xD7424 (63 × {offset,len}; 1M 0xD77B4 identical), 27
+  blocks tiling 0x000–0x7FF; job id = (blk<<4)|sub-id. Raw 48-byte coding = block 10 @ **0x400–0x42F**; the
+  unpacked image the app runs from (0x4030DC / 0x4031AA / 0x4031B6) is block 7 @ 0x44B–0x4AF; ident data block 24
+  @ 0x322–0x3FF; DTC memory block 5 @ 0x068; DDS data block 14 @ 0x510. Bytes are stored inverted on the chip.
+  `0x409564` (w564) loads from 0x3BA–0x3BD (tail of the `1A 89` string), not 0x322. Full map:
+  `analysis/EEPROM_MAP_7846816A.md`.
+  There is no separate geometry accessor: M3 0x8E25E = 1M 0x8E066 is mid-function code,
+  never called; the loaders read `0x4031AA+1` directly. M3 `0x8E066(id, sel)` is `state_nibble_get`, a 3-bit
+  operating-state getter (0x401FAC for id 24) whose callers compare it with 2–4.)
+- **[verified, static 2026-10-21]** **M3 coding write validator** `0xCF432 → 0xD02E6`: clears the active image,
+  then five stages over the RX buffer 0x403320 (checksum 0xCFDB8, field unpack/limits 0xCFDD8 + 0xCFADC, flag
+  words A/B 0xCFF1A, word array 0xD0064, feature row 0xD024C → 0xCF5D8). Any failure → fault 0xC0002, image
+  zeroed, image check byte poisoned, NRC 0x31; pass → image resealed (check byte = XOR + 1). The raw bytes are not
+  kept in RAM (reads go straight to the diag buffer 0x40943E). f+6 (feature row) is derived from c3 b2/b3 and
+  c13 b5/b6; f+7 is the run-time DSC mode (`dsc_mode_select` 0xCF2E8). If `0x8E066(24,1)` = 4 the validator is
+  skipped and the raw bytes are stored unchecked without updating the active image. Detail:
+  `analysis/CODING_BYTES_7846816A.md`; symbols § Coding write validator.
 
 ### Cycle 2 [verified 2026-10-04] — control, wheel-speed, AYC/yaw (symbols in `analysis/7846816A_symbols.md`)
 
@@ -579,12 +746,12 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   (M3-rewritten: variant-indexed curves 0x40412/405F2/40674 by `0x4031AA+1`, vs the 1M's fixed curves). The
   `control_dispatcher` 0x8CCB8 is a **flat 41-call per-frame sequencer, not a jump table**. ABS/vref working RAM
   is shifted **+0x24** (vref 0x408DA8, decision code 0x408DDE). vref integrator + wheel-accel code and constants
-  (literal 0xE287=58023, two-frame mean ·2.833, 0.01 g) are unchanged — closes the 1M "wheel-accel ±158" conflict:
+  (literal 0xE287 = 57991, two-frame mean ·2.8316, 0.01 g) are unchanged — closes the 1M "wheel-accel ±158" conflict:
   normal range is ±16 g before clamp, so the dump stages (−62…) are reachable.
 - **[verified]** M3 **tunable ABS control** scalars: apply ramp 0x403A8=400, dump reductions 0x40E64/66/68=1000/
   1500/2000, reapply nudge 0x40D90=80, decel set A/B enables 0x40E94/0x40E9C=1, cornering limits 0x40DCE=126/8/1748.
   Hard-coded speed-dependent ROM curves relocated to **0xD6AFC–0xD6D50, byte-identical to 1M 0xD713C–0xD7390**.
-  Clamps 25000/−8000, delta clamp ±5714, accel scale 58023 and the vref rise/fall/snap values are code literals
+  Clamps 25000/−8000, delta clamp ±5714, accel scale 57991 (0xE287) and the vref rise/fall/snap values are code literals
   (patch-only, not calibratable). (The 1M 0xDA2F0 scalar block has matching *referenced* values but is not a clean
   contiguous relocation — left unverified.)
 - **[verified]** M3 **wheel-speed chain**: edge ISRs vec 56/57/58/59 → handlers 0x70E6A/0x70D56/0x70DE0/0x70CD0
@@ -594,7 +761,7 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   15; invert pair 05/09 at 0xD766C. VMO monitor block 0x42424 (window threshold 2000, %-scales 85/75).
 - **[verified]** M3 **AYC / yaw control**: `yaw_observer` 0x5EBC4 (variant-indexed via per-variant arrays
   0x415F8/0x41610/0x41628), `yaw_pd_moment` 0x5F7BA, `engine_torque_request` 0x65078, `yaw_ref_closedform` 0x90E5C,
-  `dsc_mode_select` 0xCF2EA. AYC block 0x41190: entry base A/B = 1396/2792, per-mode entry/hold ceilings
+  `dsc_mode_select` 0xCF2E8. AYC block 0x41190: entry base A/B = 1396/2792, per-mode entry/hold ceilings
   (10471/10471/8028 and 9773/9773/7330), speed-factor and P-gain % curves per mode, **torque ceiling per mode
   m0=150/400, m1=200/2000, m2=180/330** (feature-enable [1,0,0] relocated to 0xD6DA4). **m=1 is the most
   permissive (torque ceiling 2000)** — consistent with the 1M; AYC tables are not M-specific except three
@@ -611,13 +778,14 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
 
 - **[verified]** **M3 CSI block 0x40EA8 (len 0x114) GREW +0x62 vs the 1M and its steering-ratio curve changed.**
   Steering ratio = y/1024 (:1): M3 ~15.9 at centre → 12.6 (vs 1M 14.6 → 12.5), 3 curve sets selected by coding
-  `0x4031AA+5` (sets 0/1 identical, set 2 differs); x = raw steering counts. Three former scalars became 12-way
+  `0x4031AA+5` (NCS: 0 = E90, 2 = E92/E93; set 1 is a copy of set 0); x = offset-corrected steering-wheel angle
+  0x402132 in counts. Three former scalars became 12-way
   per-variant sign tables (all −1). The 144-byte tail is byte-identical to the 1M. `steer_ratio_convert` 0x9032E.
 - **[verified]** **Steering input**: F-CAN RX **0x0C9** (DLC8, 1 ms, mailbox 16) sig 43 = angle → handler 0xC5C78
   (·1029/1024 → RAM 0x401644). Sensor cluster 0x0CD/0x0D1 → `cluster_sensor_get` idx0..5 (yaw/ay, 0x402F1C..26).
   Closed-form r_ref confirmed on the M3 (`yaw_ref_closedform` 0x90E5C): v_ch enters via RAM 0x400AE8/AEA (variant
-  model), no CSI constant in the denominator; r·v clamp ≈1.24 g (hard-coded). Yaw-rate LSB ≈1/20480 rad/s and
-  steering ≈0.043 deg/LSB are **[agent, med / unverified units]**.
+  model), no CSI constant in the denominator; r·v clamp ≈1.24 g (hard-coded). Yaw-rate LSB = 1/20000 rad/s (derivation in
+  Cycle 7); steering ≈ 0.044 deg/LSB **[unverified]**.
 - **[verified]** **Brake COA 0x41978 (0x36C) and BCO 0x41758 (0x220) bodies are byte-identical to the 1M** — brake
   calibration is NOT retuned; coding only picks code 0 vs 1 per axle (`coding_unpack_block` 0xCFDD8: front +3 =
   (rec[2]>>3)&7, rear +4 = rec[2]&7; codes 2–7 undefined). COA p-V: shared pressure axis 0x41B4E (0..32700, 0.01
@@ -633,7 +801,9 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
 - **[verified]** **LVC block 0x41E44 (len 0x5E0) body byte-identical to the 1M EXCEPT one scalar 0x4226A = 75 (1M
   50)** — the only M3-specific calibration difference in the DDS/LVC/FSF region (a hold/delay count, ~0.75 s vs 0.5 s
   if the cycle is 10 ms). `lvc_main` 0xBFB6C runs a 5-level speed ladder off max wheel speed; "LVC" expansion
-  undetermined. Per-coding-variant arrays at 0x422F8.. (indexed by 0x4031AA+9).
+  undetermined. **[2026-10-14] LVC is very likely the hill-start assist**: LVC code reads the HSA-level coding
+  f+9 (0xC0D44) and gates on `coded_feature(11)` = hill-start (coding c13 b6) at 0xC0D5E. It drives CAN 0x19E
+  byte 3 bit 2 via 0x402BE8 (see `analysis/CAN_TX_TABLE_7846816A.md`, "Frame 0x19E"). Per-coding-variant arrays at 0x422F8.. (indexed by 0x4031AA+9).
 - **[verified]** **Fault manager** `fault_set` 0xB427C (= 1M 0xB4064): fault id = group<<16 | mask16, latched in the
   u16 array 0x402838[group], NVM-pending bits in 0x408CBC, NVM block id 0x31. `monitoring_main` 0xB3FC0 dispatches
   ~26 sub-monitors. Direction-fault id table 0xF576C = {0x00020040, 0x00030040, 0x00040040, 0x00050040} (per wheel).
@@ -697,7 +867,8 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   frame with the measured wheel-output pressure and V is re-synced to it** (`sub_082BC0`; see the pressure-sensing entry); valve flow Q = isqrt(|dp|)·open·k/4096 (clamp 2000),
   with a low-pressure accumulator per circuit. **The COA block carries the model coefficients** (byte-verified, tunable):
   k_in 0x41B26 (957/421), k_cross 0x41B2A (219/421), k_back 0x41B2E (705), k_out 0x41B30 (755/465), LPA pressure/volume
-  curves 0x41B16/0x41B1E, pump ramp 0x41B34 (1150)/gain 0x41B36 (100)/filter 0x41B4C (187), volume temp-comp 0x41AE4/F0.
+  curves 0x41B16/0x41B1E, pump supply-store cap 0x41B34 (1150) / fill rate 0x41B36 (100) (earlier misnamed "pump
+  ramp/gain"; see "Pump volume model", 2026-10-16), pump flow curve 0x41B38, filter 0x41B4C (187), volume temp-comp 0x41AE4/F0.
   **Pressure unit = 0.01 bar**, pinned by CAN: 0x2B2 bytes 0–3 and 0x19E byte 6 transmit the internal values ÷100 as
   integer bar (consistent with LPA plateau 1.3-5.0 bar, pedal threshold 8 bar, request clamp 200 bar). Arbiter priority order (channel_owner_select 0x83720):
   18>5>4>6>8>1>2>3>14>13>0>11>12>17>20>16.
@@ -732,6 +903,20 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   0x40E64=1000/1500/2000, stage thresholds 0x40E5E/0x40E9E, reapply steps 0x40D5E/0x40D60=300/500. Hard-coded code
   literals (patch-only): clamps 25000 (0x61A8), −8000 (0xE0C0), 20000, 30000, 9000; hard-coded ROM dump-cap curves
   0xD6AFC/0xD6C76 (byte-identical to 1M). Pressure unit 0.01 bar.
+- **[verified 2026-10-15]** **Full CAN RX decode: `analysis/CAN_RX_TABLE_7846816A.md`** (27 PT-CAN + 18 F-CAN
+  frames, every signal, handler, timeout and the frame → DTC map). Key points: RX timeouts count in the 10 ms CAN
+  task (50 = 500 ms; cluster/steering 100 ms). The CAN DTC id = 0x2000/0x3000 + 16·group + bit, with reason flags
+  0x04 timeout / 0x02 alive / 0x08 checksum (e.g. D354–D357, D370–D373). **0x0BA (gear) is only processed with an
+  automatic/DCT gearbox coded and 0x3B0 (reverse) only with a manual one** (`gearbox_type` 0x40114D from coding f+2).
+  Dead frames: PT 0x0AC/0x0B4/0x0D5/0x1B4/0x388/0x2A6, F 0x118/0x11F (and F 0x194's payload).
+  **PT-CAN message DTCs need ignition from 0x130**: every reporter checks 0x401163 b4, which `can_comm_state_update`
+  0x794FC sets only 750 ms after `ignition_on` (0x400956 b6), plus ≈1.8 s after start-up. **[revised 2026-10-15]**
+  `power_state_update` 0x72020 takes `ignition_on` from a valid 0x130 (byte 0 bits 2–3 = 1 → `terminal_state` 4).
+  While 0x130 has never been received or has timed out (`ign_source_hw` 0x4009FF b0), it uses the hardware input
+  0x400958 b5 = NOT bit 8 of the CS5 interface-chip status word 0x4009C8. **Bench:** with power only and no 0x130,
+  an automatic-coded unit logs D35A + D354–D357, so that input reads "on" with power alone. So: valid 0x130 with
+  ignition off → no CAN DTCs; no 0x130 → hardware input decides. The physical source of bit 8 is unknown.
+  Detail: CAN_RX_TABLE "ignition gate".
 - **[verified]** **DSC inputs (input-sources map, `analysis/agents/m3rx/`... text only)**: live powertrain RX = DME
   torque 0x0A8/0x0A9/0x0AA, gear 0x0BA, CAS 0x130; live chassis RX = steering 0x0C9, yaw/lat-g 0x0CD/0x0D1/0x0D4;
   NM node 0x29 on 0x480; tester 0x6F1. **Disabled**: the external torque-limit exchange (F-CAN 0x78F/0x78E) is gated
@@ -747,8 +932,7 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   wheel→yaw term 0x400AF4 = round(56888/track_Q10) = 36 gives R=20000 exactly, and the ay chain (0x90EE2:
   ay_int = r_int·V/70632, 88290=9.81·9000) closes to g/1000 only at R=20000. **Strong independent check: every AYC
   threshold is a round deg/s value** — entry base A/B 1396/2792 = **4.00 / 8.00 deg/s**, hold hysteresis 698 = 2.00,
-  per-mode ceilings 10471/8028 = **30.0 / 23.0 deg/s**, entry-by-speed table 4.0–10.0 deg/s. (**Refines the cycle-3
-  "1/20480" hypothesis, which came from misreading the track table as mm.**) Steering ≈ 0.044 deg/bit; the r·v friction
+  per-mode ceilings 10471/8028 = **30.0 / 23.0 deg/s**, entry-by-speed table 4.0–10.0 deg/s. Steering ≈ 0.044 deg/bit; the r·v friction
   clamp (0x4020EC ≤ 0x558C) = **1.27 g**. CAN output LSBs (sig63 ≈0.05 deg/s, sig62 ≈0.025 m/s²) are the only
   assumption-dependent items; the internal LSBs are not. Chains: `csi_cond_sensor0` 0x905E4 (yaw), 0x8FE70 (ay),
   both unity-gain (slew + LP + offset only). v_ch unchanged in km/h (V = 0.01 km/h confirmed).
@@ -766,10 +950,11 @@ XDF: `xdf/MK60E5_7846816A.xdf` (vehicle-model + slip/decel categories); disasm `
   Per-wheel demand 0x400B0C[w] ≈ 0.1 bar / M-count. Submitted as arbiter **id 3** (rate caps 0x41552/54 = 300/500)
   and **id 20** (front-outer 5-bar pre-fill, 0x411B4=500). **Engine-torque cap** `ayc_torque_cap_B30` 0x65494:
   0x400B30 = min(0x400D24, 0x400DB0), min-merged into the DME request at 0xCC388 (→ TX 0x0B6).
-- **[verified]** **AYC→ABS link resolved (corrects the cycle-6 EB2 note):** **0x408EB2 = driver brake pressure**
+- **[verified]** **AYC→ABS link:** **0x408EB2 = driver brake pressure**
   (0.01 bar, dual-track ratiometric ADC sensor via 0x8F344, constants 0x5EE8=24296 / 0x97D=2429 / 0x556A=21866), NOT a
   yaw quantity. The real link is **B1A 0x400B1A** read directly by `abs_yaw_deviation_monitor` 0x4A254 (e = measured
-  yaw ECC − B1A). In `abs_sensor_input_gather` 0x5D82C: **0x408ECA = lateral accel** (coarse, the x for the ABS
+  yaw ECC − B1A), and (corrected 2026-10-23) by 13 other ABS sites gated only on yaw-valid; see "ABS reads the
+  steering-based yaw target". In `abs_sensor_input_gather` 0x5D82C: **0x408ECA = lateral accel** (coarse, the x for the ABS
   decision-32 yaw-limited-build curves 0x40E26/0x40E0A), **0x408ECC = measured yaw rate**, **0x408ECE = yaw accel**.
 - **[verified]** **DDS/RPA is a resonance-frequency tyre-pressure monitor** (indirect TPM). Chain: tooth-period capture
   (`rpa_tooth_period_proc` 0xAA550, 48 teeth, learned per-tooth correction) → **uniform-time resample** to ~400 Hz
@@ -1158,7 +1343,7 @@ frame".
 ### [verified disasm 2026-10-05] Where "2 pulses per tooth" lives: speed constant K = C·900 (not the tooth count)
 - **`wheel_cal_prepare` 0x751A8:**
   - K_front = C_front(0x41CF4) × 900 → **0x4033CC**; K_rear = C_rear(0x41CF6) × 900 → **0x4033D0**.
-  - floor 0x4032D0 = min(2·900·C/60000).
+  - floor 0x4032D0 = **max** over axles of 2·900·C/60000 (0x751D6 `cmplt r2,r3; movf r3,r2`: rear kept unless rear < front; an earlier note here said min).
   - The true circumferences are copied to 0x40935C.
   - The 900 folds in pulses/rev (96 = 48×2) and the capture clock. Bench check: 300 pulses/s → 22.94 km/h at
     C = 2073, i.e. ≈ 97 pulses/rev.
@@ -1425,8 +1610,7 @@ telegram MK60E5 decodes (7/14/28 mA, direction bit), to run E46 front reluctors.
 
 Consolidated doc: `analysis/ABS_ALGORITHM_M3_7846816A.md`; per-domain detail in
 `analysis/agents/abs_full/0{1..5}_*.md`. CPU addrs; file = CPU+0x8000. Frame 10 ms.
-Units: speed/slip 0.01 km/h, accel/decel 0.01 g, pressure ~0.01 bar (absolute scale [open],
-needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal addrs differ.
+Units: speed/slip 0.01 km/h, accel/decel 0.01 g, pressure 0.01 bar (pinned by CAN 0x2B2/0x19E ÷100 = bar). Core architecture is opcode-identical to the 1M; RAM/cal addrs differ.
 
 - **Two triggers.** (1) Slip = plain `vref−wheelspeed` in 0.01 km/h (NOT a ratio): entry gate 0x40DB6
   ~1.5 km/h arms; gross-slip limit 0xD6CE2 = flat ~6 km/h to 55 km/h then **11.04 % of vref** (k=113/1024).
@@ -1440,12 +1624,10 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
 - **LATERAL G AFFECTS ABS — YES, in ABS-only.** ABS has its own sensor latch (lat accel 0x408ECA, yaw
   0x408ECC). (a) code-32 cornering handling (`abs_decision_classify` 0x51B54 + exec 0x58FF4). (b) Pair
   cornering gate 0x54D9A. (c) Inside/outside rear select-low 0x5184C. [verified]
-  **⚠ DIRECTION CORRECTED 2026-10-05 (see "cornering lat-g pressure term" entry below): the cal curves
-  0x40E0A/0x40E26 are a lateral-g pressure term that RISES with |lat g| (26→49 / 14→40 bar), NOT a
-  knockdown. The actual code-32 rear reduction uses a SEPARATE pct byte 0x408DE0 (producer untraced), plus
-  rear select-low.** Earlier "scales ABS pressure down the harder you corner / the curves soften braking"
-  was wrong on direction.
-- **Steering angle never reaches ABS** (DSC-only). **Vehicle model (mass/l_f/l_r/Cf/Cr/Jz) feeds ONLY DSC**
+  The cal curves 0x40E0A/0x40E26 are a lateral-g pressure term that **rises** with |lat g| (26→49 / 14→40 bar), not a
+  knockdown. The code-32 rear reduction uses a separate pct byte 0x408DE0 (the position of driver pressure between
+  the two curves, "ABS with and without the SZL"), plus rear select-low.
+- **Steering reaches ABS** via the getters and sets the yaw-stable flag `0x408E5F` b4; see "ABS with and without the SZL". **Vehicle model (mass/l_f/l_r/Cf/Cr/Jz) feeds ONLY DSC**
   — zero reads in the ABS region; it is NOT an ABS tuning lever. [verified] **EBD is decel-driven** (front
   0x40412/rear 0x405F2), not model-based. [verified]
 - **HARDWARE: the MK60E5 has FIVE integrated brake-pressure transducers** — 1 on the input/master side
@@ -1463,7 +1645,8 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
     b7 front / b6 rear), b7 = valid. Bytes 4.4–5.7 = a ×939 yaw/accel value (not pressure); 6–7 = flags.
   - `0x19E StatusDSC` byte 6 = master/input pressure: getter 0x7AD2A → `sub_093F00(2)` → `0x401FF8`
     (validated, offset-corrected, filtered master sensor), same ÷100 → bar.
-  - `0x1A0 Speed`: AccX/AccY/YawRate/VehicleSpeed.
+  - `0x1A0 Speed`: VehicleSpeed 0.0/12, drive direction 1.4/3, AccX 2.0/12, AccY 3.4/12, YawRate 5.0/12,
+    alive 6.4/4, checksum 7. Full decode: `analysis/CAN_TX_TABLE_7846816A.md`, "Frame 0x1A0".
 - **Pressure sensing: all five transducers are sampled AND used for control [verified].** Detail:
   `analysis/agents/abs_full/06_pressure_sensors_recheck.md`.
   - **Master sensor** (ASIC ch 6/7, raw 0x402954, `pressure_adc_track` 0x8F344) → validated `0x401FF8`.
@@ -1479,7 +1662,8 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
     normal → **PM = measured** (store 0x82E9C) and volume `0x4016DA[w]` re-synced via `coa_pressure_to_vol`;
     outlet/dump active (valve state `0x401A16[w]` < 0, latched `0x401715[w]`) → COA volume model until the
     state goes positive, then the volume error is reconciled into `0x4016F2[circuit]`; inlet fully open
-    (state 20) with recent pump flow → min(model, measured) (store 0x82E06); **gate closed → pure model for
+    (state 20) with recent pump flow → min(p(V(PM) + 500), measured), so PM may rise by at most 500 volume
+    units per frame (store 0x82E06; detail in `analysis/7846816A_symbols.md`, "Circuit volume model"); **gate closed → pure model for
     all four wheels**. Gate = `0x402888` b5 clear, fault ids 35/57/59/61/63 `<<15` not latched, and all
     four sensors valid (one invalid sensor drops all four).
   - **Other direct consumers of measured wheel pressure:** ABS `sub_046ADC` (per-wheel filters
@@ -1512,7 +1696,7 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
   gate 0x401FF2 b7 ⇒ **ABS never arms without plausible wheel signals** (does NOT degrade gracefully). [verified]
 - **Track tuning levers (ranked) [REVISED 2026-10-05]:** (1) the code-32 cornering rear-knockdown — the real
   mid-corner pressure cut (exec 0x58FF4: CMD = PM − pct·(LOCKEST−CMD)/100), driven by pct byte 0x408DE0
-  (PRODUCER UNTRACED) + rear select-low 0x5184C; this is the lever for trail-brake authority, NOT the
+  (producer: 0x51F42, "ABS with and without the SZL") + rear select-low 0x5184C; this is the lever for trail-brake authority, NOT the
   0x48E0A/26 curves (those ADD pressure with g). (2) apply-ramp/slew onset. (3) decel floors / variant 10/11. (4) gross-slip
   slope 0xD6CE2 (smallest; stock ~11 % already near peak-µ). NOT levers: vehicle model, COA P-V.
 - **Unmapped global cal to add to XDF:** 0x40C40, 0x40C5A, 0x40D24, 0x40D40(=50), 0x40D42(=7000),
@@ -1522,20 +1706,68 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
 
 - **ST_CLCTR = CAN 0x19E (StatusDSC) byte 0** — a BITFIELD (getter `can_tx_19E_status_flags` 0x7AEAA),
   assembled from the ABS control-state block 0x408DA0/0x408DA2 + intervention flags:
-  - bit0 (1) = brake/slip-control active (ABS engaged) ← 0x408DA2 b7. (At engagement the phase machine
-    DUMPS first, so pressures DROP when this sets — consistent with a datalog showing all four fall, fronts
-    first, on a front-biased car.)
+  - **[verified 2026-10-14] bit0 (1) = a FRONT wheel is in an ABS cycle** ← 0x408DA2 b7. Not a general "ABS
+    engaged" flag. `abs_state_aggregate` 0x45808 (called from 0x45EC4) clears DA2 b0/b5/b6/b7 every pass
+    (0x45858–0x45864), then loops over the wheel records 0x40BF00+0x40·w (0x4596C–0x45A32). For each wheel
+    with `rec[0]` b0 (in cycle: DUMP 0x21 / HOLD 0x09 / REAPPLY 0x11 / 0x15) it sets DA2 b0+b6 and 0x408DA1
+    b4, then DA2 **b5 for a rear** (record address b7 set, w = 2/3) or DA2 **b7 for a front** (w = 0/1,
+    0x45994). 0x45994 is the only instruction that sets DA2 b7 (the other writers 0x51160 / 0x51226 /
+    0xB5D40 never do). So rear-only ABS leaves bit0 = 0, and pre-control (0xC0) or armed (0x80) don't set it.
+    (At front engagement the phase machine DUMPS first, so front pressures drop when this sets.)
   - bit1 (2) = TCS/ASR ← 0x402FC0 b4; bit2 (4) = AYC/torque ← 0x400B0A&0xC0; bit3 (8) = DSC ← 0x400DF4 b7;
     bit4 (16) = TCS mode ← 0x402F6C+1 b2.
-  - **bit5 (32) = lateral-limited (cornering handling active)** ← 0x408DA0 b1. CONFIRMED tie to decision
-    code 32 (`abs_pair_logic` 0x54D9A → exec `abs_decision_pressure_exec` 0x58FF4). The exec REDUCES
-    commanded pressure: CMD = PM − pct·(LOCKEST−CMD)/100 (pct byte 0x408DE0, producer untraced), and the
-    rear-biased reduction is the separate select-low 0x5184C. (The cal curves 0x40E0A/0x40E26 are a lat-g
-    pressure term that RISES with g — a separate thing, see the dedicated entry; do not conflate them with
-    the knockdown.) [verified byte+bits; decision-code tie inferred]
+  - **[verified 2026-10-14] bit5 (32) = rear axle controlled without the front** ← 0x408DA0 b1. The only
+    writer is 0x45A62 in `abs_state_aggregate`, right after the wheel loop (0x45A34–0x45A62). The other DA0
+    writers (0x5184C, 0x51A5C, 0x58B30, 0x5CAF4, 0x5DC08) touch only b4/b5/b7:
+    ```
+    if DA2.b5 (a rear in an ABS cycle):  bit5 = !DA2.b7          # rear in ABS, no front in ABS
+    else:                                bit5 = 0x409049[4*2].b3 | 0x409049[4*3].b3   # rear decel-gate latch
+    ```
+    **No lateral or yaw input feeds this bit.** The earlier "lateral-limited / decision-code 32" label was
+    inferred from bit position only and is **wrong**. The cornering latch (0x409049 b2+b5, set at 0x4E908) is
+    not read here; only b3 is.
+    - **Rear decel-gate latch 0x409049[4w] b3** (rears only), set at 0x4DF9E. Every condition must hold:
+      - 0x408E1C b7.
+      - One trigger path: ax 0x408E80 < −0.55 g (cal 0x40C94 = 70, +15) with 0x40902E[3w] & 0x12; or
+        0x408E94 < −700 raw with 3 ≤ 0x408E6A ≤ 24. 0x408E94 is a second ax-type signal from
+        `abs_sensor_gather` (getter 0x938E2: 0x404A00 − 0x404A04/10; fallback 10·0x408DAF). Units 1 mg/bit
+        [inferred, see "The accelerometer IS broadcast"], so −700 = −0.70 g.
+        0x408E6A is a frame counter in 0x471A4 that runs while 0x401FF2 b5 is set.
+      - `rec+6` < 0.
+      - Counter 0x409014[w] ≥ 2.
+      - `rec[0] & 0x41` = 0 (not in a cycle or pre-control).
+      - No EV0.b6 this frame.
+      - No WSS fault (0x400952[w] b0 clear).
+      - 0x401FF2 b7.
+      - Driver pressure 0x408EB2 > 0.
+      - 0x408E6D b6.
+
+      On set it snapshots 0x408EB2 → 0x408E72.
+
+      **Release** at 0x4ECA0 (any one):
+      - ax > −0.55 g with 0x408E1C b7 set.
+      - With 0x408E6D b6: driver pressure < snapshot − 4 bar AND < 0.8·snapshot.
+      - EV0.b5 (dump trigger) on that wheel.
+
+      While latched, 0x4ECA4 forces EV0.b6, which puts the rear into pre-control.
+    - Open: meaning of 0x408E1C b7, 0x408E6D b6, 0x40902E b1/b4, 0x401FF2 b5; which of w = 2/3 is RL vs RR.
   - **The getter sets only bits 0–5 (≤63); it NEVER emits bit6=64.** The `64 = rear-control` value exists
     only in the *internal* decision code 0x408DDE, which is NOT broadcast (0 CAN getters read it). A logged
     ST_CLCTR=64 ⇒ the DBC byte/bit offset is wrong.
+- **[verified code 2026-10-14] Rest of 0x19E decoded.** Full table in `analysis/CAN_TX_TABLE_7846816A.md`,
+  "Frame 0x19E".
+  - 1.0/2 ABS status (2 = off/failed).
+  - 1.2/3 DSC status enum: 0 normal, 1 DSC-off lamp, 2 failed, 3 steering angle not valid, 4 mode lamp,
+    6 start-up.
+  - 2.4/4 event counter. Its trigger bit 0x4046D4 b4 has no setter, so it likely never changes.
+  - 3.0/2 torque-intervention flag 0x402F6E b5.
+  - 3.2/2 hill-start (LVC) flag 0x402BE8.
+  - 5.0/2 brake-light switch state. The BLS is GPIO 0xDE0018 b0 (`bls_input_get` 0x6FE92), plausibility-checked
+    against master pressure by 0xB7ABC.
+  - 5.4/2 coded-feature-5 status.
+  - 5.6/2 brake applied (BLS or any wheel > 6 bar).
+  - 6.0/8 driver pressure (`can_tx_19E_driver_pressure` 0x7AD2A).
+  - 1.6, 2.0, 2.2, 3.4, 3.6, 4.4, 4.6 are constant 3, 4.0/4 is constant 14, 5.2 is constant 0.
 - **"ST_CLCTR=0 (ABS off), rear 0x2B2 > master 0x19E" is physical.** 0x2B2 rear bytes are the measured
   rear wheel-output pressures; 0x19E byte 6 is the master/input sensor. On a car with independent
   front/rear master cylinders they are different circuits. [verified sources; plumbing inferred]
@@ -1557,9 +1789,12 @@ needs bench gauge). Core architecture is opcode-identical to the 1M; RAM/cal add
   knockdown.** [CONFIRMED scaling]. Two curves → separate regs (0x40E0A→r8+boost primary, 0x40E26→r11
   companion); not multiplied/min'd. Exact store role (per-wheel ceiling vs reference) UNCONFIRMED.
 - **The code-32 REAR KNOCKDOWN is separate:** exec 0x58FF4 (0x59222) `CMD(0x408F22) = PM − pct·(LOCKEST−CMD)/100`,
-  floored, where `pct` = small byte 0x408DE0 **(producer NOT traced)**; plus rear select-low 0x5184C. This —
-  not the 0x40E0A/26 curves — is what pulls rear pressure at turn-in (the ST_CLCTR=32 "big rear reduction"
-  the user logged). **The real trail-brake-authority lever is the 0x408DE0 pct producer; TRACE IT NEXT.**
+  floored, where `pct` = small byte 0x408DE0 **(producer traced 2026-10-15: pct = 100·(P_drv − P_lo)/(P_hi − P_lo) with
+  P_lo/P_hi from these two curves; "ABS with and without the SZL")**; plus rear select-low 0x5184C. This —
+  not the 0x40E0A/26 curves — is what pulls rear pressure at turn-in. (The user logged a "big rear reduction"
+  with ST_CLCTR=32. That CAN bit is NOT code 32: it means a rear-only ABS cycle or the rear decel-gate latch,
+  see the ST_CLCTR entry. A rear dump or pre-control can explain the drop without code 32.) **The real trail-brake-authority lever is the 0x408DE0 pct producer (now traced: the two curves set it, so they are the lever. Higher curve values give a smaller pct for the same
+  pedal, so less rear knockdown [I]).**
 - Yaw rate (0x408ECC) is used separately at 0x51B88: curve 0x40E42 (x=peak-decel) sets a threshold |yaw|
   must exceed to latch the cornering flag 0x409024. 0x40C5A = AYC-gated yaw-deviation monitor (0x4A254),
   a separate DSC path, does NOT factor into code-32. [CONFIRMED]
@@ -1594,3 +1829,687 @@ Design doc: `docs/VDA_CONVERTER_DESIGN.md` (1-channel PoC converter, design only
     user's car.
   - The IC inside is not public.
   - Representative 2-level parts: TLE4941plusC (≥ 4.5 V), A1684 (≥ 4.0 V).
+
+## [disasm 2026-10-06] vref during all-wheel slip, the longitudinal-accel path into ABS, and the CAN speed source
+
+Read directly from `analysis/7846816A_main.lst` (M3) in a single pass. **Not bench-verified.** Items marked
+[inferred] are interpretation. CPU addresses; speeds 0.01 km/h; accel 0.01 g; one vref count per 10 ms frame
+= 0.0283 g (so 0.36 count/frame per 0.01 g).
+
+### `vref_update` 0x449D0 — what happens when every wheel is below vref
+- **Wheel picks.** Cmax = fastest tyre-compensated wheel; Fmax = fastest compensated front; Vmin = slowest
+  valid raw wheel. Skipped: fault bit `0x400952[w]` b0, `rec+0x19 & 0xC0`; Vmin also skips `0x40905E[2w]` b7.
+  A wheel with `rec[0]` bit2 set cannot become Cmax/Fmax (looks like an overspeed mark [inferred]).
+  Compensation factor = `(0x301 + byte)/1024`, byte from `0x403214[w]` or `rec+53` (learned tyre-tolerance trim,
+  applied inline to `rec+0x1A`; fronts take the smaller byte, rears the larger).
+- **Regime bit = `0x408DA1` bit4** (with bits 7:5 clear). Set: rise +44 while vref < Fmax, and the
+  decel-limited fall below applies. Clear: rise only +22 (or +282 snap in controller modes 1/2/4) while
+  vref < Vmin; fall −32. Bits 7:5 ≠ 0: −90 while Vmin < vref. **The earlier "+22 while ABS active" label looks
+  wrong**: bit4 is grouped with the TCS/AYC/DSC active flags in `sub_092C26`, so bit4-set reads as the
+  braking/ABS regime [inferred].
+- **vref only falls when vref > Cmax**, i.e. above every wheel. In that state it is an open-loop
+  extrapolation; wheel speeds do not enter the step. A wheel that recovers above vref pulls it back up
+  (+44/frame).
+- **Fixed-step fall (fallback path), per frame:** −22 or −44 chosen by phase flags (both fronts in
+  dump/hold, a rear in control, vref ≥ 100 km/h, `0x408DA2` b5, front `rec+12` b2); −11 for one flag
+  combination (`0x408DEE` b6 / `0x408DEB` b5 with `0x408E7A` < 140; meaning not established); −23 or −32
+  plus `(75 + decel)/3` when the decel estimate `0x408DAF` < −80, reaching about −49 (1.4 g) — so −44 is
+  not a hard cap on this path.
+- **Inline decel limiter:** step = max(step, `(0x408DAF − margin)·360/1000`), margin **50** (or **30** when a
+  front has `rec+12` b2), and at least `margin·0.36`. Skipped when an invalid wheel was seen, in controller
+  modes 1/2/4, or when `0x400966` b6. (Earlier docs said margin 20…30; that is the helper's margin.)
+- **Decel estimate `0x408DAF`** (s8, writer 0x534E6) = `0x408EE8 / 21`, or `0x408DB4` in one state. Writer of
+  `0x408EE8` not found. `0x408DB8` (writer 0x532F0) is a vref slope: `(0x408DBA − vref)·453/16/(10n−10)`,
+  clamp ±127. Both are speed-derived, so the fallback path is self-referential once all four wheels slip.
+- Shadow integrator `0x408E7E` takes the same step and is kept ≤ vref. Floor `0x4032D0` applied after.
+
+### Longitudinal accel IS used by ABS — from the F-CAN cluster, not an on-board ADC
+- **Chain:** F-CAN RX `0x0D1` bytes 4–5 (sig 36) → `0x402F26` → `cluster_sensor_get(5)` 0xC583C →
+  × sign cal `0x40F2C` (=1) → `0x404A00` (`sub_092B98`) → IIR low-pass `(10x + 7y)/8` (or `(10x+23y)/24`
+  when `0x408DB5` b7; DC gain 10, so 0.1 mg) → `0x404A02` → minus zero offset `0x404A04` (= learned
+  `0x4049FD` ×20), ÷100, clamp ±127 → **`0x4049FC`** (s8, 0.01 g, saturates ±1.27 g) (`0x92BBC`).
+- Getter **`0x93828`** returns `0x4049FC` plus a status byte; "present" comes from ROM table `0xF6756[9]`
+  (= 1 in this image); faults from `0x404A2E` b7:6 and `0x402888` b1.
+- ABS sensor gather `0x5D82C` writes **`0x408E80`** (s16): default = wheel-derived `0x408DAF`; overwritten
+  with the getter value when valid, which also sets **`0x408E6D` bit3** ("ax valid").
+- **That signal 5 is longitudinal is [inferred]** (docs label the cluster "yaw/ay"): its offset is learned
+  against the wheel-derived longitudinal decel (`sub_092C26`: accumulates `0x4049FC − 0x408DAF·37/32` over
+  distance while no ABS/TCS/AYC/DSC flag is set; not fully traced), and ABS substitutes it for `0x408DAF`.
+- **vref helper `0x50FF4`** (called from `vref_update` at 0x451F2). The b3 entry is dead (b3 is cleared again in the
+  gather); the live route needs lat, yaw, steering and pressure valid ("Steering-sensor loss", "ABS with and without
+  the SZL"). Coded conditions of the b3 entry: `0x408E6D` b3 set,
+  `0x408DA1 & 0xE0` = 0, and — if `0x408E6D` b7 — |lat `0x408ECA`| ≤ 70; if a front has `rec+16` b2 it
+  also needs `0x408E80` ≥ 0. (A second entry route exists without b3; conditions at 0x45142–0x45196.)
+  - decel = −|`0x408E80`| in the bit4 regime (sign ignored). With bit4 clear it may pick the wheel estimate.
+  - margin 20, or 30 when decel ≤ −50; +10 or −10 by phase flags; minimum 10.
+  - when Cmax < vref: **step = max(−44, (decel − margin)·360/1000)**, and this *replaces* the fixed step.
+  - So with a healthy cluster the all-wheel-slip extrapolation is accelerometer-driven, capped at 1.25 g.
+- `0x408E80` has 59 references in the ABS region (0x45xxx–0x59xxx), including the decel-threshold builder
+  (0x47AFE, 0x47CEA). Only the vref path was traced.
+- **Standalone / no-cluster consequence:** ABS falls back silently to the wheel-derived estimate.
+- The on-board longitudinal sensor mentioned in the 5-transducer entry is not used on this path; no
+  evidence for or against it elsewhere.
+
+### CAN `0x1A0` vehicle speed = mean of the two FRONT wheels, not vref
+- `can_tx_1A0_vspeed` 0x7B1F2 loops over wheel records 0 and 1 only (fronts). Per wheel: skipped and
+  counted as faulted if `0x400952[w]` b0 or `0x40288C` b2; else adds `min(rec+0x1A, 30000)` if above the
+  floor `0x4032D0` (a wheel at or below the floor adds 0).
+- 0 faults: sum/20 (front mean, 0.1 km/h). 1 fault: sum/10 (the other front). 2 faults: `0xFFF` and
+  `0x4015E8` b7 set. Clamp 3000 (300.0 km/h). Stored to `0x404720`.
+- Uses raw filtered wheel speed (no tyre-compensation factor) and never reads vref `0x408DA8`. It
+  therefore dips with front slip under ABS, reads 0 with both fronts locked, and ignores rear wheelspin.
+- **[verified 2026-10-14] AccX on 0x1A0 (2.0/12) is also front-wheel-derived, not the accelerometer.** Getter
+  0x7B0AC → `ax_signal_get(1)` 0x9390E → 0x40200E (writer 0x8F2B0) = mean of the unfaulted fronts' wheel accel
+  (rec+0x20, 0.01 g), clamp ±1.00 g, IIR α = 1/32 (`iir_blend_q8` 0x712FC, k 248); ×4 on CAN (0.0025 g/bit). 0x800 only when both fronts are faulted.
+  So it shows front-wheel deceleration under braking and ABS, not body decel. AccY and YawRate are the conditioned,
+  offset-corrected cluster signals (0x4020DA, 0x4020F4), scaled to 0.025 m/s² and 0.05 °/s per bit.
+- **[verified] The accelerometer IS broadcast, in 0x1A3 and 0x2B3, not 0x1A0.**
+  No caller uses `ax_signal_get(0)` (the offset-corrected 0x4049FC). 0x1A3 0.0/12 (0x7B906) and 0x2B3 1.4/12
+  (0x7B7F4) send idx3 = raw 0x404A00 (unfiltered, no offset correction). 0x1A3 1.4/12 (0x7B96E) and 0x2B3 3.0/12
+  (0x7B83C) send idx2 = 0x4049FD, which is the **learned zero offset**, not a filtered accel (0x93A52 is only one of
+  several writers, and the ax filter has a DC gain of 10).
+  - 0x4049FD is the s8 offset-learner state: seeded from 0x404A02/20 (0x93A52) or from EEPROM (0x92186), stepped
+    by at most ±5 (0x92DF2–0x92E24), clamped ±119, and stored ×20 as the subtracted offset 0x404A04 (0x92E2A).
+  - Units: `(10x + 7y)/8` settles at 10x, so 0x404A02 and 0x404A04 are 0.1 mg and 0x4049FD is 2 mg (±0.238 g).
+    0x404A00 is **1 mg/bit [inferred]**: it matches 0x4049FC = (0x404A02 − 0x404A04)/100 being 0.01 g, and the
+    lateral channel from the same cluster (0x8FE70, unity gain) is 1 mg at 0x4020D6.
+  - On the bus both signals of a frame share one scale, so corrected ax = raw − offset. 0x1A3: ×251/256 and
+    ×251/128 → 0.01 m/s²/bit, signed, clamp ±2047, 0x800 invalid. 0x2B3: ×201/512 and ×201/256 →
+    0.025 m/s²/bit, offset binary +2048, clamp 0..4095, 0xFFF invalid (decoded in `MK60e5_CAN.dbc`).
+  So BMW's split is: 0x1A0 AccX = kinematic dv/dt matching the 0x1A0 speed; 0x1A3/0x2B3 = measured specific
+  force (includes road gradient), sent uncorrected together with the DSC's learned offset so the receiver can
+  correct it [design intent inferred].
+- **0x1A0 1.4/3 drive direction:** 0 standstill (0x40328C b7, `vehicle_standstill_update` 0xD381C), 1 forward /
+  2 reverse when both fronts' direction-sensing wheel speed sensors agree (0x4029D9 b4/b5), 3 when they
+  disagree or no direction is known, 7 when the standstill detector is invalid. Without valid direction-sensing
+  fronts it falls back to the AYC reverse flag 0x400B09 b3 (2) or 3.
+
+### Motorsport consequence: a ~1.25–1.27 g ceiling runs through the ABS estimation [inferred]
+vref fall cap −44/frame (1.25 g, code literal); ax byte `0x4049FC` and lateral byte `0x408ECA` both
+saturate at ±1.27 g; decel estimate `0x408DAF` is a signed byte; g-term curve `0x40674` ends at 1.27 g.
+A car that really decelerates above ~1.25 g outruns the vref fall, apparent slip grows, and ABS
+over-releases. Raising it means code patches (literals 44 at 0x44DE2/0x44FEA and the −44 clamp at 0x51100)
+plus rescaling the byte signals — not a calibration edit.
+
+### Doc inconsistency noted
+`docs/HANDBOOK.md` and the TL;DR/§2(a)/§6 of `analysis/agents/abs_full/03_lateral_g_influence.md` described
+the `0x40E0A`/`0x40E26` curves as the code-32 knockdown / source of `pct`. The 2026-10-05 correction above
+stands: they are a pressure term that rises with |lat g|. (2026-10-15: they are the P_lo / P_hi thresholds that set
+`pct`; see "ABS with and without the SZL".)
+Both files now carry a correction note.
+
+## [disasm 2026-10-12] Pressure-model coding (byte 2) and friction radius (byte 17): M3, 1M, non-M
+
+Detail: `analysis/CODING_BYTES_7846816A.md` (M3 / 1M) and `analysis/CODING_BYTES_6862873A.md` (non-M).
+
+- **[verified]** M3 pressure model is 0/1 per axle (NCS: M3 / M3 GTS). It changes the COA p-V curve on
+  both axles and, for the front code only, the BCO prefill tuning (0xD7156, 0x4176C, 0x41770, 0x41774,
+  0x417A8, 0x417B4). Every other code-indexed table holds the same value for 0 and 1.
+- **[verified]** The 1M (7846411A) has the same two codes and the same p-V values as the M3 (image
+  bytes rebuilt from the listing's hex column). It is not representative of the non-M cars.
+- **[verified]** Non-M image `fw/6862873A.0pa` (DSC90) is now disassembled: `analysis/6862873A_main.lst`.
+  Coding image at 0x40323C; limit table 0xE1710 allows front codes 0–5, rear 0–4, 22 variants.
+- **[verified]** Non-M stores a caliper piston diameter per code (0xE17C8: front 54/54/57/57/57/57 mm,
+  rear 40/40/42/44/44 mm) and computes the torque↔pressure factors from it and from coding byte 17.
+  The M3 uses constants (front 1762, rear 1016, set at 0xD2888) and does not read byte 17.
+- **[verified]** Non-M coding byte 17: low nibble front, high nibble rear, signed 4-bit `n`, value
+  `139 + 3·n` (115–160). **[inferred]** unit is mm (NCS: "effective friction radius"). It feeds the
+  general torque↔pressure converters (26 call sites), not only yaw moment compensation.
+- **[from NCS rules, not firmware]** Front 5 / rear 4 are the sport-brake (fixed caliper) packages,
+  standard on the 135i. The firmware has no fixed-caliper switch; those codes only select table rows.
+- **Open:** purpose of the three undecoded code-indexed clusters in the non-M image; why front 4/5 and
+  rear 4 use the small-caliper coefficient at 0xD90F0/0xD90FC; the non-M path from EEPROM to 0xD1C74;
+  why the M3 constants are lower than the non-M formula gives for its smallest caliper.
+
+## [disasm 2026-10-16] Pump volume model, and M3 vs 335 hydraulic calibration
+
+Symbols: `analysis/7846816A_symbols.md`, "Pump volume model". Overview and ABS-only simulation: `analysis/HYDRAULIC_MODEL_7846816A.md`. Circuit c = 0 is wheels 0/1 and c = 1 is wheels 2/3
+(ROM 0xDA1B8).
+
+- **[verified] 0x41B34 / 0x41B36 are not a pump ramp and gain.** Both are read by two functions:
+  - `pump_supply_store_update` 0x82824 (called by `hydraulic_model_step` at 0x82F24) loops c = 0, 1. While
+    circuit c is pumped, the store 0x401702[c] goes up each frame by 0x401A1A[c] × r / 20, doubled when the
+    store is empty. Here r = 0x41B36 × the ROM factor 0xDA5F8 / 100. The store is clamped to **0x41B34**. The
+    same function then reduces the store by the volume the pump delivered: interp(pump flow 0x40170C,
+    0x41B3C → 0x41B44) × 0x401A1A[c] / 20.
+  - `pump_circuit_demand(c)` 0x88A18 is called for c = 0 and c = 1 by `hydraulic_actuation_pipeline` (at
+    0x843CE / 0x843D2). It acts when the shortfall 0x401D32[c] is more than store + 125 and 0x401E4E = 1.
+    demand = (0x401D32[c] − min(store + 0x41B36, 0x41B34)) × 10 / interp(0x40170C, 0x41B3C → 0x41B48),
+    clamped to 0–10. The rate is doubled when the store is empty.
+- **[verified] The cap is a volume, not a pressure.** `circuit_volume_shortfall(c)` 0x86054 handles the
+  circuit's two wheels.
+  - For each wheel it takes the target pressure: max(0x401A20[w] when 0x40199C[w] is set, 0x401D28[c]).
+  - It converts that pressure to a volume with the coded p-V curve. The axis is 0x41B4E; the front curve is
+    0x41B62 + 20 × coding byte 3, and the rear is 0x41B8A + 20 × byte 4.
+  - It subtracts the modelled volume V 0x4016DA[w].
+  - The result is stored to 0x401D32[c] at 0x86288.
+
+  How the two wheels are combined is not traced. 0x401D32 and the 0x41B34 cap are both in the p-V curve's
+  volume unit, which has not been identified.
+- **[verified, main path]** `pump_flow_estimate_update` 0x81782 is called by `hydraulic_model_step` at 0x82F22.
+  - x = the sum of circuit pressure 0x4016EA[c] / 2 over circuits with 0x4016FA[c] ≠ 0.
+  - target = interp(x, ROM axis 0xDA604 {0, 25000}, **0x41B38 {4300, 2600}**).
+  - 0x40170C += (target − 0x40170C) × 0x41B4C / 256.
+
+  The curve has pump flow falling as delivery pressure rises from 0 to 250 bar, which is a pump characteristic.
+- **[verified] M3 vs 335 COA block.** This compares the M3 block (0x41978, 0x36C bytes) with the 6862873A block
+  (0x415A0, 0x514 bytes), word by word.
+  - **Identical:** k_in, k_cross, k_back, k_out, the LPA curves, pump level cal 0x419D4–DA, valve start
+    offsets and build gains 0x41A72–78, the store fill rate 0x41B36, the pump flow curve 0x41B38, the curves
+    0x41B3C / 0x41B44 / 0x41B48, and the filter 0x41B4C.
+  - **Different:** the store cap 0x41B34 (M3 1150, 335 650), the p-V curves, front volume temp-comp y2 0x41AE8
+    (−2500 vs −2250), and the unidentified words 0x4197E–82, 0x41996, 0x419B8, 0x419C8, 0x419D2 and 0x41C48.
+  - **The cap in each image:** 7846816A 1150, 7846411A 1150, 6862873A 650, 6791524A 650. The cap follows the M
+    brake package: the 1M has the M3's p-V curves.
+- **[inferred]** The pump characteristic and the valve-flow coefficients are identical, which suggests the same
+  pump and valve block. Whether the cap is brake tuning or reflects supply-side hardware is open.
+
+## [estimate 2026-10-16] Hydraulic-model volume unit: about 0.1–0.3 mm³ per count
+
+The firmware never states the unit of the p-V curves, the LPA curve or the valve-flow gains. They are
+consistent with each other (all calibration), and no code constant ties them to a physical unit. The flow law is a bare
+orifice equation, Q = isqrt(|Δp in 0.01 bar|) × opening (max 80) × k / 4096 per 10 ms, so k absorbs
+Cd·A·√(2/ρ) and the unit scaling. Three independent bounds:
+
+- **[inferred] Master cylinder capacity.** At 120 bar the M3 front circuit is 2 × 13300 counts. A tandem master
+  supplies roughly 8–9 cm³ per circuit over its whole stroke, so 1 mm³/count is impossible and the unit
+  must be well below about 0.3 mm³.
+- **[inferred] Caliper compliance.** At 0.1–0.25 mm³/count, a 57 mm front piston comes to 0.5–1.3 mm of
+  equivalent travel at 120 bar and 0.06–0.14 mm at 4 bar (pad clearance). Both are plausible.
+- **[user + inferred] Orifice flow.** u ≈ 707 × Cd × A[mm²] / k mm³/count. The user sectioned an MK100 body:
+  its inlet valve is a sprung-open needle with a seat of about 0.5–0.8 mm, and flow toward the caliper
+  pushes the needle off the seat. With k_in front = 957 and Cd ≈ 0.65 this gives about 0.09–0.24 mm³/count.
+
+**Working value: about 0.1–0.3 mm³/count, probably 0.1 (a round decimal, like 0.01 bar).** On that basis the "full"
+LPA (15000) is about 1.5–4.5 cm³. For scale, the user measured an MK100 LPA bore of 24 mm × 30 mm. The LPA curve
+then implies a spring preload of about 59 N (1.3 bar on 452 mm²) and a spring rate of about 15–50 N/mm. The
+needle-valve geometry supports the inlet-valve model: current sets the Δp at which the valve cracks open
+(F_mag = F_spring + Δp × A_seat; 2–5 N at 100 bar). A return flow cannot pass the inlet valve itself, which is
+why the model's backflow path (k_back) depends on the USV level rather than the inlet level.
+At 0.1 mm³/count, a `valve_flow` result of 1 count/frame is 0.1 mm³ per 10 ms, or 10 mm³/s. So the 2000 clamp is
+20 cm³/s. At full opening (80) and Δp = 100 bar, the flows are: front inlet (k 957) about 18.7 cm³/s, rear inlet
+(k 421) 8.2, front outlet (k 755) 14.7 and rear outlet (k 465) 9.1. A 0.6 mm sharp orifice at Cd 0.7 passes about 30 cm³/s
+at 100 bar, which is the same order.
+- **[source, user 2026-10-16] A BMW-published hydraulic diagram shows a check valve antiparallel to each inlet
+  valve**, so fluid can leave the caliper back toward the master side while the inlet valve is closed. This
+  matches `wheel_volume_delta` 0x8216E. When p_wheel > driver pressure (and the circuit is not pump-fed), the
+  backflow is -valve_flow(Δp, k_back 0x41B2E, (10 - `usv_close_level`/2) × 8). That path does not use the inlet
+  opening, uses one shared coefficient (705) for all four wheels, and is throttled only by the USV
+  in series with it.
+- **[source, user 2026-10-16] The same diagram shows two more check valves**, and the model matches both:
+  - **Around the USV (master -> circuit).** The master can always add fluid, even with the USV closed. In the
+    model, inflow to a wheel is valve_flow(driver pressure - p_wheel, k_in, inlet opening), with no USV term.
+    The circuit pressure is floored at `driver_pressure` in both branches of `circuit_feed_pressure_update`
+    0x8236C, including the pump-fed one. `circuit_supply_pressure` 0x81AF4 adds driver pressure on top of the
+    pump-side term.
+  - **LPA / outlet side -> pump inlet.** The LPA drains only through the pump (`lpa_pump_draw` 0x825B6). While
+    the pump is drawing from the master side (HSV open, `pump_circuit_active`), it takes 250 per frame from the
+    LPA only if `lpa_pressure`[c] >= `driver_pressure`, else 0. That is, the check valve only opens when the LPA
+    is above the pump-inlet (master) pressure. Otherwise the draw is `pump_volume_frame`[c].
+- **[user, MK100 section 2026-10-16] Outlet valve = normally closed ball-on-seat.** A spring holds a small ball on
+  the seat. Wheel pressure pushes the ball onto the seat, so the seal gets tighter as pressure rises, and the
+  solenoid is strong enough to lift the ball against the full wheel pressure. This matches the firmware's treatment of
+  outlets as digital (on/off through the CS4 latch, `spi_cs4_out16` 0xD4BF4), with no current scheduling and no
+  calibration. The outlet "level" (`outlet_valve_level`, from `valve_cmd` < 0) is an open-time fraction of the
+  10 ms frame set by `outlet_dump_time_calc` / `valve_pulse_set`, not a partial lift. The model has no leak term
+  for a closed outlet, and only lets the LPA flow back into a wheel while the outlet is commanded open
+  (`wheel_dump_volume` returns 0 at level 0). Normally closed outlets plus normally open inlets mean an unpowered
+  unit keeps conventional braking and cannot dump.
+- **[source/user 2026-10-16] Pump outlet "damper chamber".** In the MK100 section it is a rubber diaphragm with almost no
+  volume behind it, so it is a small, stiff compliance: a high-frequency filter for piston ripple (NVH and pedal
+  feel), not a store. [inferred] So the model's one-frame "line charge" release (`supply_charge_state_update`
+  0x82108 + `supply_inflow_split` 0x81BC8) more likely stands for the compliance of the whole pump-to-inlet
+  passage (bores, the diaphragm, trapped fluid) than for a damper volume. The pump-flow low-pass (0x41B4C =
+  187/256 per frame) is about 30 ms, which is far slower than piston ripple, so it more likely models motor
+  spin-up and flow averaging than the damper.
+
+## [disasm 2026-10-15] DSC driver mode: button, CAN 0x398, and the DME-timeout fault reaction
+
+Symbols: `analysis/7846816A_symbols.md`, "DSC button / driver mode". How to use this on a car:
+`docs/PTCAN_FRAMES_EXPECTED.md`, "Turning DSC off".
+
+- **[verified]** Driver mode lives in `driver_mode_state` 0x4049B4[0]: 0 = DSC off, 1 = on, 2 = button stuck,
+  4 = MDM. Param 0x4049BC[0]. Power-up always sets mode 1, param 0 (`driver_mode_init` 0x8D1BE). Nothing stores it.
+- **[verified] Hardwired button.** `dsc_button_input_get` 0x6FEE4 reads latch 0x4009F4 b1 (BLS is b0), active-low.
+  `button_mode_sm` 0x8D214 runs every 10 ms frame with table 0xDA1BC:
+  - From on (or MDM), held for 50 frames (≈ 0.5 s) → off.
+  - From off, held for 15 frames → on.
+  - Held for 1000 frames (10 s) → mode 2 and fault 0x91000 = 5E5B. The mode later returns to 1.
+  - No button rule enters MDM (4). The button code ignores the input until the start-up flag 0x400966 clears.
+- **[verified] CAN 0x398 sets the same state.** Byte 1 bits 2–4 (sig 209, `can_rx_398_dsc_mode` 0x7C3DC):
+  **0 → mode 1 (on), 1 → mode 0 (off), 4 → mode 4 (MDM)**; other values are flagged invalid and ignored. The frame
+  is DLC 2 with no checksum, alive counter or timeout DTC. Its "received" bits (0x40113B) are cleared at the
+  start of every 10 ms CAN task (0x78CE2 from 0x793F0), so each received frame is one request. `can_mode_request_apply`
+  0x8D70A applies it when:
+  - the button is idle (press counter 0x4049C4[0] = 0),
+  - enable 0x4049CC[0] b7 is set (`driver_mode_can_update` 0x8D7FE sets it every frame, except when 0xC7818 ∈
+    {2, 5} and `dsc_function_state` 0x4049EF = 1), and
+  - `mode_transition_valid` 0x8D570 accepts it. On → off and on → MDM need 0x400B0A b2 = NOT 0x400B0A b7 (no AYC
+    intervention running). Off → on and off → MDM need 0x402F6A b7 and 0x400B0A b3 (= 0x400B50 & 0xC0 = 0).
+    A rejected request leaves the mode unchanged and is retried by the next frame.
+  A CAN request sets mode 0 with param 1. That is the same steady state a button press reaches (the button sets
+  param 2, then 1 on release). The DSC-off lamp (`0x80CFE`) needs mode 0 and a param other than 0, so both light it.
+  While 0x398 keeps sending "off", CAN overrides the button: a press back to on is undone by the next frame after
+  release. Byte 0 bits 4–5 (sig 208) drive a second slot (0x4049B4[1], states 8–11). Its meaning is not identified.
+  0x399 (needs terminal 15) writes the same request bytes through toggle logic that is not fully traced.
+- **[verified] What mode 0 does.**
+  - Traction control mode: `tcs_mode_from_driver_mode` 0x8DA30 sets 0x4030A2 = 2 (mode 4 → 3, modes 1/2/5 → 1).
+    0x4030A2 is read only by the traction code (0xC7xxx–0xCFxxx).
+  - Yaw control: `driver_mode_is_on` 0x8D060 (modes 1/2/5) is false. The yaw state select 0x68E5E then picks state 2
+    for 0x400DF5, unless DSC has been active for more than 2000 cycles (`dsc_active_cycles` 0x400E24). 0x69F6E sets
+    the DSC-inhibit flag 0x400DF4 b6.
+  - **[verified 2026-10-15]** Traction channels A and B go to state 7 (off); channel C (MSR-like) stays enabled. See
+    "DSC-off and the traction channels".
+- **[verified] DME torque timeout reaction.**
+  - All three timeouts (0x0A8/0x0A9/0x0AA → D354/D355/D356) report group fault **0xA0008**. It latches 0x40284C
+    (`0x402838[10]`) b3. The timeouts also set 0x401151/0x401154 b2. They never start the 5E1B timers, which only run
+    on 0x800 values in frames that do arrive.
+  - `fault_reaction_matrix` 0xB567E: group A & 0x2F (also & 0x3F at 0xB5B38), through the follow-on rules at
+    0xB5BDE and 0xB5C2E, sets:
+    - 0x402880 b2–b5. b2 blocks and aborts AYC intervention (0xB5CD0) and is tested by the traction code
+      (0xCE3D0/0xCE638). b3–b5 are read by the AYC code (0x5FEE0, 0x6028E, 0x66E7A).
+    - 0x402881 b7 and 0x402882 b4/b6. 0x402882 b4 → DSC inhibit 0x400DF4 b6 (0x6A03A).
+    - 0x40288E b0, b2–b5 and 0x40288F b5. 0x40288E b2 forces `dsc_function_state` (0x8DA8E); the lamp shows DSC failed.
+  - **ABS is not disabled.** The ABS-off bits 0x402880 b6/b7 and 0x40288E b6/b7 are not set. So `abs_function_state`
+    0x8D8C0 stays OK, ABS enable 0x408DC6 b6 (built by 0x5DAA2) stays enabled, and 0x19E reports ABS OK.
+  - The accelerometer stays valid: `ax_signal_get` 0x9390E checks only ignition, cluster status 0x402E50/51 and
+    0x402888/0x402890 b1, none of which group A sets.
+  - **[open]** 0x402880 b2 also clears 0x408DC6 b5, which gates two ABS-side hooks: a per-wheel branch at 0x46050
+    (only when 0x40905E[w] b6; looks like the hand-off from active pressure) and 0x59BF2 → 0x408E68 b1. Both look
+    like the interface to active braking, not the slip loop. Not traced.
+- So **0x130 alone, without the torque frames**, gives ignition-on ABS with DSC failed, and DTCs D354–D356.
+  **0x130 + torque frames + 0x398 "off"** gives the same ABS, DSC in the normal driver-off state, and no DTCs.
+
+### [disasm 2026-10-15] What constant ("fake") DME values affect
+
+- **[verified] No DME DTC checks the torque values against anything.** Every DME DTC is raised by an invalid
+  marker or by a DME status bit, after a 50-cycle timer. The timer loop in `can_dme_iface_update` 0x7E7A4
+  (0x7F2D6–0x7F354) reports:
+  - pedal 0xFF (timer 0x4046EA) or rpm invalid (0x4046ED; 0xFFFF or 0x0AA 6.0–6.1 ≠ 0) → **5E1A**;
+  - 0x0A8 3.0–3.3 = 3 (0x4046EB) → **5E19** "Motormoment nicht einstellbar" (fault 0xB0040);
+  - 0x0A8 6.4–6.5 ≠ 0 (0x4046EC) → **5E18** "Botschaft unplausibel" (fault 0xB0010);
+  - any torque 0x800 (0x4046EE/EF/F0) → **5E1B**.
+
+  So 5E19 is the DME's own "torque not adjustable" flag; the DSC does not compare its 0x0B6 request with the torque
+  it receives. All-zero torques/pedal with status fields 0 and a valid rpm raise nothing.
+- **[verified] ABS does not read engine torque, rpm or pedal.** In 0x40000–0x5DFFF there are no references to
+  0x401144/46/48 or 0x40113E/3C, and no calls to the torque getters. The pedal is read once, through
+  `pedal_at_most` 0x7D16A(13) at 0x4EDD6, on a path taken only when 0x408DC6 b6 is clear (0x402880 b6, ABS degraded).
+  The validity byte 0x401150 is read on the same path.
+- Readers that do use the DME values:
+  - **AYC** (0x5E936, 0x5FA2A, 0x65078, 0x66E7A, 0x68096, rpm 0x6339E) and **TCS/MSR** (0xC95B8–0xD09A4):
+    torque, drag, demand, rpm and pedal.
+  - **Hill-start assist / LVC** (0xC0DAE–0xC4116): `lvc_driveoff_torque_model` 0xC2CB8 uses rpm and engine torque.
+    Release logic with zero torque not traced; coding byte 13 bit 6 turns the feature off.
+  - **BCO**: pedal gradient (0x6C31C, from 0x401142 and the 0x401157 b3:2 time base) for mode A (ready-alert, 0x6B280) and the
+    throttle test of mode B (disc drying, 0x6BCFE). Constant pedal 0 → mode A never triggers; mode B needs pedal > 25. Mode A
+    also needs DSC mode on; mode B does not. Both are inhibited while steering / lateral / yaw are invalid. See
+    `analysis/BCO_PREFILL_7846816A.md`.
+  - **RPA/DDS** (0x9EDE0, 0x9FF9E, 0xA8FC8, 0xAA196): torque and rpm.
+  - **Supervisor**: 0xB5E3C sets `engine_running` 0x4028A5 b7 = rpm ≥ 720 (internal rpm units; ≈ 360 rpm if the raw
+    is 0.25 rpm/bit). It is read in the lamp/supervisor code 0xB5458 / 0xB616A. **[open]** Its exact role; it looks
+    like start-up lamp-check logic.
+  - 0x91070 sets an output bit only for pedal ≥ 26 while accelerating above a speed threshold. Its purpose is
+    unknown; it never fires with pedal 0.
+
+## [disasm 2026-10-15] Steering-sensor loss: sensor validity, DSC and TCS reaction
+
+Symbols: `analysis/7846816A_symbols.md`, "Sensor validity, steering-loss reaction, TCS inhibit". Question behind it: a
+swap with the yaw/lat cluster on F-CAN but no steering sensor (0x0C9) and no DME. Read from code, not bench-tested.
+
+- **[verified] Getter validity.** Every ABS/CAN sensor getter fills `sensor_sig_t {s16 value; u8 st; u8 st2}`;
+  valid ⇔ `(st & 0x78) == 0x60`. Fault inputs per signal:
+
+  | Signal | Getter | `0x402888` bit | `0x402884` bit |
+  |---|---|---|---|
+  | steering (3 getters) | 0x9403C / 0x94120 / 0x940AE | b0 | b3 |
+  | ax | 0x93828 | b1 | (0x404A2E b7:6) |
+  | lateral | 0x93AC0 (+ 0x93B3A / 0x93C22) | b2 | b5 |
+  | yaw, yaw accel | 0x94308 / 0x94376 | b3 | b7 |
+  | brake pressure | 0x93E1C / 0x93E8E | b5 | b4 |
+
+  The ABS lat-valid bit `0x408E6D` b7 additionally needs `0x402888 & 0x09` = 0 (steering and yaw OK).
+- **[verified] Missing 0x0C9 marks steering, lateral and yaw invalid.**
+  1. `fcan_rx_0C9_timeout` 0xC6E18 (100 ms) reports D373 with fault id 0xA0040, only while F-CAN reporting is
+     enabled (`0x402F35` b4, built in 0xC4F0E; no ignition term). It also sets `0x402E6D` b7/b5 ("missing now").
+  2. 0xBFA2A → `fcan_fault_flag_set` 0xB481E → `0x4028B1` b7 → `fcan_fault_commit` 0xB484A → `fault_set(0xA0040)`
+     (group A b6) and `0x402893` b6 (held 255 cycles by 0x4028BC).
+  3. `sensor_reaction_build` 0xB4A74 rebuilds `0x402888` every cycle. Group A b6 **and** `0x402E6D` b5 (0xB4C66), or
+     `0x402893` b6 (0xB4C06) → `0x402888` b0 | b2 | b3.
+  4. Result in the ABS gather: steering `0x408E6D` b5 = 0, lateral b7 = 0, yaw b4 = 0 with `0x408ECC` = 0 and
+     `0x408ECE` = 0. `0x408ECA` is still written every cycle, with the wheel-speed substitute `0x408D64`
+     (`ay_wheel_estimate_update` 0xD21C4, formula not fully decoded). **ax stays valid** (only `0x402888` b1).
+  5. ABS lateral users test b7 first (rear select-low 0x5197E, classifier lateral curves 0x51BF2 with b6, many
+     more). The yaw-stable flag `0x408E5F` b4 (0x530E4) needs b7, b4 and b5, so it stays 0. Net: plain ABS
+     without the cornering logic. It recovers when 0x0C9 returns.
+- **[verified] The 0x1A0 AccY / YawRate fields do not show this.** The TX encoders 0x7B06A / 0x7B104 send 0x800 only
+  on `st2 & 0x60` (`0x402890`, `0x402884`, cluster status). `0x402888` sets only `st2` b4, which they ignore. So with
+  0x0C9 missing, 0x1A0 carries live ay/yaw while the ABS treats them as invalid. Tell from outside: D373 active and
+  no 0x0C9 traffic.
+- **[verified] DSC reaction.** `fault_reaction_matrix` 0xB567E: `0x402888 & 0x0D` → `0x402880` b2 (0xB596C);
+  `& 0x0C` → `0x402881` b7 (0xB5AF2); follow-on 0xB5BDE → 0xB5BFC → `0x402880` b2–b5 and `0x402882` b4 (DSC
+  inhibit `0x400DF4` b6). That is the same `0x402880` pattern as the DME timeout. `0x40288E` is not set by this rule.
+- **[verified] TCS reaction: all three traction channels are inhibited.** `0x402880` b4 → `0x403004` b7
+  (0xCE3D0, latched until `0x402F86` b2), b5 → `0x403048` b6 (0xCE638, same latch), b3 → `0x402F84` b1 (0xCE7A4).
+  The channel state functions `tcs_state_a/b/c` 0xC779A / 0xC7818 / 0xC789C return 6 (5) = inhibited when their
+  fault word is non-zero and the channel is not already active (active flags `0x402FC0` b4 / `0x402F6C` b7 /
+  `0x40303C` b7). Summary `0x402F6A` b6/b4/b5. So with steering **or** DME missing there is no traction control
+  of any kind, brake-only included. **[open]** Which of A / B is engine ASR and which is brake TCS. Channel C is
+  `tcs_torque_pi`, MSR-like [I] ("DSC-off and the traction channels").
+- **Not affected by DSC-off or the DME timeout:** neither sets `0x402884` / `0x402888` / `0x402890`, so with
+  steering present the ABS keeps using lateral and yaw. Only the AYC-gated monitor 0x4A254 goes quiet.
+- **[verified] `0x408E6D` b3 is always 0 for consumers.** `abs_sensor_gather`
+  sets b3 from the ax getter at 0x5D868, then clears b3 and b7 at 0x5D914 in the same pass. No other writer of
+  0x408E6D exists (also checked through nearby base addresses). So the `0x50FF4` entry "when `0x408E6D` b3 is set"
+  is never taken; only the second route (0x45142–0x45196) can reach it. ax validity survives in `0x408E1B` b4 and
+  `0x408DEC` b2 (ax invalid). Route 2 calls `vref_fall_from_ax` only with lat, yaw, steering and pressure valid
+  and \|lat\| < 0.3 g ("ABS with and without the SZL"). Bench check: does vref fall faster than −22/−44 per frame
+  under hard straight-line braking with the SZL connected, and not without it.
+
+## [disasm 2026-10-15] ABS with and without the SZL (steering-angle sensor)
+
+Detail: `analysis/agents/abs_full/09_chassis_sensor_use.md`. Symbols: `analysis/7846816A_symbols.md`, "ABS and TCS use
+of the chassis sensors". Question: in a swap with the yaw/lateral cluster present, what does the ABS lose when the
+SZL (F-CAN 0x0C9) is dead? Read from code, not bench-tested. With the SZL dead, lateral, yaw and steering are all
+invalid ("Steering-sensor loss"): `abs_ay` = wheel-speed estimate, `abs_yaw` = `abs_yaw_accel` = steering = 0, and the
+yaw-stable flag `0x408E5F` b4 never sets.
+
+- **[verified] The pct producer.** `abs_decision_classify` 0x51B54 writes `abs_decision_t` at 0x408DDE (code u16, pct
+  u8 at 0x408DE0). With lat + pressure valid (`0x408E6D & 0xC0`), the wheel's `0x40903C` b7 or rear cornering latch
+  `0x409049` b5, and `0x408DC4` b4 clear: P_lo = 100·curve 0x40E26(\|lat\|), P_hi = 100·curve 0x40E0A(\|lat\|), +500
+  above \|lat\| 80. Then driver pressure `0x408EB2` < P_lo → **code 1**; a dumping wheel with P_drv > P_lo (and
+  P_drv < P_hi or latch b5) → **code 32**, pct = 100·(P_drv − P_lo)/(P_hi − P_lo) (0x51F32–0x51F42). Without these
+  conditions P_lo = P_hi = 0.
+- **[verified] Straight-line shortcut → code 1** (0x51E00–0x51E94): \|lat\| < 9 (< 15 after code 1), front pressures
+  `0x408FF0/F2` within 50 %, yaw-stable, `0x409024` b0 clear, yaw valid, `0x408DBE` b7 clear, plus a rear condition.
+  The default is code 1 if both rears are only armed, else **64** (select-low). So without the SZL a controlling rear is
+  always select-low.
+- **[verified] Yaw cornering flag** `abs_yaw_corner_flags` 0x409024 b0+b6: \|yaw\| > curve 0x40E42(−decel) during ABS.
+  Never set without yaw.
+- **[verified] Rear cornering latch** (event classifier 0x4E908): needs `0x408E6D & 0xF0` = 0xF0 (lat, pressure,
+  steering, yaw) at 0x4E8B6. Sets `0x409049` b2+b5 and `0x408E1B` b1, which enable the code-32 / code-1 branch above
+  and the yaw-limited dump flag (classifier block 14).
+- **[verified] µ-split pair logic needs yaw.** `abs_pair_logic` 0x54D9A exits at once (0x553BE) while `abs_pair_gate`
+  0x54B70 (state `0x408E5F` b6:5) is 0. 0 → 1 needs `abs_pair_gate_split_yaw` 0x547D8: an axle pressure split,
+  \|yaw\| > cal 0x40DD4 with the side's sign, and `0x408E5F & 0x14` = 0x14 (yaw-stable + b2). So the partner-dump code
+  32 and the 1024 / 16 rebuild codes never run without yaw. The front staged dump (0x53940) and the low-µ coupling
+  (0x48EB0) do not need it; `abs_front_stage_cancel` 0x540D4 cancels the staged dump in a corner (\|lat\| > 35) only
+  with lat valid.
+- **[verified] vref only uses ax with every chassis sensor valid.** Route 2 into `vref_fall_from_ax` 0x50FF4
+  (0x45142–0x451F2) needs `0x408E1C` b7, `0x408E6D` b7 + b4 + b5 + b6, \|lat\| < 30, `0x408DA1 & 0xE0` = 0, no
+  `0x400B09` b6, and `0x408DB5` b7 or (ax > −0.3 g, `0x408E6A` ≥ 21, regime) (code `cmplti r7,21; bt skip`).
+  Route 1 (b3) is dead. Without the SZL vref falls on the fixed slopes bounded by the wheel-derived `0x408DAF`.
+  The clamp that holds `0x408DAF` within ±0.2 g of measured ax during ABS (`abs_decel_est_clamp_ax` 0x538E8) needs
+  ax trust, which also needs the SZL (next bullet), so without the SZL ax does not shape vref.
+- **[verified] Other SZL-dependent paths.** Dump cornering flags b28/b27 (\|lat\| > 50 / 80, ½ / ⅓ steps) need b7.
+  `abs_rear_lead_select` 0x5184C needs b7; `abs_side_select` 0x5AEEE falls back to the rear wheel-speed difference.
+  `abs_countersteer_check` 0x5CAF4 needs steering (road-wheel angle opposite to yaw). `abs_ax_decel_estimator`
+  0x49572 updates only straight and stable with lat (+ yaw) valid. `abs_chassis_frame_init` 0x5A21C flags "all four
+  valid" and otherwise clears `0x40903C[3w]` b4.
+- **[verified] Without the SZL the cluster's longitudinal accel is valid but never trusted.** `0x408E1C` b7 = "ax
+  trusted" is first set at 0x49AE0–0x49CB8, which needs lateral + pressure valid and the yaw-stable flag. The
+  re-trust path 0x49AC6 (deviation `0x408E8E` < 50, counter `0x408E8C` ≥ 16; cleared above 500) reads no lateral,
+  yaw or steering but runs only after a trusted ax went stale ("ax trust needs the SZL"). With trust: the decel-threshold g-term uses measured decel (0x47BE0), `0x408DAF` is clamped to ax ± 0.2 g in ABS
+  (0x538E8), the classifier uses ax, and the rear decel-gate latch can fire. Without trust, ax still reaches the
+  readers of `0x408E80` that skip the flag (0x47CEA, 0x48584, 0x492F6, 0x4A530, 0x4EC36, 0x50E14, …). Detail: 09 §2.10.
+- **Unaffected:** slip / decel thresholds, phase machine, dump / hold / reapply, EBD, front staged dump, low-µ flag.
+  (The rear decel-gate latch needs ax trust, so it is off without the SZL.)
+- **[inferred] Net effect of a dead SZL:** rears always select-low, no cornering-specific rear handling or dump-step
+  reduction, no yaw-triggered µ-split limiting, and the accelerometer does not reach vref at all. A few readers use the raw
+  lateral byte without the valid bit and so see the wheel-speed estimate (classifier block 14, the rear dump clause
+  0x4EF72, parts of `abs_front_split_detect` 0x53D3C).
+- **[open]** Writer of `0x40903C` b7 and of `0x408DF0` b7/b6; the rest of `abs_chassis_frame` 0x5A0DC; pair-gate
+  helpers 0x54954 / 0x54AF8; consumers of the 0x49572 outputs.
+
+## [disasm 2026-10-15] Steering calibrations that affect ABS (SZL working)
+
+Question: with a working SZL, which calibrations decide how steering changes ABS behaviour, how sensitive are they,
+and which are physical versus to-taste? Read from code, not bench-tested. Detail and tables:
+`analysis/agents/abs_full/09_chassis_sensor_use.md` §7. Steering LSB ≈ 0.044°/count is still unverified, so the
+degree figures below are [inferred].
+
+- **[verified] Signals.** `0x402132` (getter `steer_angle_get` 0x94120 → ABS `abs_steer_angle` `0x408EDE`) is the
+  **offset-corrected steering-wheel angle** (raw `0x4020D0` − offset `0x4020A6`/64). Road-wheel angle `0x408EE4` = 29360·angle / ratio; rate `0x408EE6` from `steer_rate_update`
+  0x90408 (raw angle, so offset-free; units not confirmed).
+- **[verified] Steering mostly acts as a validity switch.** `0x408E6D` b5 enables yaw-stable, the rear cornering latch,
+  the straight latch, GMA (via yaw-stable), the countersteer test, vref route 2 and `abs_chassis_frame_init`.
+  Magnitude is used in only two places:
+  1. `abs_yaw_stable_update` 0x530E4: \|angle\| > cal **0x4040E = 2971** (≈ 130°) zeroes the yaw-stable counter
+     (other cals: 0x40404 = 1047 calm yaw, 0x4040C = 63 frames, 0x40406 = 28 hysteresis, 0x40408 / 0x4040A = 1571 /
+     3002 decay).
+  2. `abs_gma_hold_frames` 0x54BE8 (GMA rebuild pacing in `abs_pair_logic`; the high-µ wheel gets +0x40DB0 = 3 bar
+     every 0x40D8E (7) + score frames). Steering terms: rears + \|rate\|/**0x40D86 (457)** when rate is past
+     **0x40D88 (1143)** toward that side; all wheels + **0x40D92 (14)**·(\|angle\| − min)/(**0x40D8A (2286)** − min),
+     min = `0x408EF2` = smallest \|angle\| since the gate opened; score 248 (rebuild stops) when \|angle\| > 2286 and
+     the wheel is > 5 bar above its partner. Other terms: slip, speed above 40 km/h, decel, predicted yaw (rears).
+- **[verified] Sign / zero only:** `abs_countersteer_check` uses the road-wheel angle sign against lat / yaw and peak
+  `0x408EE2` (0x5A4E4); no magnitude cal. The front staged-dump steering peak `0x400A92` feeds outputs with no readers.
+- **[inferred] Physical vs to-taste.** Physical: sensor scale (LSB, ·1029/1024), sign convention, zero offset (learned
+  by `steer_offset_learn`), steer-ratio curve 0x40EB4 / 0x40ECC. To-taste: 0x4040E, the GMA steering terms
+  0x40D86 / 0x40D88 / 0x40D8A / 0x40D92 and pacing 0x40D8E / 0x40DB0, the yaw-stable yaw thresholds.
+- **[inferred] Sensitivity for ABS:** valid status ≫ sign > offset > scale > ratio (≈ none; the ratio only matters for
+  the DSC yaw reference). The to-taste thresholds are generous (130°, 100°, ≈ 50 °/s); the GMA steering terms are the
+  only ones that noticeably change behaviour (split-µ rebuild speed versus pull).
+- `abs_gma_hold_frames` 0x54BE8 uses predicted yaw (yaw `0x408ECC` + yaw accel `0x408ECE`/2), not lateral accel.
+- **[open]** Steering LSB and rate units; what `steering_angle_init_monitor` 0xB97D4 needs before steering is valid;
+  whether the CSI sign tables 0x40EE4 / 0x40F14 reach anything ABS reads.
+
+## [disasm 2026-10-15] DSC-off and the traction channels
+
+Symbols: "Sensor validity, steering-loss reaction, TCS inhibit" and "ABS and TCS use of the chassis sensors".
+
+- **[verified] DSC off (`tcs_mode` 0x4030A2 = 2) switches off channels A and B.** `tcs_a_inhibit_update` 0xCE3D0
+  sets `tcs_a_fault_word` 0x403004 byte 3 b2 while the mode is 2 (0xCE584); `tcs_b_inhibit_update` 0xCE7A4 sets
+  0x402F84 byte 1 b2 (0xCE7F0). Both stay set until the mode is no longer 2 **and** 0x402F86 b2 is set. With the bit
+  set, `tcs_state_a` / `tcs_state_b` return **7** unless the channel is already active (a running intervention
+  finishes).
+- **[verified] Channel C has no DSC-off bit and stays enabled.** `tcs_c_inhibit_update` 0xCE638 builds 0x403048
+  from: fault reaction 0x402880 b5 (b6), 0x40288C b5 (b7), channel A / B / AYC active (b5), 0x403056 ≥ 15 (b4),
+  0x403047 b7 or 0x6FF0E() (b3), **pedal > 13 %** (b2), 0x403046 b2 (b1), 0x4030A4 = 3 (byte 1 b0).
+- **[inferred] Channel C is MSR-like.** Its controller `tcs_torque_pi` 0xCD1E8 only requests positive torque (the
+  integrator 0x40304A is floored at 0), only while the wheel-derived decel `0x408DAF` is negative, and only with the
+  pedal at ≤ 13 %. In mode 2 its output is capped and then forced to 0 (0xCD33A–0xCD350), but only when
+  `dme_0A8_flags` 0x40114F b4 (0x0A8 byte 5 bits 0–1 = 1, meaning unknown) is set and the DME frames are valid. So
+  whether MSR acts in DSC off depends on that DME bit. It reads no yaw, lateral or steering.
+- **[verified] The traction code's own sensor copy.** `tcs_sensor_latch` 0xCC89C → `tcs_sensor_valid` 0x403064
+  (b7 ax, b6 lat, b5 pressure, b4 road-wheel angle, b3 yaw) and 0x40306C–0x403074. Lateral comes from
+  `abs_ay_aux2_get` 0x93C22, not `abs_ay_get`. Users: `tcs_straight_detect` 0xCB43E (no valid-bit test),
+  `tcs_yaw_slip_term` 0xC9450 (yaw when valid, else 0x4030A8), `tcs_reduction_floor` 0xCD7FE (needs lat valid).
+- **Summary of the swap combinations** (with "Steering-sensor loss" and "DSC driver mode"): yaw cluster only, or
+  cluster + DME frames → plain ABS, AYC and all traction channels inhibited; cluster + SZL without DME → full ABS
+  (above), AYC and all traction channels inhibited by the DME rule; everything present → full function. DSC off then
+  changes nothing in the ABS and leaves only channel C of traction control.
+- **[open]** Which of channels A / B is engine ASR and which is brake TCS; the meaning of 0x0A8 byte 5 bits 0–1;
+  0x402F86 b2 (the release condition of the fault and DSC-off latches).
+
+## [disasm 2026-10-15] D364 "Operator_Key_Tempo" has no reporter
+
+- D364 is the F-CAN cruise/ACC stalk frame **0x194** from the SZL (DSC_87.prg job `STATUS_F_CAN_TEMPOMAT_ACC`
+  reads $0194). The prg text says "PT-CAN", but its `dtc_table` ids are F-CAN: 0x3046 timeout, 0x3047 checksum,
+  0x3048 alive (mask 0x40040 / 0x40100 / 0x40080).
+- **Nothing in 7846816A can raise it.** The 0x194 timeout handler (F-CAN var 5, 60 × 10 ms) at 0xC69F4 is a bare
+  return. The payload handler 0xC69EA only jumps to `fcan_rx_queue_push` 0xC56D0 (gateway to PT-CAN), and the
+  signal handlers are stubs. A raw scan of the whole image finds eight F-CAN report calls (all through 0xBFA2A,
+  0xC624A–0xC6E9A), and none can produce group 4 bits 6–8. The SZL fault-forward switch at 0xC5F46 stops at id
+  0x3045.
+- So a D364 on a bench unit is most likely stored from the car the unit came from. Not bench-checked.
+- Same scan: the 0x0C9 timeout 0xC6E18 also reports **9502 / 9503** (SZL steering sensor under / over voltage,
+  ids 0x304A / 0x304B) when 0x402F53 b2–3 = 1 / 2. Those bits are written by the signal handler 0xC62EC, whose
+  frame was not traced; they are probably 0 with no SZL on the bus.
+
+## [disasm 2026-10-18] vref fall paths, ax trust, decel-threshold build order, low-µ flags
+
+Full detail: `analysis/agents/abs_full/10_vref_and_ax.md` (vref) and `02_decel_threshold.md` §2 (threshold).
+Not bench-verified.
+- **[verified] vref fall step selection** (`vref_update` 0x44DE4–0x45138), only with vref > Cmax and controller
+  mode 0. Steps −11 / −22 / −23 / −32 / −44, plus `(75 + DAF)/3` below DAF −0.80 g on the −23 and reapply-flag −32
+  branches (down to −40 / −49). Then the DAF limiter `max(s, min((DAF − m)·0.36, −m·0.36))`, m 50 or 30. The limiter
+  is skipped in several states, notably when a wheel in control re-accelerates with PM > 40 bar (`hiP`, 0x44A4A).
+- **[verified] Cmax excludes the rears** while a front is in an ABS cycle (0x408DA2 b7) with 0x408DB5 b5 clear and
+  0x408DC4 b5 set (0x44BD0), unless a wheel was invalid.
+- **[verified] `vref_fall_from_ax` 0x50FF4** replaces the step (not a max) with `max(−44, (d − m)·0.36)`, d = −|ax| in
+  the regime, m 20/30 ±10 (min 10). Route 2 needs trust, lat + yaw + steering + pressure valid, |lat| < 0.3 g, and
+  0x408DB5 b7 or (ax > −0.3 g, 0x408E6A ≥ 21, regime). So it is dead without the SZL and rarely taken in a hard stop.
+- **[verified] Effect of ax trust on vref:** only through `abs_decel_est_clamp_ax` (DAF to ax ± 0.2 g in the regime),
+  which anchors the limiter to measured ax. With ax valid but untrusted, vref behaves exactly as with no cluster.
+- **[verified] Curve reader 0x710FC** picks segment i = number of breakpoints strictly below x. Speed term at
+  200 / 250 / 300 km/h = 0.29 / 0.47 / 0.80 g (var 0); g-term at 0.5 / 1.0 / 1.27 g = 0.04 / 0.35 / 0.60 g.
+- **[verified] Decel-threshold pre-trim** (0x47C1A–0x47C8C): `rec+0x10` bits 7:5 < 2 → speed trims −25…−8; ≥ 2 →
+  `thr −= 60 − 2·0x408E6A`, then ≤ −121. The 60 km/h floor is skipped only with ax ≤ −127, DAF < −110 and trust.
+- **[verified] Low-µ flags `0x40902E + 3w`** (stride 3): b1 below 80 km/h, b4 from 60 km/h; set only outside a cycle;
+  front depth gate uses own **or partner** 0x409010 > 50, rear own > 30. Detail in `05_edge_cases_variants.md` §2.
+
+## [disasm + bench log 2026-10-21] ax trust needs the SZL
+
+- `0x408E1C` b7 (ax trusted) has two writers in `abs_ax_decel_estimator` 0x49572. **Initial set** 0x49AE0–0x49CB8:
+  driver pressure 0x408EB2 > 5 bar (cal 0x40CC6), 0x401FF2 b7, not in the ABS regime, 0x408E68 b7 clear,
+  0x408E6D b7 + b6 (lateral + pressure valid), 0x408E5F b4 (yaw-stable), DAF < 0, \|lat\| < 0.20 g (cal 0x40C9A);
+  agreement counter 0x408EA7 ≥ 5 and deviation 0x408E8E < 20. **Re-trust** 0x49AC6 needs b2, set at 0x49614 only
+  after a trusted ax went stale. So without lateral / yaw (no SZL) ax is never trusted.
+- Bench log (MR2, 7846816A + CAN debug patches, 740 s drive, stops to 1.0 g): lat / yaw / steering invalid
+  throughout, b7 = 0, b2 = 0, b3 = 1, ax valid, alive counter 25.
+- Same log: ax lags the wheel-speed derivative by ~120 ms and reads 0.07–0.09 g more negative (also at standstill);
+  DAF 0x408DAF is unbiased (−0.002 g), lags ~200 ms, gain 0.88.
+
+## [disasm 2026-10-21] Tyre-tolerance learning and wheel-ratio plausibility DTCs
+
+Detail: `analysis/TYRE_TOLERANCE_LEARNING_7846816A.md`. Not bench-verified. M3 only.
+- **[verified]** The per-wheel factor in vref (`(0x301 + byte)/1024`) is a learned tyre-tolerance correction
+  (`tyre_tol_learn` 0xD144A). The bytes are normalised so the slowest wheel is 1.0 (`0xD0480`), range 0.746–1.0. They
+  are stepped every 11th pass with vref > 5 km/h, no wheel fault, outside the braking regime and with the rear wheel
+  accels near the vehicle decel. Fronts step −1.5 %/+0.1 % per step within 5 %; rears and larger front corrections
+  step +1.5 %/−0.1 %.
+- **[verified]** Stored in EEPROM block 22 (0x403255). At start-up each axle gets the larger factor of its two wheels,
+  **floored at 225 (0.970)**, so only about 3 % is applied before relearning.
+- **[verified]** `rec+0x1C` is the corrected speed. The main ABS slip (vref − `rec+0x1A`), the wheel accel `rec+0x20`
+  and the excess speed loss `rec+6` use **raw** speed; the corrected speed only feeds vref, slip2 (overspeed / pause
+  tests), front slip under `0x408DF1` b7 (factory-stagger switch, below), and the left/right comparisons. **[inferred]** So a learned front/rear
+  mismatch m becomes a −m slip offset on the faster-reading axle (late ABS there); unlearned it is a +m phantom slip
+  on the slower axle (the MR2 track log case).
+- **[verified]** `wss_ratio_plausibility` 0xB6A08: sorted-speed ratios ≥ 1.25 above 40 km/h (≥ 1.50 below 20 km/h),
+  held for a counter of 1000 (3000 at low speed), raise 5Dx5 on the fast wheel(s) or 5Dx3 on a single slow wheel,
+  and mark the wheel faulted.
+- **[inferred]** One wheel 8–20 % fast with the other three matched is handled as a space-saver spare (0xD10EC):
+  factors are loaded at once.
+- **[verified, 2026-10-23] It is a ratio trim, not a size calibration.** Only ratios between wheels are learned, so an
+  error common to all four (wrong BFU circumference or tooth count) is invisible to it and stays in every speed, slip
+  threshold and acceleration. For a standalone or swapped installation it cannot fix wrong tyre sizes; set C per
+  axle (`WHEEL_SPEED_CHAIN_7846816A.md` §6.3).
+- **[verified, 2026-10-23] Factory-stagger switch.** `abs_wheel_signal_frame` 0x461C0 sets `0x408DF1` b7 (front main
+  slip on `rec+0x1C`) when each axle's factors match within 5 counts and rear − front axle sums D satisfy
+  2·cal − 20 < D < 2·cal + 10, cal = ABS+0x66 (0x40402) = **25** (fronts ≈ 1.5–3.0 % fast), plus learner status
+  0x403210 b0 and (0x403212 & 31) ≥ 9. The stock M3 (245/40R18 ≈ 2052 mm, 265/40R18 ≈ 2102 mm on a matched 2073 mm
+  cal: fronts ≈ 2.4 % fast, factors ≈ 231 / 255, D ≈ 48) falls in the window, so the calibration is built around the
+  factory stagger. The start-up restore floor (225, 2.9 %) also covers it. **[inferred]** With correct per-axle C the
+  factors stay ≈ 255, D ≈ 0 and the switch stays off. Above ≈ 3 % (to 25 %) the learner still corrects vref but the
+  switch is off, so the fronts read −m slip (late front ABS). **Non-M 6862873A has no switch** (equivalent function
+  0x462F4 lacks the block); its front main slip is always raw.
+
+## [disasm 2026-10-22] Steering data flow, offset learning and fitting DSC to another car
+
+Detail: `analysis/DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md`. Read from code, not bench-tested. Degree figures assume
+≈ 0.044°/count (unverified; a non-M coding cross-check gives 0.04374°/count).
+- **[verified] Chain.** 0x0C9 → `canrx_steer_angle_0C9` 0xC5C78 (·1029/1024) → 0x401644 → `steer_task` 0x91008:
+  `steer_capture` 0x901D4 (raw 0x4020D0, IIR 0x4020D2), then `steer_offset_learn` 0x9020C (corrected angle 0x402132 =
+  raw − 0x4020A6/64 every call) and `steer_ratio_convert` 0x9032E (road-wheel 0x40212E = 29360·a / R). Readers of
+  0x40212E: the yaw reference (0x90E8A → r_ref 0x4020EC), state flags 0x91070, the ABS getter 0x9403C.
+- **[verified] Offset limits.** The learner clamps its target to offset ± 228
+  counts; it is a step clamp, not a window. Hard clamp ±0x7249 Q6 (457 counts ≈ 20°). `steer_offset_fault_monitor`
+  0xBF868 sets **0x120001** when \|offset\| > 14628 Q6 (228.6 counts ≈ 10°) or \|raw\| > 16457. So about ±10° is usable.
+  Update `offset += (target·64 − offset)/D`, D = min(lateral curve 0xDA8FA, residual curve 0xDA906)·1200/[0x400B2C],
+  every 100 calls with 0x4020FD b7 + 0x402147 b7.
+- **[verified] The offset is saved.** EEPROM block 8 (0x160) = record 0x4020AE: XOR checksum + steering, lateral and
+  two master-pressure offsets, clamped by 0xDA974 on restore (`sensor_offset_record_sm` 0x92104; bad checksum → fault
+  0x81000). A bad learned offset survives power cycles; re-zero with `31 21 00` after moving the sensor.
+- **[verified] Steering-ratio sets.** f+5 picks one of 3 four-point curves (x 0x40EB4, y 0x40ECC, y = secant ratio
+  × 1024). NCS **[user-supplied]**: 0 = E90, 2 = E92/E93, 1 unused (ROM copy of 0). A set 3 would overlap y set 0 and
+  the sign tables; the field limit (3) rejects it. Non-M 6862873A: 5 sets, limit 5, and f+5 = 1 builds the curve from
+  coding words w22–w28.
+- **[inferred] The curve is geometry plus tuning.** Set 0 gives ≈ 38° road wheel at lock, local ratio 15.4 → 10.8;
+  the rack is constant-ratio **[user-supplied]**, so this is linkage geometry. Sets 0 and 2 differ by up to 3.4 % on
+  identical hardware, so they are calibration fits, not drawings.
+- **[verified] No coding route to custom geometry.** Variant 1 (Custom ESM) reads ROM column 1. To fit another car,
+  patch the coded variant's column (keep 0–9; ABS decel curves are variant-indexed too): l_f / l_r / track in Q10 m,
+  mass kg, Jz kg·m², Cf / Cr (units open; they set v_ch). Also tyre circumference (BFU 0x41CF4 / 0x41CF6) and the
+  ratio curve. Validate by overlaying target yaw 0x400B1A on measured 0x402100 in steady cornering.
+
+## [disasm 2026-10-22] BCO pre-fill: two modes (summary; full detail `analysis/BCO_PREFILL_7846816A.md`)
+
+Static analysis only; nothing bench-confirmed.
+
+- **Two independent generators, both arbiter id 17.** Mode A `bco_main_state_machine` 0x6B85E (pedal-lift ready-alert) and
+  mode B `bco_dry_main` 0x6C090 (wiper-driven brake-disc drying).
+- **[verified in code] Mode A trigger.** Pedal-release path: A.10 coded ∧ `driver_mode_is_on` ∧ front code 0 ∧ pedal gradient
+  `0x400F0C` (= previous − current, positive on lift) above the pedal curve 0x4177A. Residual path: A.9 coded ∧
+  `|0x402126|` (model-based axle lateral acceleration, 0.01 g: roughly ay) at or above 0.60 g for 0.5 s, then at or below 0.20 g for 0.4 s (front code 1: 0.87 g / 0.76 g for 0.1 s), i.e. a hard-cornering detector. Needs vref 60–500 km/h, master pressure < 3 bar
+  with pedal switch clear, no ABS/AYC/TCS/DSC intervention, DME pedal valid. DSC off (mode 0) kills the pedal-release path.
+- **[verified in code] DME status nibble.** `bco_dme_status_monitor` 0x6B51A watches 0x0AA byte 6 bits 7:4 (0x40470C): outside {8, 9, 11} for
+  about a second pulses `0x400ECE` = 1 and `bco_main_state_machine` resets mode A. Send 8. Only the 0x0AA frame feeds mode A's DME inputs.
+- **[verified in code] Inhibit gate** `0x6B490` → `0x400E9D` (**1 = inhibited**): `0x402888 & 0x0D` (steering/lateral/yaw),
+  `0x404605 == 3` (meaning open), WSS faults, fault ids 35/57/59/61/63. So no SZL/yaw/lateral sensors → no BCO unless patched.
+- **[verified in code] Mode A request.** All four wheels, target `0x400E9E`/`0x400E9F` = 20 (hard-coded) × scale 100 (hard-coded;
+  `0x417B4` = 50/150 on the residual path), no divide → 2000 = 20 bar in one 10 ms frame (rate literal 10000 = jump to
+  target; `req_slot_step` 0x83F26). **Suspect:** mode B uses explicit `/100 /10` and gives 1.0–1.4 bar in the same units.
+- **[verified in code] Mode B.** Wiper state from F-CAN 0x2A6 byte 0 (3-bit, `0x402E4C` b7:5) and PT-CAN 0x226 byte 0
+  (0xAA / 0xFD / 0x55 = level 1/2/3). Exposure accumulator `0x400ED0` (above 70 km/h; due after about 36–72 s at 100 km/h, halved
+  when outside temperature `0x4046E0` is above about 18 °C). Fires at 82–500 km/h with throttle on, no braking, no intervention.
+  Front wheels only, 1.0 bar at 82 km/h up to 1.4 bar from 150 km/h, shaped over at most 3 s (0 at start, peak at 1.5–1.8 s, fade to 0 at 3 s). No DSC-mode check.
+- **[verified] Arbiter slot format** (`req_arbiter_submit` 0x833DA, slot at 0x401728 + 56·w + 8 + 12·k): +0 id, +4 current, +6 rate,
+  +8 target (s16, 0.01 bar), +10 flag. Rate 10000 / ±8000 / 9000 jump to target; other rates are 0.01 bar per 10 ms frame.
+- **[verified in code]** Mode B runs only if `coded_feature(18) == 1` (`bco_dry_init` 0x6BB82 → `0x400EE7`), the NCS
+  "brake-disc drying" bit (c13 b5; verified through `coding_feature_combo_check` and `coded_feature` case 18), and cal 0x417C2 ≠ 0.
+  The flag-word-A bit 11 getter 0xCFD0A is A.11 (GMB, c14 b5), unrelated (read only by `abs_front_split_detect`). A.9 (c13 b3) is
+  read only by `bco_init`; the NCS "soft-stop assist" label does not match (soft-stop, id 18, is gated by cal 0x4182A).
+
+## [disasm 2026-10-23] ABS reads the steering-based yaw target
+
+Question: without an SZL, can ABS use lateral and yaw if they are made valid, or does it still need the steering
+angle? Read from code, not bench-tested. Patch: `mk60e5_patcher` `patches/performance/abs_cluster_without_szl`.
+
+- **[verified] Direct steering-value users in ABS** (0x408EDE / 0x408EE4 / 0x408EE6): `abs_yaw_stable_update` (\|angle\|
+  > 0x4040E kill), `abs_gma_hold_frames` (angle, rate), `abs_countersteer_check` / `abs_corner_peak_track` (road-wheel
+  sign and peak), and the dead outputs of 0x53940 / 0x5971C. Nothing else.
+- **[verified] Indirect users: the DSC yaw target.** Besides 0x4A254, these ABS literal words hold 0x400B1A:
+  0x4E444, 0x4E900, 0x4ED60 (`sub_04D270`), 0x50E88, 0x571E0, 0x59980 (0x5971C), 0x5ABF0 (0x5A4E4), and 0x5B828,
+  0x5BBAC, 0x5BEAC, 0x5C2CC, 0x5C594, 0x5C8B8 (`abs_side_select`). 0x55560 (0x55420) holds the closed-form reference
+  0x4020EC. Every lrw is followed by a plain `ld.h (rN,0)`. Most sites compute yaw − target or compare signs, and are
+  gated on 0x408E6D b4, on `0x40493A` b5 (always set by init 0x81584) or on other ABS state. None is gated on
+  steering-valid (b5) or AYC. Earlier notes said "ABS reads B1A only in 0x4A254"; that is wrong.
+- **[verified] The b5 (steering-valid) users of 0x408E6D**: 0x4518C (vref route 2, mask 0x60), 0x468A2 / 0x469A6
+  (0x4688C → 0x408E69 b6/b7, also 0x400B09), 0x47856 (0x477E8, also 0x400B09 b6), 0x4A276 (yaw-deviation monitor),
+  0x4B556 (`abs_reapply_special_rate`), 0x4E8B6 (rear cornering latch), 0x500F0 (`abs_event_prefilter_flags`, 0xB0),
+  0x521EC / 0x522A4 (straight latch), 0x530EA (yaw-stable), 0x59898 (dead), 0x5A230 (`abs_chassis_frame_init`),
+  0x5CE36 / 0x5CECE (countersteer).
+- **[verified] Validity coupling.** The lateral / yaw getters (0x93AC0, 0x93B3A, 0x93C22, 0x94308, 0x94376) fail on
+  `sensor_reaction_word` b2 / b3 with st b3|b4 set and skip the `sensor_reaction_aux` test on that path. In
+  `sensor_reaction_build` every rule that sets b0 also sets b2 | b3. The steering-timeout rules are 0xB4C66 (group A b6
+  + 0x402E6D b5) and 0xB4C0E (0x402893 b6, sharing its set-site with 0x4028B6 b1). The only caller is the jsri at
+  0xB5D6A, just before 0xB4D40 and `fault_reaction_matrix`. The only reader of 0x402881 b7 is 0x9AE96 (`sub_09ADE4`
+  → 0x4022FA b0).
+- **[inferred] Consequence.** Making yaw valid without the SZL, without also neutralising these targets, would make
+  every corner look like a yaw error of the full measured yaw in those ABS paths.
+- **[bench 2026-10-23, MR2 without SZL] More rules than the 0x0C9 timeout invalidate lateral / yaw.** Read:
+  0x402009 = 0x40 (steering monitor fault state b6, b7 clear), group A = 0x0040 (0xA0040), group 11 = 0x0402,
+  0x402890 b0 = 1. Group 11 b10 = fault **0xB0400**, raised only by `fcan_rx_2A6_byte0` 0xC630A (F-CAN 0x2A6, an SZL
+  frame the DSC gateways). It trips rule 0xB4C2E (group 11 & 0xE00 → 0x402888 b0|b2|b3 and 0x402890 b0). Rule
+  0xB4BF4 (0x402009 b6 + b7) is the next one to watch. The "Steering-sensor loss" chain above lists only the 0x0C9
+  path.
+- **[disasm 2026-10-23] The ax plausibility check is blind during ABS.** The deviation integrator 0x408E8E
+  (`abs_ax_decel_estimator`, trust drops above 500) compares ax with DAF using tolerance cal 0x40D46 = 0.20 g. That
+  is the same width as `abs_decel_est_clamp_ax`, which pins DAF to ax ± 0.20 g in the ABS regime once trusted, so
+  inside ABS the integrator can only decay. Outside ABS it rises at up to +5 per frame (about 1 s to drop trust at
+  e > 0.5 g). Detail: `analysis/agents/abs_full/10_vref_and_ax.md` §1.1.
+- **[disasm 2026-10-23] Correction: one ax check does act inside ABS, and nothing overflows.** `sub_0935E8` sets
+  ax invalid (0x404A2E b7, which drops trust) after 30 ABS frames in which 0x408DB5 b6 is set (reference wheel slip ≥
+  ¼ of the gross-slip curve, [I]) and both rears decelerate uniformly. That is, vref held above the wheels. DAF is
+  clamped (0x408EE8 ±2667 → ±127) and ax is the clamped byte, so a stop above 1.27 g pegs both together and the
+  deviation stays 0. The alive counter uses the 1 mg raw signal. Detail: `10_vref_and_ax.md` §1.1.
+- **[disasm 2026-10-23] The decel-threshold g-term wraps above 1.27 g, but only with ax trusted.** In
+  `abs_decel_threshold_builder` 0x47BDC the trusted path takes x = 0x408E92 (1 mg, s16) / 10 at full width
+  (0x47BF6). 0x47CB6 `sextb r3` then truncates it, so a 1.28–2.55 g decel wraps positive, is negated to x ≤ 0, and
+  gives g-term 0: about −1.85 g at 1.27 g jumps back to the zero-decel value, about −1.25 g, at 1.28 g (100 km/h, var 0). The untrusted path
+  (0x408DB8 / DAF bytes) can't wrap. Curve 0x40674 has breakpoints at 1.55 / 1.83 g that only a full-width input
+  reaches. The fix is `sextb` → `mov r3,r3` (mk60-patcher `research/abs_decel_thr_ax_wrap`, branch
+  vesrah/Lotus-GT3). The output stays bounded by curve hi = 250 and the absolute floor 0x4061E (−2.40 g). The 60 km/h
+  floor skip (0x47CEA) uses the clamped byte 0x408E80 and is not affected. A car without the SZL only hits this
+  with `abs_cluster_without_szl`, which makes trust possible.

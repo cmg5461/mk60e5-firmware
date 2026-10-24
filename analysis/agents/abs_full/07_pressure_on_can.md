@@ -140,30 +140,34 @@ plus intervention flags:
 
 | bit | val | source | meaning (INFERRED unless noted) |
 |---|---|---|---|
-| 0 | 1 | 0x408DA2 bit7 | brake/slip-control active (build) |
+| 0 | 1 | 0x408DA2 bit7 | **a front wheel is in an ABS cycle** (rec[0] b0, w = 0/1) [CONFIRMED, writer 0x45994] |
 | 1 | 2 | 0x402FC0 bit4 OR (0x402F6C b7 & +1 b3) | TCS/ASR intervention |
 | 2 | 4 | 0x400B0A & 0xC0 | AYC/torque intervention |
 | 3 | 8 | 0x400DF4 bit7 | (DSC function flag) |
 | 4 | 16 | 0x402F6C+1 bit2 | (TCS mode flag) |
-| 5 | **32** | 0x408DA0 bit1 | **lateral-limited / cornering build-limit active** |
+| 5 | **32** | 0x408DA0 bit1 | **rear axle controlled without the front**: a rear in an ABS cycle with no front in one, or (no rear in a cycle) rear decel-gate latch 0x409049[4w] b3 on w = 2/3 [CONFIRMED, writer 0x45A62] |
 
 **Important:** this getter sets only bits 0–5 (max 63); **it never sets bit6 (64)**. The value **64**
 the user expects comes from the *internal* decision code **0x408DDE** (values 1/32/64…), which is
 **NOT transmitted on CAN** (0 CAN getters read 0x408DDE — all 23 readers are in the ABS controller
-0x4B–0x58). So the CAN ST_CLCTR byte is a *reduced bit-image* of the DSC control state, sharing the
-1↔build and 32↔lateral semantics by bit position, but it cannot emit 64. If the user truly logs 64,
-their DBC byte/bit mapping differs from this firmware (verify the byte offset). [CONFIRMED byte+bits;
-the 1/32 ⇔ decision-code tie is INFERRED by bit position + adjacency to 0x408DDE]
+0x4B–0x58). If the user truly logs 64, their DBC byte/bit mapping differs from this firmware (verify the
+byte offset).
+
+Bits 0 and 5 are set by `abs_state_aggregate` 0x45808 from the per-wheel phase bits and the rear
+decel-gate latch; no lateral or yaw input is involved, and they are unrelated to the internal decision codes
+1 and 32 despite the matching values. Derivation: FACTS.md, "ST_CLCTR control-state bitfield".
 
 ### Decision code 0x408DDE (the semantic origin; internal only)
-Bitfield (writers `abs_decision_classify` 0x51B54, `abs_decision_resolve` 0x58B30, exec 0x58FF4;
-report 01 + symbols): **1 = build** (commands pressure **BUILD**, not dump), 2 = pair-hold-done,
-16 = dump/hold-resolve, **32 = lateral-limited**, **64 = rear-control**, 128/256/1024 = reapply
-chain, 16384 = reapply. It is a bitfield.
+A code value, not a bitfield: `abs_decision_pressure_exec` 0x58FF4 switches on exact values. Writers
+`abs_decision_classify` 0x51B54 (1 = rears independent, 64 = rear select-low, 32 = cornering knock-down,
+128), `abs_pair_logic` 0x54D9A (32 / 1024 / 16 / 2) and `abs_decision_resolve` 0x58B30 (64→16, 128→256/2,
+16→8). Exec arms: 2, 4, 8 (select-low follower), 32 (knock-down), 256 (lateral-g build step); see
+`01_core_slip_loop.md` §4.
 
-### Value 32 ⇔ cornering knock-down
-Decision code 32 (`abs_pair_logic` 0x54D9A → exec `abs_decision_pressure_exec` 0x58FF4) reduces the
-commanded pressure on a rebuilding wheel: `CMD = PM − pct·(LOCKEST − CMD)/100` (pct byte `0x408DE0`,
-producer untraced). Rear-specific reduction is the separate inside/outside rear select-low
-`abs_rear_lead_select` 0x5184C (which also sets `0x408DA0` b7). The cal curves 0x40E0A / 0x40E26 are a
-different lateral-g pressure term that rises with g (see FACTS).
+### Decision code 32 (internal) ⇔ cornering knock-down
+(This is the internal code 0x408DDE = 32, not CAN ST_CLCTR bit 32.) Decision code 32 (written by
+`abs_decision_classify` and `abs_pair_logic` 0x54D9A; exec `abs_decision_pressure_exec` 0x58FF4 arm 0x59222)
+reduces the commanded pressure on a rebuilding wheel: `CMD = PM − pct·(LOCKEST − CMD)/100`. The pct byte
+`0x408DE0` is written by the classifier (0x51F42) from the driver pressure's position between the lateral-g
+curves 0x40E26 and 0x40E0A (`03_lateral_g_influence.md` §2(a)). The inside/outside rear choice is the
+separate `abs_rear_lead_select` 0x5184C (which also sets `0x408DA0` b7).

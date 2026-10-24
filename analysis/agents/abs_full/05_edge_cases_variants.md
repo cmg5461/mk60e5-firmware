@@ -1,7 +1,7 @@
 # MK60E5 7846816A (E9x M3) — ABS edge cases, modifiers & coding-variant effects
 
 CPU addresses; file offset = CPU + 0x8000 = XDF address. Curve record `[lo,hi,n, x[n-1], c[n], k[n]]` s16,
-`y = clamp(c[i] + (x*k[i])>>10, lo, hi)`, reader `0x710FC`. Units: speed/slip 0.01 km/h, decel/g 0.01 g,
+`i = count(x[j] < x)`, `y = clamp(c[i] + x*k[i]/1024, lo, hi)` (division truncates toward zero), reader `0x710FC`. Units: speed/slip 0.01 km/h, decel/g 0.01 g,
 pressure 0.01 bar (pinned by CAN 0x2B2 ÷100 = bar). Evidence tags: **CONFIRMED** (read from bytes/opcodes here) /
 **INFERRED** (interpretation) / **UNCONFIRMED** (not resolved). Scope: **ABS only** — kept distinct from
 DSC/TCS/AYC except where an AYC signal explicitly feeds the ABS pressure loop.
@@ -13,39 +13,41 @@ Companion: `analysis/ABS_ALGORITHM.md`, `analysis/7846816A_symbols.md`, agents `
 
 ## 1. mu-split / yaw-moment-build limiting ("GMA")
 
-**Mechanism = decision code 32 ("yaw/lateral-limited build"), applied per wheel on the pressure-building
-(high-grip) side, scaled by lateral acceleration.** This is BMW's Giermomentenaufbau-Begrenzung analogue.
+**Mechanism = `abs_pair_logic` 0x54D9A, active only after a yaw kick, which slows the rebuild of the
+high-grip wheel on an axle.** This is BMW's Giermomentenaufbau-Begrenzung analogue. Sensor requirements:
+`09_chassis_sensor_use.md` §2.4.
 
-- **Who sets code 32:** `abs_pair_logic 0x54D9A`. The axle is handled as a pair (front 0/1, rear 2/3,
-  partner = `wheel ^ 0x40` in the record pointer). When the **partner** wheel is in ABS dump (its rec[0]
-  bit5 set, tested at `0x54E1E`) **and** the partner's commanded pressure `0x408F42[w]` exceeds this wheel's
-  command `0x408F22[w]` (`0x54E40`), it writes `0x408DDE = 32` (`0x54E44–0x54E48`). CONFIRMED.
-  - If instead this wheel's command has fallen below 0.60× the partner's saved level, it writes code **1024**
-    (reapply nudge, `0x54EAE`, uses cal `0x40D90`=**80**) or code **16** (stepped reapply, `0x54F00`,
-    DDE+4 = `0x40D90`). CONFIRMED.
-- **How code 32 limits the build:** `abs_decision_pressure_exec 0x58FF4`, code-32 arm at `0x59064`:
-  - reads lateral accel `0x408ECA` through `sub_06D0CC` (abs). **If |lat| < 40 counts → skip (exit, no
-    build)**. If **|lat| > 80** → add one **+80**-count pressure step toward cap **0x61A8 = 25000**
-    (`0x5908A–0x590C4`). If **40 < |lat| ≤ 80** (and the other |lat|>65 branch) → a gated, smaller step.
-    CONFIRMED. Build step **80** and cap **25000** are code literals (patch-only, not cal).
-  - Net effect: the high-grip wheel's pressure is **released toward the partner's low-mu level and then rebuilt
-    in small +80 steps, and the rebuild is throttled by how hard the car is cornering** (lateral-g). More
-    lateral g → larger permitted step; below ~40-count lateral the staged build is suppressed entirely so the
-    yaw moment is held. INFERRED (behavioral reading of CONFIRMED code).
-- **AYC→ABS yaw-deviation feedback** reinforces this: `abs_yaw_deviation_monitor 0x4A254` computes
-  `e = measured_yaw 0x408ECC − target 0x400B1A` (AYC observer target), writes `0x408E9C/0x408EA2`, and runs a
-  **persistence counter `0x408EA6` (cap ~20, `0x4A364`)** driven by a gain curve at **`0x40C5A`** (ABS cal,
-  x = lateral accel via `0x6D0CC`; `[lo0,hi3490,n9, x:20,45,62,80,100,130,150,200 …]`). CONFIRMED.
+- **Gate:** `abs_pair_gate` 0x54B70 (state S in `0x408E5F` b6:5). S leaves 0 only when
+  `abs_pair_gate_split_yaw` 0x547D8 sees an axle pressure split with |yaw| > cal **0x40DD4 = 1399** (4 °/s)
+  on the matching side and the yaw-stable flag. While S = 0 the pair logic exits at once. CONFIRMED.
+- **Codes:** the axle is handled as a pair (partner = `wheel ^ 0x40` in the record pointer). When the
+  **partner** is dumping (rec[0] b5, `0x54E1E`) and its commanded pressure `0x408F42[w]` exceeds this
+  wheel's command `0x408F22[w]` (`0x54E40`), it writes `0x408DDE = 32` (`0x54E44–0x54E48`). If instead this
+  wheel's command has fallen below 0.60× the partner's saved level, it writes code **1024** and steps the
+  command to `0x408F42 + cal 0x40D90` (**80** = 0.8 bar, `0x54EAE`), or code **16** (`0x54F00`, DDE+4 =
+  `0x40D90`). CONFIRMED.
+- **Rebuild pacing:** `abs_gma_hold_frames` 0x54BE8 (called at 0x55200) returns a hold score; the caller
+  steps the command by cal 0x40DB0·100 (+3 bar) once counter `0x408EEF` reaches score + 0x40D8E. The score
+  grows with slip, speed, decel, predicted yaw (yaw + yaw accel/2) beyond cal 0x40DD6 = 1047, steering rate
+  and steering added since the event started. Full term table: `09_chassis_sensor_use.md` §7.3. CONFIRMED.
+- **Code 32 in the exec:** `abs_decision_pressure_exec 0x58FF4`, arm **0x59222**, reduces the command by
+  `pct` % (`0x408DE0`) of a headroom term (LOCKEST − CMD or `0x408F42` − CMD). CONFIRMED structure. The
+  lateral-g-gated **+80 build step** (|lat| 40/65/80, cap 25000) is a different arm, code **256** at
+  0x59064, reached via `abs_decision_resolve` (`03_lateral_g_influence.md` §2(b)).
+- **AYC→ABS yaw-deviation feedback** (only with AYC active, `03_lateral_g_influence.md` §5):
+  `abs_yaw_deviation_monitor 0x4A254` computes `e = measured_yaw 0x408ECC − target 0x400B1A` (AYC observer
+  target), writes `0x408E9C/0x408EA2`, and runs a **persistence counter `0x408EA6` (cap ~20, `0x4A364`)** driven
+  by a gain curve at **`0x40C5A`** (ABS cal, x = lateral accel via `0x6D0CC`; `[lo0,hi3490,n9,
+  x:20,45,62,80,100,130,150,200 …]`). CONFIRMED.
   - The reapply handler `0x4B680` clears the restriction bit (`0x40903A` b4) only when `0x408EA6 < 15`
     (`0x4B9C2–0x4B9D2`). So **while yaw deviation persists (counter ≥ 15) the pressure rebuild on that wheel
     stays restricted.** CONFIRMED.
-- **Rear-axle cornering clause:** `abs_pair_cornering_rear 0x54BE8` gates rear select-low by a lateral value
-  (`lat = 0x408ECC + 0x408ECE/2`) against cal **`0x40DD2 = 1748`** (`[1748,1399,1047]` + curve `0x40DD8`
-  `[lo0,hi4000,n3, x:50,100, c:2000,2000,1750, k:10240,10240,12800]`). CONFIRMED values.
 
-**Governing cal (all ABS block):** `0x40C5A` (yaw-dev gain), `0x40D90`=80 (pair reapply step),
-`0x40DD2`=1748 (+curve `0x40DD8`) rear cornering, entry-slip `0x40DB6`. Build step/cap (80/25000) and the
-lateral gates (40/65/80) are **ROM code literals, not tunable cal**.
+**Governing cal (all ABS block):** `0x40DD4` (pair-gate yaw), `0x40DD6` + the other GMA score cals
+(`09` §7.3), `0x40DB0` (+3 bar step), `0x40D90`=80 (pair reapply step), `0x40C5A` (yaw-dev gain). Neighbours
+`0x40DD2` = 1748 and curve `0x40DD8` `[lo0,hi4000,n3, x:50,100, c:2000,2000,1750, k:10240,10240,12800]` sit
+in the same block; their readers were not traced. The lateral gates (40/65/80) and the +80 / 25000 of the
+code-256 arm are **ROM code literals, not tunable cal**.
 
 ---
 
@@ -54,19 +56,23 @@ lateral gates (40/65/80) are **ROM code literals, not tunable cal**.
 There is **no continuous surface-µ estimator in the ABS path and no µ-indexed slip-target remap.** Adaptation
 is a **per-wheel "deep-slip / low-grip" flag** plus the speed/g-dependent decel-threshold shaping (§5).
 
-- **Flag:** `0x40902E[w] bit4`, sole writer `abs_lowmu_flag_update 0x4F9D4`. CONFIRMED.
-  - Input is a **peak wheel-speed-drop counter** `0x409010[w]`: `wheel_speed_history_diff(0x403296)/40`,
-    clamped 0..200, running-max (writer `0x585C0–0x585D2`). `0x40900C[w]` is the instantaneous value.
-    CONFIRMED (this is a lock-depth measure, **not** a filtered µ).
-  - Flag set when peak counter `0x409010[w] ≥ 0x40D40` (**50**) with the vehicle under braking
-    (driver pressure `0x408EB2 > 0x40D42` = **7000** ≈ 70 bar) and `vref 0x408DA8 < 80 km/h` (8000) /
-    gated by `0x408E6D` b6, `0x408DC6` b2. CONFIRMED values.
+- **Flag byte `0x40902E + 3w`** (stride 3), two bits, sole writer `abs_lowmu_flag_update 0x4F9D4`
+  (0x4F9D4–0x4FB42), written only while the wheel is **not** in a cycle (`rec[0]` b0 clear):
+  - gates (all): `rec+0x10` bits 7:5 < 3; for a front, no other wheel with `rec+0x10 & 0x12`; depth
+    `0x409010` > 50 (cal 0x40D40) on the front itself **or its partner**, or > 30 (cal − 20) on a rear itself;
+    braking: `0x40900C[w]` > 30, or `rec+0x18` b2, or driver pressure 0x408EB2 > 70 bar (cal 0x40D42) with
+    0x408E6D b6; and 0x408DC6 b2;
+  - then by vref: < 60 km/h → set b1 (b4 kept); 60–80 km/h → set b1 and b4; ≥ 80 km/h → set b4 (b1 kept);
+  - gates fail → clear b1 and b4, unless `rec+0x16` b7 holds them. CONFIRMED.
+- **Depth input** `0x409010[w]`: a **peak wheel-speed-drop counter**, `wheel_speed_history_diff(0x403296)/40`,
+  clamped 0..200, running max (writer `0x585C0–0x585D2`); `0x40900C[w]` is the instantaneous value. This is a
+  lock-depth measure, **not** a filtered µ. CONFIRMED.
 - **Consumers (behavioral effect):**
-  - `abs_decel_threshold_builder` region reads bit4 at `0x473F0` / `0x47CE0` — biases the per-wheel decel
-    threshold / dump staging on a wheel flagged deep-slip. CONFIRMED (read sites).
+  - Decel-threshold step 6: b1 → thr −1.30 g (−1.35 g with b4) and no 60 km/h floor (`02_decel_threshold.md`
+    §2; read sites `0x473F0` / `0x47CE0`). `0x40902F[3w]` b3 (same block, next byte) trims the threshold
+    −0.04 g above 60 km/h. CONFIRMED.
   - Axle pressure-coupling `0x48EB0` at `0x49154/0x49168/0x491B2/0x491C4`: if **either** this wheel's or the
-    partner's bit4 is set, a pressure step is skipped — i.e. the low-grip partner constrains the pair.
-    CONFIRMED.
+    partner's flag is set, a pressure step is skipped — the low-grip partner constrains the pair. CONFIRMED.
   - Also read by hold-threshold / event-prefilter code (`0x4F38E` tests the neighbouring **bit6**, a separate
     threshold-builder flag — do not conflate). CONFIRMED.
 - **Learned/adaptive RAM:** the counter `0x409010/0x40900C` is recomputed each cycle and **not persisted to
@@ -157,10 +163,9 @@ gates are the event prefilter `0x4FFF6` (E+24=vref/33, E+26=vref/50) and `abs_gr
     `0x4009BC` inhibit → `0x401FF2` b7 = 0 → **the ABS pressure/decision pipeline never arms; ABS will not
     actuate on a sensorless bench.** The standstill detector (<2 faulted) and direction tally (<3 invalid)
     also bail. CONFIRMED.
-- **vref invalid-wheel exclusion:** `vref_update 0x449D0` excludes faulted wheels and resyncs to the shadow
-  integrator (per `ABS_ALGORITHM.md` §2). The specific 1M `struct+0x19 & 0xC0` mask could not be matched in
-  M3 (offset computed, not a literal) — **UNCONFIRMED in M3**; the effect (fault bit0 `0x400952` + global
-  inhibit) is as above.
+- **vref invalid-wheel exclusion:** `vref_update 0x449D0` skips wheels with `0x400952[w]` b0 or
+  `rec+0x19 & 0xC0` in its picks (`10_vref_and_ax.md` §2.1); a wheel-speed fault also raises the global
+  inhibit as above.
 
 Key RAM: `0x401FF2` master gate, `0x4009F4` mode/enable, `0x4009BC` global inhibit, `0x4009B4/B6/B8` signal
 health, `0x400952[idx]` per-wheel fault b0, `0x4033D8` standstill latch, `0x408DAD` rough-road mode,
@@ -200,8 +205,8 @@ Front values:
 
 **E9x M3 index:** not determinable from flash (EEPROM-coded). Vehicle-model geometry rows (`0xD6F42`…) show
 **rows 0–4 duplicated as 5–9** (wheelbase l_f+l_r ≈ 2.76 m on every row) with **10/11 unique** — i.e. one M3
-part number, coding picks body geometry and (for 10/11) the permissive ABS curves. Mapping (user-supplied,
-added after this pass): 0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
+part number, coding picks body geometry and (for 10/11) the permissive ABS curves. Mapping (user-supplied):
+0 sedan, 1 Custom ESM, 3 coupe, 4 convertible, 5/8/9 Competition sedan/coupe/
 convertible, **10 GTS coupe, 11 GTS sedan**; 2/6/7 not identified. So the standard and Competition cars all
 use the 0–9 ABS set and the permissive set is the GTS calibration; the track-relevant lever is that 10/11
 raise the high-speed decel ceiling.
@@ -220,19 +225,21 @@ Scan of the ABS block `0x4039C..0x40EA6` (XDF uses CPU+0x8000). All verified **g
 | `0x40D24` | 0x48D24 | curve `[0,30,4, x:30,50,80, c:10,25,33,22, k:512,0,−171,−21]` | lateral build term |
 | `0x40D40` | 0x48D40 | scalar **50** | low-mu deep-slip counter threshold (`0x4F9D4`) |
 | `0x40D42` | 0x48D42 | scalar **7000** | low-mu brake-pressure gate (≈70 bar) |
-| `0x40DD2` | 0x48DD2 | `[1748,1399,1047]` + curve `0x40DD8` `[0,4000,3,x:50,100,c:2000,2000,1750,k:10240,10240,12800]` | rear cornering lateral threshold |
+| `0x40DD2` | 0x48DD2 | scalar **1748** (followed by 0x40DD4 = 1399 and 0x40DD6 = 1047, both in the XDF as GMA cals) | reader not traced |
+| `0x40DD8` | 0x48DD8 | curve `[0,4000,3,x:50,100,c:2000,2000,1750,k:10240,10240,12800]` | reader not traced |
 | `0x40D66..0x40D7E` | 0x48D66.. | scalars 24/14/19/1000/100/3000/80/50/60 + weights 3/4/5/1 | rough-road score detector `0x5567C` (13 fields, all unmapped) |
 
-(`0x40DB6` entry-slip and `0x40D90` pair-reapply step **are** already in the XDF.) The variant-audit pass
+(`0x40DB6` "entry-slip" (the pair-logic partner-slip curve), `0x40DB4`, `0x40D90`, `0x40DB0` and the GMA /
+yaw-stable cals **are** in the XDF.) The variant-audit pass
 confirmed there are **no other** 12-wide per-variant tables or curve families in the ABS block beyond the four
 in §5.
 
 ---
 
 ## Confidence summary
-- CONFIRMED: decision-code-32 GMA mechanism and its cal; low-mu flag source/threshold; the four per-variant
+- CONFIRMED: the yaw-gated GMA mechanism and its cal; low-mu flag source/threshold; the four per-variant
   tables and their 0–9 vs 10/11 split (byte-verified); the six unmapped edge-case fields; variant setter.
-- INFERRED: the precise ride/behavioral reading of the +80 staged build and of "permissive" 10/11; stock M3
+- INFERRED: the behavioral reading of "permissive" 10/11; stock M3
   index = 0–9.
 - UNCONFIRMED: any NVM-persisted ABS µ-adaptation (none found); pressure unit; §3/§4 fault detail pending the
   edge-case sweep.

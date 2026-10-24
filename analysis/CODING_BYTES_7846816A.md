@@ -51,14 +51,14 @@ checksum but fails most of the M3 field rules below, so it is not an M3 test vec
 | 11 | all | w21 | signed trim ×7.5 (0x6A462…) | |
 | 12 | all | w20 | signed trim ×10 (0x69BD8) | |
 | 13 | 0–2 | f+5 | steering-ratio curve select for `steer_ratio_convert` (0x9033C; sets 0x40EB4/0x40ECC + 8·f5). NCS: **0 = E90 M3, 2 = E92/E93 M3**, 1 unused. Set 1 is a copy of set 0. Value 1 = "custom", needs c[41..47] ≠ 0, but nothing reads those words. Only 3 sets fit: a set 3 would read y set 0 as x and the sign tables (−1) as y. Detail `DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §3 | < 3 |
-| 13 | 3 | A.9 | soft-stop assist | |
-| 13 | 4 | A.10 | ready-alert brake | |
-| 13 | 5 | – (feature check only) | brake-disc drying | |
+| 13 | 3 | A.9 | NCS "soft-stop assist". **In the code A.9 is read only by `bco_init` 0x6B44A** (getter 0xCFD60, flag word A bit 9) and enables the BCO post-corner pre-fill trigger (`BCO_PREFILL_7846816A.md` §3, §11, §12). The soft-stop module (0x6ACC6, arbiter id 18) is not gated by this bit; it is gated by cal 0x4182A (non-zero). The NCS label does not match the behaviour | |
+| 13 | 4 | A.10 | ready-alert brake: flag word A bit 10 (getter 0xCFCC8, read only by `bco_init` 0x6B440 → 0x400E9B) enables the BCO pedal-release pre-fill (mode A). That path also needs front pressure-model code 0 and DSC mode on. The label matches the behaviour | |
+| 13 | 5 | – (feature check only) | brake-disc drying. `coding_feature_combo_check` 0xD024C requests feature-word 2 bit 1 when this bit is set, and `coded_feature(18)` 0xCF478 (case 18 = word 2 bit 1) returns 1; `bco_dry_init` 0x6BB82 copies that into 0x400EE7, which the wiper-driven drying mode needs (`BCO_PREFILL_7846816A.md` §9). Verified in code | |
 | 13 | 6 | – (feature check only) | hill-start assist | |
 | 13 | 7 | B.5 | brake fade compensation | |
 | 14 | 0–3 | w6 | NCS "yaw moment compensation" | must be 0 |
 | 14 | 4 | A.12 | trailer stabilisation | must be 0 |
-| 14 | 5 | A.11 | GMB | |
+| 14 | 5 | A.11 | GMB: flag word A bit 11 (getter 0xCFD0A, read only by `abs_front_split_detect` 0x53FFC, which gates the front-split ABS logic). Not related to disc drying | |
 | 14 | 6–7 | f+8 | RPA threshold (DDS code, 77 readers) | |
 | 15 | 0 | A.13 | – | |
 | 15 | 1–2 | f+10 | LVC / hill-start engine-speed limit: 0xF587E[f10] = 5000 / 5500 / 6000 / 6500 rpm; above it `0xC27E6` sets LVC condition 40 | < 4 |
@@ -135,15 +135,16 @@ Front: within ~5 % below 60 bar; code 1 is 14 % more compliant above 60 bar. Rea
 below 15 bar and 15–36 % more compliant above 20 bar. Code 1 is nowhere meaningfully stiffer than code 0.
 
 **2. BCO prefill tuning (front code only; the rear code is never read here).** 0x6B280 / 0x6B6F4 /
-0x6B85E watch the accelerator pedal (0x401142) and request a small pressure on wheels 0 and 1.
-Identification as ready-alert brake prefill is medium confidence; not fully decoded.
+0x6B85E (mode A) watch the accelerator pedal (0x401142) and request pressure on all four wheels (targets 0x400E9E / 0x400E9F, arbiter id 17).
+Identification as ready-alert brake prefill is medium confidence. A separate mode B (0x6C090) does wiper-driven brake-disc drying
+and is not code-indexed. Both are decoded in `BCO_PREFILL_7846816A.md`.
 
 | Table | Code 0 | Code 1 | Use |
 |---|---|---|---|
 | 0xD7156 | 0 | 1 | trigger-path select: code 0 allows the pedal-release trigger (needs A.10); code 1 disables it and uses the path gated by A.9 and 0x400EBA bit 6 |
 | 0x4176C | 400 | 100 | debounce count |
-| 0x41770 | 60 | 87 | threshold on \|signal 0x402126\| (signal not identified) |
-| 0x41774 | 20 | 76 | second threshold on the same signal |
+| 0x41770 | 60 | 87 | arm threshold on \|0x402126\| = model-based axle lateral acceleration in 0.01 g (about 0.60 g / 0.87 g) |
+| 0x41774 | 20 | 76 | release threshold on the same signal (about 0.20 g / 0.76 g) |
 | 0x417A8 | 1500 | 500 | wait timer (÷10 loops) |
 | 0x417B4 | 50 | 150 | % scale on the requested pressure when 0x400EBA bit 6 is set (else 100) |
 
@@ -219,3 +220,30 @@ shows for that column of the variant-indexed tables (vehicle model 0xD6ECA.., AB
   not identified.
 - The non-M firmware differs: the captured 335 coding has non-zero bytes 16–31, which this M3
   image would reject. What is known of the non-M layout is in `CODING_BYTES_6862873A.md`.
+
+## Flag word A (0x4031F4) bit map, from `coding_pack_flag_words` 0xCFF1A
+
+NCS "A.n" is flag word A bit n. The word is packed from the raw coding bytes (c = payload byte n of `2E 30 00`) as below;
+the 0xCFxxx getters (`ld.h` of 0x4031F4, mask `1 << n`) read single bits.
+
+| Flag A bit | Raw coding bit | NCS | Getter | Read by |
+|---|---|---|---|---|
+| 0 | c3 b0 | A.0 | | BBV pad wear |
+| 1 | c3 b1 | A.1 | | Pre-MSR (inverted) |
+| 2 | c3 b4 | A.2 | | CBC (inverted) |
+| 3 | c3 b5 | A.3 | | SDR_CTC (must be 1) |
+| 4 | c3 b6 | A.4 | | engine power reduction for brake overheating (NCS name; the getter 0xCFC44, `coding_dds_rpa_enable` in the symbol table, reads this bit) |
+| 5 | c3 b7 | A.5 | | |
+| 7 | c10 b5 | A.7 | 0xCFC98 | M-Dynamic mode (`dsc_mode_select`) |
+| 8 | c10 b6 | A.8 | 0xCFCAE | rear-axle rotation direction |
+| 9 | **c13 b3** | A.9 | 0xCFD60 | BCO post-corner trigger only (`bco_init`) |
+| 10 | **c13 b4** | A.10 | 0xCFCC8 | BCO lift-off trigger only (`bco_init`) |
+| 11 | c14 b5 | A.11 (GMB) | 0xCFD0A | `abs_front_split_detect` |
+| 12 | c14 b4 | A.12 | 0xCFCF4 | trailer stabilisation (must be 0) |
+| 13 | c15 b0 | A.13 | 0xCFCDE | |
+| 14 | c3 b2 | A.14 | | brake fan |
+
+Bits that do not appear in flag word A but are checked through the feature row (`coded_feature`, 0xCF478, case n =
+bit of feature word 1 = `0xF677A[f+6]` for n 0..15, word 2 = `0xF67DC[f+6]` for the cases that test r3):
+c3 b3 (RPA) → n = 3 (word 1 bit 2); c13 b5 (disc drying) → n = 18 (word 2 bit 1); c13 b6 (hill-start) → n = 11 (word 1
+bit 10); c3 b2 (fan, inverted) → word 1 bits 4 and 12. Raw byte indices: the payload byte n is EEPROM 0x400 + n.
