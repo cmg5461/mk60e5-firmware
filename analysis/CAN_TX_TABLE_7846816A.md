@@ -45,7 +45,8 @@ A frame is sent when its counter `0x4015F8[i]` reaches the period (+6). `0x7E7A4
 | 0x1A3 (8) | 0x7E912 `st.b r6,(r7,8)` | 0x4046D4 b3 clear |
 | 0x2B3 (11) | 0x7E906 `st.b r6,(r7,11)` | ax getter `0x9390E(3)` status b6 clear |
 
-So 7846816A never transmits 0x0BF or 0x0E1 (confirmed on a bench unit; 0x1A3 and 0x2B3 were present there). The
+So 7846816A never transmits 0x0BF or 0x0E1 (confirmed on a bench unit; 0x1A3 and 0x2B3 were present there). In the
+field 0x1A3 has never been seen to drop out (user, a few hundred hours of track logging plus road miles, 2026-10). The
 patcher's 0x0BF / 0x0E1 patches replace those stores with `mov r6,r6` (0x1266).
 
 The payload is pre-filled with 0xFF before packing. Every TX signal that uses the packer is Intel; the only
@@ -59,10 +60,10 @@ symbol file and `agents/m3cansig/cb_summary.txt`. "const"/"reads" notes are only
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 0 | 0.0 | 16 | Intel (LE) | 0x052 | 0 value getter | 0x07B6D4 | can_tx_0C4_steer_angle |  |
-| 1 | 2.0 | 2 | Intel (LE) | 0x053 | 0 value getter | 0x07B6E8 |  |  |
-| 2 | 3.0 | 16 | Intel (LE) | 0x054 | 0 value getter | 0x07B714 |  |  |
-| 3 | 5.0 | 8 | Intel (LE) | 0x02E | 0 value getter | 0x07B728 |  |  |
+| 0 | 0.0 | 16 | Intel (LE) | 0x052 | 0 value getter | 0x07B6D4 | can_tx_0C4_steer_angle | steering angle 0x401644 (F-CAN 0x0C9 angle ·1029/1024, s16); 0x8000 when 0x40164E b3 (no valid angle) |
+| 1 | 2.0 | 2 | Intel (LE) | 0x053 | 0 value getter | 0x07B6E8 |  | angle status: 3 when 0x40164E b1 (status not received); else 0x0C9 status 0x40164D b7:6 = 0/1 passed through (table 0xD9FAC = {0, 1}), 3 → 2 |
+| 2 | 3.0 | 16 | Intel (LE) | 0x054 | 0 value getter | 0x07B714 |  | 0x401646 = 0x0C9 mux channel 11 (sig 41 jump-table case 0xC6298 → 0x402F60; same ±0x7F5F window and ·1029/1024 as the angle, 0x40164E b2 set when outside), copied at 0xC5D50 only on frames whose mux index is 11, so it is held between updates; 0x8000 when 0x40164E b2. Steering-wheel velocity per other docs (user, 2026-10), same LSB as sig 0 |
+| 3 | 5.0 | 8 | Intel (LE) | 0x02E | 0 value getter | 0x07B728 |  | const 0xFF |
 | 4 | 6.0 | 2 | Intel (LE) | 0x05E | 0 value getter | 0x07B72C |  | const 1 |
 | 5 | 6.2 | 2 | Intel (LE) | 0x02F | 0 value getter | 0x07B730 |  | const 0 |
 
@@ -93,11 +94,11 @@ DBC name: brake wheel torque ("Radmoment Bremse"). This image sends only the ali
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 17 | 1.0 | 4 | Intel (LE) | 0x014 | 0 value getter | 0x07AB5E |  |  |
+| 17 | 1.0 | 4 | Intel (LE) | 0x014 | 0 value getter | 0x07AB5E |  | alive counter 0x4010DD low nibble, 0..14 wrap |
 | 18 | 1.4 | 12 | Intel (LE) · b5 | 0x05D | 0 value getter | 0x07AB58 | can_tx_0B6_sig18 | reads 0x4046E6 |
 | 19 | 3.0 | 12 | Intel (LE) · b5 | 0x05C | 0 value getter | 0x07AB52 | can_tx_0B6_sig19 | reads 0x4046E8 |
 | 20 | 4.4 | 2 | Intel (LE) | 0x04F | 0 value getter | 0x07AB48 | can_tx_0B6_sig20 | reads 0x4046D4 (lsri r2,5; andi r2,3) |
-| 21 | 4.6 | 2 | Intel (LE) | 0x02B | 0 value getter | 0x07AB82 |  | reads 0x408DB5 (lsri r2,2; andi r2,3) |
+| 21 | 4.6 | 2 | Intel (LE) | 0x02B | 0 value getter | 0x07AB82 |  | 0x408DB5 b3:2 (meaning unknown) |
 | 22 | 0.0 | 8 | raw | 0x070 | 2 payload writer | 0x07D886 |  | checksum: can_tx_checksum8 0x7D24C |
 
 #### PT-CAN 0x0BF  DLC 5  20 ms  mbox 3 · via TX queue (+5 b6)
@@ -171,9 +172,9 @@ DBC name: drivetrain wheel torque (`torq_wheel_drivetrain`). This image sends on
 |---|---|---|---|---|---|---|---|---|
 | 66 | 0.0 | 12 | Intel (LE) | 0x02D | 0 value getter | 0x07B906 | can_tx_1A3_ax_raw | accelerometer (cluster sig 5) RAW 0x404A00 (`ax_signal_get(3)`; unfiltered, no offset correction; 1 mg inferred) ×251/256 → 0.01 m/s²/bit, signed, clamp ±2047; 0x800 invalid |
 | 67 | 1.4 | 12 | Intel (LE) | 0x027 | 0 value getter | 0x07B96E | can_tx_1A3_ax_offset | learned ax zero offset 0x4049FD (`ax_signal_get(2)`; s8, 2 mg, ±119) ×251/128 → 0.01 m/s²/bit, same scale as sig 66 (corrected ax = sig 66 − sig 67), signed, clamp ±2047; 0x800 invalid. Not a low-passed accel |
-| 68 | 3.0 | 2 | Intel (LE) | 0x049 | 0 value getter | 0x07B9B2 |  |  |
-| 69 | 3.2 | 2 | Intel (LE) | 0x045 | 0 value getter | 0x07B9F0 |  |  |
-| 70 | 3.4 | 4 | Intel (LE) | 0x010 | 0 value getter | 0x07BA1C |  |  |
+| 68 | 3.0 | 2 | Intel (LE) | 0x049 | 0 value getter | 0x07B9B2 |  | status of sig 66 (`ax_signal_get(3)` out[3]): 2 if b5, else 1 if b2 clear, else 2 if b6, else 0. Like 0x2B3, 1 is not produced on this path |
+| 69 | 3.2 | 2 | Intel (LE) | 0x045 | 0 value getter | 0x07B9F0 |  | status of sig 67 (`ax_signal_get(2)`), same mapping; 1 (b2 clear) inferred = offset not learned yet |
+| 70 | 3.4 | 4 | Intel (LE) | 0x010 | 0 value getter | 0x07BA1C |  | alive counter 0x40471E low nibble, 0..14 wrap |
 | 71 | 4.0 | 8 | raw | 0x06D | 2 payload writer | 0x07D7AE |  | checksum: can_tx_checksum8 0x7D24C |
 
 #### PT-CAN 0x1A6  DLC 8  100 ms  mbox 3 · via TX queue (+5 b6)
@@ -195,18 +196,18 @@ have side effects: sig 75 sets 0x4046D7 b6 (enables the accumulation) and sig 72
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 76 | 0.0 | 8 | Intel (LE) | 0x01B | 0 value getter | 0x07B490 |  |  |
-| 77 | 1.0 | 8 | Intel (LE) | 0x01C | 0 value getter | 0x07B4DE |  |  |
-| 78 | 2.0 | 8 | Intel (LE) | 0x01D | 0 value getter | 0x07B51C |  |  |
-| 79 | 3.0 | 8 | Intel (LE) | 0x01E | 0 value getter | 0x07B566 |  |  |
-| 80 | 4.0 | 2 | Intel (LE) | 0x056 | 0 value getter | 0x07B5A4 |  |  |
-| 81 | 4.2 | 2 | Intel (LE) | 0x055 | 0 value getter | 0x07B5E0 |  |  |
-| 82 | 4.4 | 12 | Intel (LE) · b5 | 0x018 | 0 value getter | 0x07B692 |  |  |
+| 76 | 0.0 | 8 | Intel (LE) | 0x01B | 0 value getter | 0x07B490 |  | FL wheel pressure `wheel_pressure_get`(0) ÷100 = bar, negative → 0, clamp 254; 0xFF when not valid (out[2] b7 clear) |
+| 77 | 1.0 | 8 | Intel (LE) | 0x01C | 0 value getter | 0x07B4DE |  | FR wheel pressure `wheel_pressure_get`(1) ÷100 = bar, negative → 0, clamp 254; 0xFF when not valid (out[2] b7 clear) |
+| 78 | 2.0 | 8 | Intel (LE) | 0x01D | 0 value getter | 0x07B51C |  | RL wheel pressure `wheel_pressure_get`(2) ÷100 = bar, negative → 0, clamp 254; 0xFF when not valid (out[2] b7 clear) |
+| 79 | 3.0 | 8 | Intel (LE) | 0x01E | 0 value getter | 0x07B566 |  | RR wheel pressure `wheel_pressure_get`(3) ÷100 = bar, negative → 0, clamp 254; 0xFF when not valid (out[2] b7 clear) |
+| 80 | 4.0 | 2 | Intel (LE) | 0x056 | 0 value getter | 0x07B5A4 |  | 0x95E92(0x40BF00): state byte 0x4022DE[rec+0x2A / 2] for wheel record 0, folded mod 100 → 0/1/2, else 3. Meaning unknown |
+| 81 | 4.2 | 2 | Intel (LE) | 0x055 | 0 value getter | 0x07B5E0 |  | same as sig 80 for wheel record 3 (0x40BFC0). Meaning unknown |
+| 82 | 4.4 | 12 | Intel (LE) · b5 | 0x018 | 0 value getter | 0x07B692 |  | yaw `yaw_signal_get(0)` 0x4020F0 (NOT offset-corrected) ×939/65536, clamp ±2047; 0x800 on out[3] b5/b6. ¼ the gain of 0x1A0 yaw: 0.2 °/s/bit if 0x4020F0 shares the 1/20000 rad/s LSB [I] |
 | 83 | 6.0 | 2 | Intel (LE) | 0x04A | 0 value getter | 0x07B610 |  | const 0 |
-| 84 | 6.2 | 3 | Intel (LE) | 0x04B | 0 value getter | 0x07B614 |  |  |
+| 84 | 6.2 | 3 | Intel (LE) | 0x04B | 0 value getter | 0x07B614 |  | 0 if 0x402CF9 b2 or 0x402882 b6; else 1 if 0x402CF9 b0 clear; else 3 if b6, else 5. Meaning unknown |
 | 85 | 6.5 | 3 | Intel (LE) | 0x035 | 0 value getter | 0x07B63E |  | const 0 |
-| 86 | 7.0 | 2 | Intel (LE) | 0x048 | 0 value getter | 0x07B642 |  |  |
-| 87 | 7.3 | 2 | Intel (LE) | 0x03D | 0 value getter | 0x07B668 |  |  |
+| 86 | 7.0 | 2 | Intel (LE) | 0x048 | 0 value getter | 0x07B642 |  | BCO mode A (pedal-lift pre-fill): 0 inhibited (0x400E9D) or not coded (0x400E9B = 0), 2 active (0x400E9A), else 1 armed |
+| 87 | 7.3 | 2 | Intel (LE) | 0x03D | 0 value getter | 0x07B668 |  | BCO mode B (disc drying): 0 inhibited (0x400EEA) or not coded (0x400EE7 = 0), 2 active (0x400EE6), else 1 armed |
 | 88 | 7.5 | 3 | Intel (LE) | 0x04D | 0 value getter | 0x07B68E |  | const 0 |
 
 #### PT-CAN 0x2B3  DLC 5  50 ms  mbox 3 · via TX queue (+5 b6)
@@ -231,11 +232,11 @@ have side effects: sig 75 sets 0x4046D7 b6 (enables the accumulation) and sig 72
 
 | sig | pos (byte.bit) | len | pack mode | var | var type | handler | symbol | notes |
 |---|---|---|---|---|---|---|---|---|
-| 97 | 0.0 | 8 | Intel (LE) · b5 | 0x058 | 0 value getter | 0x07B3B8 |  |  |
-| 98 | 1.0 | 8 | Intel (LE) · b5 | 0x059 | 0 value getter | 0x07B3E4 |  |  |
-| 99 | 2.0 | 8 | Intel (LE) · b5 | 0x05A | 0 value getter | 0x07B438 |  |  |
-| 100 | 3.0 | 8 | Intel (LE) · b5 | 0x05B | 0 value getter | 0x07B464 |  |  |
-| 101 | 4.0 | 2 | Intel (LE) | 0x04E | 0 value getter | 0x07B3A0 |  |  |
+| 97 | 0.0 | 8 | Intel (LE) · b5 | 0x058 | 0 value getter | 0x07B3B8 |  | wheel 0 tyre trim: `0xD273E`(1, 0) → rec+0x35 (factor n/255) − 255, clamp ±127, s8. Factor = (745 + b)/1000, so 1 bit = **0.1 %**; always ≤ 0 (slowest wheel = 0), clamps at −12.7 % although −25.4 % can be learned |
+| 98 | 1.0 | 8 | Intel (LE) · b5 | 0x059 | 0 value getter | 0x07B3E4 |  | wheel 1 tyre trim: `0xD273E`(1, 1) → rec+0x35 (factor n/255) − 255, clamp ±127, s8. Factor = (745 + b)/1000, so 1 bit = **0.1 %**; always ≤ 0 (slowest wheel = 0), clamps at −12.7 % although −25.4 % can be learned |
+| 99 | 2.0 | 8 | Intel (LE) · b5 | 0x05A | 0 value getter | 0x07B438 |  | wheel 2 tyre trim: `0xD273E`(1, 2) → rec+0x35 (factor n/255) − 255, clamp ±127, s8. Factor = (745 + b)/1000, so 1 bit = **0.1 %**; always ≤ 0 (slowest wheel = 0), clamps at −12.7 % although −25.4 % can be learned |
+| 100 | 3.0 | 8 | Intel (LE) · b5 | 0x05B | 0 value getter | 0x07B464 |  | wheel 3 tyre trim: `0xD273E`(1, 3) → rec+0x35 (factor n/255) − 255, clamp ±127, s8. Factor = (745 + b)/1000, so 1 bit = **0.1 %**; always ≤ 0 (slowest wheel = 0), clamps at −12.7 % although −25.4 % can be learned |
+| 101 | 4.0 | 2 | Intel (LE) | 0x04E | 0 value getter | 0x07B3A0 |  | `0xD273E`(1, 0) out[1] b5: 0 when tyre-learner state 0x403210 & 3 = 3, else 1. **MR2 logs: 0 at power-up, 1 after 1–2 km of driving and stays 1, so 1 = learned** (2026-10-24) |
 
 #### PT-CAN 0x4A9  DLC 8  event  mbox 3 · via TX queue (+5 b6)
 
@@ -322,7 +323,7 @@ All positions Intel. Values are what the getter returns. Sources were traced to 
 
 | Byte.bit | Len | Getter | Value |
 |---|---|---|---|
-| 0.0 | 8 | `can_tx_19E_status_flags` 0x7AEAA | ST_CLCTR bitfield; see FACTS "ST_CLCTR". 0x01 front in ABS cycle, 0x02 TCS (0x402FC0 b4, or 0x402F6C b7 & 0x402F6D b3), 0x04 AYC torque (0x400B0A & 0xC0), 0x08 0x400DF4 b7, 0x10 0x402F6D b2, 0x20 rear-only control |
+| 0.0 | 8 | `can_tx_19E_status_flags` 0x7AEAA | ST_CLCTR bitfield; see FACTS "ST_CLCTR". 0x01 front in ABS cycle, 0x02 TCS (0x402FC0 b4, or 0x402F6C b7 & 0x402F6D b3), 0x04 AYC torque (0x400B0A & 0xC0), 0x08 DSC active (0x400DF4 b7), 0x10 MSR active (0x402F6D b2; MSR confirmed by the user 2026-10), 0x20 rear-only control |
 | 1.0 | 2 | `can_tx_19E_abs_status` 0x7AD74 | 2 = ABS off (fault-reaction 0x40288E b6), or ABS lamp on (lamp0.b7) with ABS degraded (0x402880 b6); else 0 |
 | 1.2 | 3 | `can_tx_19E_dsc_status` 0x7AF52 | enum, first match wins: **2** DSC failed (0x40288E b2, or lamp0.b6 & 0x402880 b2) · **6** start-up / sensor system (0x400957 b5/b6/b7 or 0x400966 b6) · **3** steering angle not valid (0x40200A = 0) or the steering latch is set · **1** DSC-off lamp (lamp0.b5) · **4** lamp0.b0 (mode lamp, inferred DTC/M-mode) · **0** normal |
 | 1.6 | 2 | 0x7B050 | const 3 |
