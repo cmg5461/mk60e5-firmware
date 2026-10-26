@@ -426,7 +426,7 @@ Scaling restores the loop gain, not the latency: with faster wheel dynamics, the
 | one front dumps 20+ bar, car darts | B divisor `0x560B0` ↑ (50000 → 75000–100000), k2 hi `0x40B16` → 0, then A gain `0x40B6E` ↓ |
 | wheel recovers, then rebuild overshoots into a new lock | hold fraction m `0x40D62` ↑ (finer steps), build rate `0x40D5E` ↓; if it re-locks right after the continuous ramp starts, the step limit N_max (CODE) |
 | early ABS in slow corners on a high-grip car | decel floor below 60 km/h (`0x4065C`, variant column) or coding variant 10/11 (−1.40 g instead of −1.32 g) |
-| over-release at the top of very hard stops (> 1.25 g) | **CODE limit**: vref may fall at most 44 per frame (1.25 g); ax / lateral bytes saturate at ±1.27 g. Needs a patch |
+| decel held near 1.2 g for the later part of very hard stops (> 1.25 g) | **CODE limit**: vref may fall at most 44 per frame (1.25 g); ax / lateral bytes saturate at ±1.27 g. The vref error builds through the stop, so the over-release starts part-way in, not at the top. Once apparent slip reaches the gross-slip limit, the car is held at ≈ 1.19 g (FACTS "Size of the effect"). Needs a patch |
 | rears release together, little rear braking | rear select-low (code 64) without lateral; matters on mid/rear-engined cars |
 
 ---

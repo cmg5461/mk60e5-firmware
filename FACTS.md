@@ -1715,7 +1715,7 @@ Units: speed/slip 0.01 km/h, accel/decel 0.01 g, pressure 0.01 bar (pinned by CA
     0xB5D40 never do). So rear-only ABS leaves bit0 = 0, and pre-control (0xC0) or armed (0x80) don't set it.
     (At front engagement the phase machine DUMPS first, so front pressures drop when this sets.)
   - bit1 (2) = TCS/ASR ← 0x402FC0 b4; bit2 (4) = AYC/torque ← 0x400B0A&0xC0; bit3 (8) = DSC ← 0x400DF4 b7;
-    bit4 (16) = TCS mode ← 0x402F6C+1 b2.
+    bit4 (16) = **MSR (engine drag torque control)** ← 0x402F6C+1 b2 [user-confirmed 2026-10].
   - **[verified 2026-10-14] bit5 (32) = rear axle controlled without the front** ← 0x408DA0 b1. The only
     writer is 0x45A62 in `abs_state_aggregate`, right after the wheel loop (0x45A34–0x45A62). The other DA0
     writers (0x5184C, 0x51A5C, 0x58B30, 0x5CAF4, 0x5DC08) touch only b4/b5/b7:
@@ -1915,7 +1915,7 @@ Read directly from `analysis/7846816A_main.lst` (M3) in a single pass. **Not ben
     lateral channel from the same cluster (0x8FE70, unity gain) is 1 mg at 0x4020D6.
   - On the bus both signals of a frame share one scale, so corrected ax = raw − offset. 0x1A3: ×251/256 and
     ×251/128 → 0.01 m/s²/bit, signed, clamp ±2047, 0x800 invalid. 0x2B3: ×201/512 and ×201/256 →
-    0.025 m/s²/bit, offset binary +2048, clamp 0..4095, 0xFFF invalid (decoded in `MK60e5_CAN.dbc`).
+    0.025 m/s²/bit, offset binary +2048, clamp 0..4095, 0xFFF invalid. `MK60e5_CAN.dbc` carries 0x1A3 (`AccelLongSensor`), not 0x2B3.
   So BMW's split is: 0x1A0 AccX = kinematic dv/dt matching the 0x1A0 speed; 0x1A3/0x2B3 = measured specific
   force (includes road gradient), sent uncorrected together with the DSC's learned offset so the receiver can
   correct it [design intent inferred].
@@ -1931,6 +1931,22 @@ byte without ax trust and wraps above 1.27 g with it (see "The decel-threshold g
 A car that really decelerates above ~1.25 g outruns the vref fall, apparent slip grows, and ABS
 over-releases. Raising it means code patches (literals 44 at 0x44DE2/0x44FEA and the −44 clamp at 0x51100)
 plus rescaling the byte signals — not a calibration edit.
+
+**Size of the effect (2026-10-25, point-mass model, not car-verified).** The error builds through the stop, not at
+its start. While vref falls at the 1.25 g cap, the apparent slip grows until it reaches the gross-slip limit (~11 %
+of vref). Model: tyre linear up to 1.5 g at 8 % true slip, flat beyond that; a perfect ABS holds apparent slip at
+11 % once it is reached.
+- **After the hold starts, chassis decel settles at 1.25 g / r, where r = vref/v ≈ 1.05.** That is ≈ 1.19 g
+  (6.3 % true slip) whatever the tyre grip. The cap then acts as a decel limit for the rest of the stop.
+- **Stopping-distance penalty, 0.5 s apply ramp:** +2 % (1.4 g), +6 % (1.5 g), +11 % (1.6 g), +22 % (1.8 g)
+  from 200 km/h. It is slightly smaller from 100 km/h. With the cap raised to 2 g, none of these trigger.
+- **An instant apply is worse:** +15 % at 1.5 g. vref starts at chassis speed with the wheels already 8 % below
+  it, so only 3 % more is needed.
+- **Wheel decel, not chassis decel, has to exceed the cap.** With steady slip s, wheel decel = a(1 − s), so the
+  effective chassis ceiling is ≈ 1.25/(1 − s) g. Wheels that recover to chassis speed between cycles pull it
+  back toward 1.25 g.
+- **With no slip,** the time to reach 11 % is t = 0.11·v0 / (g·(a − 1.1125)). That gives 1.6 s from 200 km/h
+  at 1.5 g, and t scales with v0.
 
 ### Doc inconsistency noted
 `docs/HANDBOOK.md` and the TL;DR/§2(a)/§6 of `analysis/agents/abs_full/03_lateral_g_influence.md` described

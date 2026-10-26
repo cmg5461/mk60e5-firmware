@@ -144,7 +144,7 @@ plus intervention flags:
 | 1 | 2 | 0x402FC0 bit4 OR (0x402F6C b7 & +1 b3) | TCS/ASR intervention |
 | 2 | 4 | 0x400B0A & 0xC0 | AYC/torque intervention |
 | 3 | 8 | 0x400DF4 bit7 | (DSC function flag) |
-| 4 | 16 | 0x402F6C+1 bit2 | (TCS mode flag) |
+| 4 | 16 | 0x402F6C+1 bit2 | **MSR (engine drag torque control)** [user-confirmed 2026-10] |
 | 5 | **32** | 0x408DA0 bit1 | **rear axle controlled without the front**: a rear in an ABS cycle with no front in one, or (no rear in a cycle) rear decel-gate latch 0x409049[4w] b3 on w = 2/3 [CONFIRMED, writer 0x45A62] |
 
 **Important:** this getter sets only bits 0–5 (max 63); **it never sets bit6 (64)**. The value **64**
