@@ -3,7 +3,8 @@
 Scope: the wheel-**deceleration-rate** trigger of ABS (complement to the gross-slip trigger at
 `abs_gross_slip_threshold` 0x052380 / curve 0xD6CE2). All addresses CPU; **file offset = CPU + 0x8000 =
 XDF addr**. s16 big-endian. Curve evaluator (verified): layout `[lo,hi,n, xs(n-1), cs(n), ks(n)]`;
-`i = #{xs[j] : x>=xs[j]}`, `y = clamp(cs[i] + ((x*ks[i])>>10), lo, hi)`.
+`i = #{xs[j] : xs[j] < x}` (strictly below, 0x71108–0x71126), `y = clamp(cs[i] + (x*ks[i])/1024, lo, hi)`
+(division truncates toward zero).
 Confidence tags: **[C]** confirmed from bytes/code here · **[I]** inferred · **[U]** unconfirmed.
 
 ---
@@ -12,17 +13,17 @@ Confidence tags: **[C]** confirmed from bytes/code here · **[I]** inferred · *
 
 Disassembly (file 0x0D20DC, 15 insns):
 ```
-r6 = 0xE287 = 58023                       ; scale numerator
-r2 = Δv * 58023                           ; Δv = input (clamped wheel-speed delta, see caller)
+r6 = 0xE287 = 57991                       ; scale numerator
+r2 = Δv * 57991                           ; Δv = input (clamped wheel-speed delta, see caller)
 r2 = trunc(r2 / 2^11)   (signed, round-toward-zero idiom asri10/lsri21/add/asri11)
-r2 = trunc(r2 / 10)     (divs)            ; => r2 = trunc(Δv * 58023 / 20480) = Δv * 2.83315
+r2 = trunc(r2 / 10)     (divs)            ; => r2 = trunc(Δv * 57991 / 20480) = Δv * 2.83159
 r4 = *(0x400978)                          ; current wheel struct ptr (loop var, stride 0x40)
 r3 = [struct+0x1E] (prev raw accel)
      [struct+0x1E] = r2                   ; store new raw accel
 r2 = (r2 + r3) >> 1                        ; TWO-FRAME MEAN
      [struct+0x20] = r2                    ; <-- wheel acceleration, 0.01 g
 ```
-- **Scale factor 2.8332 = 58023 / 20480** (= 58023/2^11/10). Literal 0xE287 byte-verified; identical to 1M
+- **Scale factor 2.8316 = 57991 / 20480** (= 57991/2^11/10; earlier notes said 58023, a hex conversion slip). Literal 0xE287 byte-verified; identical to 1M
   0xD271C. **[C]**
 - **Input Δv**: from the caller `wheel_speed_update` 0x07525C at the `jsri` 0x075482. Before the call r10
   (=Δv) is clamped to **±5714 (0x1652 / 0xFFFFE9AE)** — the glitch clamp — then `mov r2,r10`. Δv is the
@@ -53,42 +54,49 @@ Cal inputs (literal pool of 0x047BDC, byte-verified values):
 | floor<20 table (12×) | 0x40644 | 0x48644 | **−127** (v0); −120 (v1..11) |
 | floor<60 table (12×) | 0x4065C | 0x4865C | **−132** (v0..9); −140 (v10,11) |
 | speed-term front family (stride 0x28) | 0x40412 | 0x48412 | curve, see §3 |
-| speed-term rear (single) | 0x405F2 | 0x45DF2 | curve, see §3 |
+| speed-term rear (single) | 0x405F2 | 0x485F2 | curve, see §3 |
 | g-term family (stride 0x40) | 0x40674 | 0x48674 | curve, see §4 |
 
-Core build sequence:
+**Build order (0x47BDC–0x47E3E) [C].** w = wheel, var = coding variant `0x4031AB`.
 ```
-thr = base (−116)
-thr -= speed_term(vref)      ; front curve 0x40412+0x28*var (by coding var 0x4031AA+1) or rear 0x405F2
-thr -= g_term(|decel|)       ; curve 0x40674+0x40*var, x = |vehicle decel estimate|
-thr  = max(thr, decel_floor = −240)                 ; absolute deepest
-if vref < 6000 (60 km/h):  thr = max(thr, floor60[var] = −132)
-if vref < 2000 (20 km/h):  thr = max(thr, floor20[var] = −127)
+ 1  thr = base (−116, 0x40620)
+ 2  pre-trim, only if 0x408DEB b0, neither front rec[0] b0, and 0x408E6A < 31:
+        rec+0x10 bits 7:5 < 2:  thr −= 25 / 21 / 15 / 8   when vref > 160 / 120 / 80 / 60 km/h
+        otherwise:              thr −= (60 − 2·0x408E6A); thr = min(thr, −121)
+ 3  thr −= speed_term(vref)    front curve 0x40412 + 0x28·var, rear 0x405F2
+ 4  thr −= g_term(x)           curve 0x40674 + 0x40·var
+        x = −(0x408E92 / 10)                       when ax is trusted (0x408E1C b7)
+        x = max(−0x408DAF, 0x408DB8)               otherwise
+ 5  thr = max(thr, −240)       (0x4061E)
+ 6  if 0x40902E[3w] b1:  thr = −130, or −135 with b4; skip step 7      (low-µ flags, see 05 §2)
+ 7  if vref < 60 km/h:   thr = max(thr, floor60[var])                    (−132; −140 for var 10/11)
+        skipped when ax 0x408E80 ≤ −127 AND 0x408DAF < −110 AND 0x408E1C b7
+ 8  if vref < 20 km/h:   thr = max(thr, floor20[var])                    (−127 var 0; −120 others)
+ 9  front only: own PM 0x408F2A > 2× partner's AND own 0x408FF0 > 2× partner's:
+        thr −= max((own − partner 0x408FF0)/300, 8)
+10  first that applies:  −8 if 0x408E1E b2
+                         −8 if 0x409014[w] ≥ 11, vref > 60 km/h and rec[0] b0
+                         −4 if 0x40902F[3w] b3 and vref > 60 km/h
+11  thr = −99 if |rec+0x20| < 15, or for a rear with 0x408DEB b5
+12  output by X = rec+6:  X < 0, or X = 0 with wheel accel < 0  → thr
+                          otherwise → +63, or +285 with rec[0] b0, or +130 with rec[0] b0 and rec+0x10 b2
 ```
-- Both curve terms are **subtracted** from base ⇒ the threshold **deepens** (more negative) with speed and
-  with current deceleration, trending toward the −2.40 g floor. **[C]**
-- Low-speed floors are **max()** clamps ⇒ they **cap how deep** the threshold may go at low speed (relax it):
-  ≤ −1.32 g below 60 km/h, ≤ −1.27 g below 20 km/h. They bind only when the g-term has already driven the
-  threshold past those limits (at low speed the speed-term is ~0). **[C]**
+- The speed and g terms are **subtracted** from base ⇒ the threshold **deepens** (more negative) with speed and
+  with current deceleration, toward the −2.40 g floor. **[C]**
+- The low-speed floors (steps 7, 8) are **max()** clamps ⇒ they **cap how deep** the threshold may go at low
+  speed: ≤ −1.32 g below 60 km/h, ≤ −1.27 g below 20 km/h. They are the only steps that make the threshold
+  shallower, and they bind only when the g-term has already driven it past those limits (at low speed the
+  speed term is ~0). **[C]**
 - **Floor selection = coding variant** `[0x4031AA+1]` (0..11), `ld.b` + `ixh` into each 12-entry table. The
   `<20` gate is `vref<2000`, the `<60` gate `vref<6000`. **[C]**
 - **Above 60 km/h** neither low-speed floor applies: the only lower bound is the absolute floor −240, so the
   threshold is free to deepen with speed/decel from −1.16 g toward −2.40 g. **[C]**
+- Step 9 (front pressure imbalance) deepens the threshold on the higher-pressure front in a split; physical
+  intent **[I]**.
 
-Secondary adjustments in the same function:
-- **|wheel accel| < 15 (±0.15 g) ⇒ thr forced to −99** (−0.99 g), a shallow default (also taken for a rear
-  wheel when `[0x408DEB]` bit5 set). 0x047DE6–0x047E00. **[C]**
-- **Front split-μ / pressure-imbalance term** (front only, 0x047D44–0x047DA0): when own wheel pressure
-  `PM 0x408F2A` far exceeds the same-axle partner's, `thr -= clamp(ΔPM/300, ≥8)` (deepens). Conditional,
-  bytes read; physical intent inferred. **[I]**
-- **Special fixed override −130 / −135** (0x047CE0–0x047CE8) when a wheel phase byte (`[0x40902E+…]` bit1)
-  is set. **[C bytes] / [I meaning]**
-- A gated rough-road speed trim (−25/−21/−15/−8 at >160/120/80/60 km/h) applies only when `[0x408DEB]`
-  bit0 set with specific wheel-valid conditions; skipped in the normal path. **[C bytes]/[I]**
-
-g-term x-input source (default path): `r12 = min([0x408DAF], −[0x408DB8])`, signed bytes = a **vehicle
-longitudinal decel estimate**; x = −r12 = |decel|. Curve breakpoints 0.30–1.83 g strongly imply the x-axis
-unit is 0.01 g. **[I unit]**
+g-term x-input: without ax trust, the wheel-derived decel estimate `0x408DAF` / vref slope `0x408DB8` (signed
+bytes); with trust, measured decel `0x408E92`. Curve breakpoints 0.30–1.83 g imply the x-axis unit is 0.01 g.
+**[I unit]**
 
 ---
 
@@ -98,14 +106,17 @@ Stored bytes (CPU 0x40412): `lo=0, hi=500, n=6, xs=[10000,15000,20000,25000,3000
 cs=[0,−10,−10,−50,−95,−277], ks=[1,2,2,4,6,12]`. x = vref (0.01 km/h). Decoded output (0.01 g), **subtracted
 from base** (so it *deepens* the decel threshold as speed rises):
 
-| vref km/h | 0 | 20 | 40 | 60 | 80 | 100 | 120 | 150 | 200 | 250 | 300 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| speed_term | 0 | 1 | 3 | 5 | 7 | 9 | 13 | 19 | 28 | 51 | 74 |
-| g equiv | 0 | .01 | .03 | .05 | .07 | .09 | .13 | .19 | .28 | .51 | .74 |
+| vref km/h | 0 | 20 | 40 | 60 | 80 | 100 | 120 | 150 | 180 | 200 | 250 | 300 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| speed_term var 0–9 | 0 | 1 | 3 | 5 | 7 | 9 | 13 | 19 | 25 | 29 | 47 | 80 |
+| speed_term var 10/11 (front) | 0 | 1 | 3 | 5 | 7 | 9 | 15 | 23 | 32 | 38 | 57 | 90 |
 
-So the threshold goes from −1.16 g (standstill) to about −1.16−0.74 = **−1.90 g at 300 km/h** before the
-g-term. **Rear** curve 0x405F2 has identical cs/ks but `lo=−110, hi=150` (allows a small negative/relaxing
-value); output is the same 0..74 in practice. Variants 0–9 identical; 10/11 more permissive (per symbols).
+The curve jumps at a breakpoint (segment index = breakpoints strictly below x), e.g. 80 at exactly 300 km/h
+and 74 just above.
+
+So the threshold goes from −1.16 g (standstill) to about −1.16−0.80 = **−1.96 g at 300 km/h** before the
+g-term. **Rear** curve 0x405F2 has identical cs/ks but `lo=−110, hi=150` and evaluates the same. Variants 10/11
+make the threshold deeper at speed, i.e. allow more wheel decel before a dump.
 
 ---
 
@@ -116,9 +127,10 @@ cs=[0,−8,−22,−31,−54,−65,−41,−77,−104,−121], ks=[0,256,563,683
 x = |vehicle decel estimate| (0.01 g, from signed byte ⇒ reachable 0..127). Decoded output (0.01 g),
 **subtracted from base** (deepens the threshold as the car brakes harder):
 
-| |decel| g | 0.00 | 0.30 | 0.50 | 0.60 | 0.80 | 1.00 | 1.27 |
-|---|---|---|---|---|---|---|---|
-| g_term | 0 | 0 | 5 | 10 | 22 | 36 | 60 |
+| \|decel\| g | ≤ 0.30 | 0.40 | 0.50 | 0.60 | 0.70 | 0.80 | 0.90 | 1.00 | 1.10 | 1.20 | 1.27 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| g_term var 0–9 | 0 | 2 | 4 | 10 | 16 | 22 | 29 | 35 | 45 | 55 | 60 |
+| g_term var 10/11 | 0 | 2 | 4 | 10 | 16 | 23 | 31 | 39 | 50 | 60 | 67 |
 
 Flat (0) below ~0.3 g, rising to +0.60 g of extra depth at the ±1.27 g byte limit (breakpoints 155/183
 unreachable from a signed byte).
@@ -131,18 +143,25 @@ thr(vref, decel) [0.01 g, negative] =
          speed_term = curve 0x40412+0x28*var  (front)  or 0x405F2 (rear),  x = vref
          g_term     = curve 0x40674+0x40*var,  x = |decel|
     thr = max(thr, −240)                       # absolute floor
-    if vref < 60 km/h: thr = max(thr, floor60[var] = −132)
+    low-µ flag b1: thr = −130 / −135, no 60 km/h floor
+    if vref < 60 km/h: thr = max(thr, floor60[var] = −132)   # skipped with trusted, pegged ax
     if vref < 20 km/h: thr = max(thr, floor20[var] = −127)
+    (front only) split-µ imbalance term, small trims (steps 9, 10)
     if |wheel_accel| < 15 (0.15 g): thr = −99  # shallow override
-    (front only) thr −= clamp(ΔPM/300, ≥8)     # split-μ imbalance, conditional
 ```
 A wheel triggers a pressure dump when its `struct+0x20` (two-frame-mean wheel accel, 0.01 g) falls **below**
 `thr`. Worked points (front var 0, ignoring the split-μ/override terms):
 - 100 km/h, light vehicle decel (<0.3 g): thr = −116 − 9 − 0 = **−1.25 g**
-- 100 km/h, 1.0 g vehicle decel: thr = −116 − 9 − 36 = **−1.61 g**
-- 300 km/h, 1.0 g: −116 − 74 − 36 = −226 → **−2.26 g**
-- 50 km/h, 1.0 g: −116 − ~4 − 36 = −156 → clamped by floor60 to **−1.32 g**
+- 100 km/h, 1.0 g vehicle decel: thr = −116 − 9 − 35 = **−1.60 g**
+- 300 km/h, 1.0 g: −116 − 80 − 35 = −231 → **−2.31 g**
+- 50 km/h, 1.0 g: −116 − 4 − 35 = −155 → clamped by floor60 to **−1.32 g** (unless ax is trusted and pegged)
 - 15 km/h, 1.0 g: → clamped by floor20 to **−1.27 g**
+- Ceiling, ax untrusted: the g-term input is a byte, so above ~1.27 g the threshold stops deepening with decel:
+  about −1.81 g at 60 km/h, −1.85 g at 100 km/h, −1.95 g at 150 km/h (var 0, no trims). A wheel tracking a harder
+  stop crosses it.
+- ax trusted: the input is full width, but 0x47CB6 `sextb` wraps it above 1.27 g, giving g-term 0 (about −1.25 g at
+  100 km/h). With the wrap fixed (`sextb` → `mov`) the curve keeps going: g-term 0.96 g at 1.6 g, so about −2.21 g at
+  100 km/h, bounded by hi = 250 and the −2.40 g floor. FACTS "The decel-threshold g-term wraps above 1.27 g".
 
 ---
 
@@ -168,6 +187,17 @@ yaw thresholds, and the EBD/brake-force logic. The vehicle-decel byte feeding th
 but the curves/floors above are ABS-cal only. **[I]**
 
 ## Residual unknowns
-- Exact unit/source of the g-term x bytes `[0x408DAF]/[0x408DB8]` (inferred 0.01 g vehicle decel). **[U]**
+- ~~Exact unit/source of the g-term x bytes.~~ Resolved 2026-10-24: 0.01 g. Trusted (0x408E1C b7, tested at
+  0x47BE8): measured ax `0x408E92` = (`ax_filtered` − offset) in 1 mg, / 10. Untrusted: the harder of the
+  wheel-derived estimate `0x408DAF` and the vref slope `0x408DB8`, both bytes clamped at 1.27 g
+  (`10_vref_and_ax.md` §1).
 - Physical meaning of the `struct+6` integrator scaling at the caller (0x47318, ×104|256 /(1024−23)). **[U]**
-- The `[0x40902E]`-indexed phase byte selecting the −130/−135 override. **[U]**
+- Meaning of 0x408DEB b0/b5, 0x408E1E b2, 0x408E6A (frame counter while 0x401FF2 b5), 0x409014, 0x40902F b3. **[U]**
+
+## Observing on CAN (patcher repo) [I]
+- The threshold itself: the 0x0BF logging patch (`abs_decel_thr`).
+- Whether step 7 is skipped: `can_0e1_ax_trust` byte 0 b7 (trusted), byte 3 (0x408DAF) < −110 and bytes 4–5
+  (0x408E80) ≤ −127. Without the SZL ax is never trusted (`10_vref_and_ax.md` §1.1), so step 7 always applies.
+  Step 8 always applies below 20 km/h.
+- Whether step 6 is active: not on CAN; it implies the low-µ gates in 05 §2 (moderate speed, deep wheel drop,
+  braking).

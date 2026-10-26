@@ -179,7 +179,9 @@ CAN 0x0CE callbacks: sign from 0x0B9524 + 0x0B94DC
 1. 0x4031F4: who writes it? Bit8 selects the invert mask; bit4 is read at about 60 sites.
 2. Diff an E46-configured flash at the sites in section 6 and at 0xB91AC.
 3. Other ASIC word bits (field strength, calibration, parity) are unidentified.
-4. The capture clock is unknown, and it is unknown whether tooth correction alters 0x40BF1A.
+4. The capture clock is unknown, and it is unknown whether tooth correction alters 0x40BF1A. **M3 answer
+   (2026-10-23):** it does not. The RPA per-tooth correction only uses its own interval buffers, and the learned
+   tyre factor goes to +0x1C, not +0x1A. +0x1A is the filtered raw speed (`WHEEL_SPEED_CHAIN_7846816A.md`).
 5. Meaning of 0x402904 bit7 and 0x400966 bit5.
-6. 0x0B65DC filter law.
+6. 0x0B65DC filter law. **Decoded for the M3 (0xB67F4):** `WHEEL_SPEED_CHAIN_7846816A.md` §5.
 7. Do the ASIC init tables contain a sensor-type bit?

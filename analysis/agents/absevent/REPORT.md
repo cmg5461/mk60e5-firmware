@@ -42,7 +42,7 @@ Suppress (→forces 0x21→0x09, 0xC0→0x80): `(0x400952[w] bit3 and (b0 or fro
 144-byte frame; scratch struct E@sp+104 filled by helpers: sub_04FA5A (slips E+28/30/32), sub_04F7D4
 (low-speed margin E+20), sub_052E54 (E+10 = phase threshold: −100 if rec[0] b2, −1000 if b3, else −400),
 sub_052ED0 (E+12 = 7% vref), sub_052580 (E+6 = curve(0xD7322,vref)+terms). Second reference speed vref2 =
-0x408D86 (sub_045884); rec+28 = tyre-compensated speed. Event word = 2 bytes (EV0=sp+28, EV1=sp+29) → to
+0x408D86 (sub_045884); rec+28 (= rec+0x1C) = tyre-compensated speed; rec+26 (0x1A) is the uncorrected filtered speed. Event word = 2 bytes (EV0=sp+28, EV1=sp+29) → to
 sub_04FE3C, also stored 0x4090F2[2w].
 - **EV1:** b7 sensor-quality ≥3; b6 rear & slipB<E+10 & 0x408D7D&0xE0==0; b5 slipB≥E+10 or (front & 0x408D7D b4);
   b4 slipB≥E+10; b3 pressure/lateral gate.

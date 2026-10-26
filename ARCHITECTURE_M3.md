@@ -90,10 +90,13 @@ flowchart TD
 ```
 
 ### Estimation
-- **vref** `0x408DA8` — rate-limited integrator (`vref_update` 0x449D0), from the 4 filtered wheel speeds ×
-  per-wheel tyre-circumference (BFU block 0x41CE4).
-- **wheel accel** — `wheel_accel_update` 0xD20DC, two-frame mean ×2.833 (literal 0xE287), 0.01 g.
-- **slip** — `ref − wheel speed` per wheel; slip ratio 0x408F84.
+- **vref** `0x408DA8` — rate-limited integrator (`vref_update` 0x449D0), from the 4 filtered wheel speeds
+  `rec+0x1A` × the learned per-wheel tyre-tolerance factor. The BFU circumference (0x41CE4 block) is already in
+  `rec+0x1A` through K = 900·C (`analysis/WHEEL_SPEED_CHAIN_7846816A.md`).
+- **wheel accel** — `wheel_accel_update` 0xD20DC, two-frame mean of Δv ×2.8316 (literal 0xE287 = 57991), 0.01 g,
+  from the uncorrected speed.
+- **slip** — `ref − rec+0x1A` per wheel (uncorrected; fronts on `rec+0x1C` under the factory-stagger switch
+  0x408DF1 b7); slip ratio 0x408F84.
 - **vehicle/yaw model** — single-track, variant-indexed scalars (0xD6F42.. loaded to RAM 0x400AA4..); v_ch
   runtime-derived (105–142 km/h); target yaw 0x400B1A from `yaw_observer` 0x5EBC4 + closed-form `0x90E5C`.
 
@@ -115,7 +118,8 @@ flowchart TD
   (PM is copied back by `abs_pm_snapshot` 0x559CC).
 - Inlets: `valve_pulse_sequencer` 0x853A8 (10 ms feed-forward) + `inlet_fast_loop` 0x85282 (5 ms, closed loop on measured
   wheel pressure) → 10 × 1 ms output steps; reapply is a metered (proportional) current, hold/dump closed. See
-  `analysis/INLET_VALVE_CONTROL_7846816A.md`. Pump via `pump_motor_control` 0x88EC0.
+  `analysis/INLET_VALVE_CONTROL_7846816A.md`. Fluid/volume model, LPA and pump: `analysis/HYDRAULIC_MODEL_7846816A.md`.
+  Pump via `pump_motor_control` 0x88EC0.
 - **Engine torque**: TCS/MSR/AYC requests merge in `dme_torque_request_compose` 0xCC2C2 → **CAN TX 0x0B6** to the DME.
 
 ## External interfaces
@@ -150,7 +154,7 @@ Most of the image is the 1M relocated. The genuine M3-specific content:
 | Vehicle model | 12-variant table by body/model (sedan, coupe, convertible, their Competition twins, GTS coupe/sedan, Custom ESM; 1M is a single scalar set); v_ch higher (105–142 vs 97.65 km/h) |
 | ABS cal block | 12-way variant duplication of speed/g-term curves; variants 10/11 (GTS coupe/sedan) more permissive at high speed; builder 0x47BDC rewritten; one scalar at 0x4063E |
 | TCS | large curves relocated to const ROM 0xF61xx; gross-slip limit + entry gates hard-coded (cal on 1M) |
-| CSI / steering | block grew (+0x62); steering-ratio curve changed (15.9→12.6 vs 14.6→12.5) |
+| CSI / steering | block grew (+0x62); steering-ratio curve changed (15.9→12.6 vs 14.6→12.5) and became 3 coding-selected sets (0 E90, 2 E92/E93); see `analysis/DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` |
 | LVC | one scalar (0x4226A = 75 vs 50) |
 | AYC / slip / decel / brake / DDS / FSF | **byte-identical** to the 1M |
 
