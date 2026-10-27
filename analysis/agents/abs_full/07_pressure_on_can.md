@@ -167,7 +167,8 @@ A code value, not a bitfield: `abs_decision_pressure_exec` 0x58FF4 switches on e
 ### Decision code 32 (internal) ⇔ cornering knock-down
 (This is the internal code 0x408DDE = 32, not CAN ST_CLCTR bit 32.) Decision code 32 (written by
 `abs_decision_classify` and `abs_pair_logic` 0x54D9A; exec `abs_decision_pressure_exec` 0x58FF4 arm 0x59222)
-reduces the commanded pressure on a rebuilding wheel: `CMD = PM − pct·(LOCKEST − CMD)/100`. The pct byte
+sets a rear's command to max(1 bar, PM − pct·G/100), G = the source wheel's dump depth LOCKEST − CMD
+(`09_chassis_sensor_use.md` §2.1 item 7). The pct byte
 `0x408DE0` is written by the classifier (0x51F42) from the driver pressure's position between the lateral-g
 curves 0x40E26 and 0x40E0A (`03_lateral_g_influence.md` §2(a)). The inside/outside rear choice is the
 separate `abs_rear_lead_select` 0x5184C (which also sets `0x408DA0` b7).

@@ -49,9 +49,10 @@ Writes the decision code 0x408DDE and the `pct` byte 0x408DE0 (`09_chassis_senso
   `pct = 100·(P_drv − P_lo)/(P_hi − P_lo)` (0x51F42).
 - A straight-line shortcut (|lat| < 9, yaw-stable, balanced front pressures) → code 1.
 
-`abs_decision_pressure_exec` **0x58FF4**, code-32 arm **0x59222**, then sets
-`CMD(0x408F22) = PM − pct·(LOCKEST 0x408FD0 − CMD)/100`: the knock-down grows as the driver's pressure moves
-from the light-braking curve toward the upper one.
+`abs_decision_pressure_exec` **0x58FF4**, code-32 arm **0x59222**, then sets a rear's command to
+max(1 bar, PM − pct·G/100), G being the dump depth `LOCKEST − CMD` of the wheel in the decision word's source field:
+the knock-down grows as the driver's pressure moves from the light-braking curve toward the upper one. pct is not
+clamped and wraps at 256 %. Wheel roles and detail: `09_chassis_sensor_use.md` §2.1 items 6–7.
 
 ### (b) Lateral-g build step — decision code 256 [CONFIRMED]
 `abs_decision_resolve` 0x58B30 maps code 128 to **256** or 2; on the path at 0x58C4E–0x58C5E the choice is
@@ -115,7 +116,14 @@ reference/observer only. [CONFIRMED values; physical LSBs of Cf/Cr UNCONFIRMED]
   §2(a). There is **no** separate lateral axle-load lookup that re-splits left/right apply pressure.
   [INFERRED — no such table found in the ABS block]
 
-## 5. Yaw-*deviation* (measured − DSC model target) link — gated by AYC [INFERRED inert for ABS-only]
+## 5. Yaw-*deviation* (measured − DSC model target) link [CORRECTED 2026-10-25: not AYC-gated]
+
+> **Correction.** The text below is the original reading and is wrong on the gate. 0x4A254 is the tail call of every
+> ABS frame. Only its snapshot branch is gated, by the wheel-speed side flags `0x408DF0` b7/b6 and `0x401FF2 & 0xA0`
+> = 0x80 (ABS enabled, not engaged), not by AYC. Its oversteer state (`0x408DF1` b6, counter `0x408EA6`) runs with DSC
+> off and feeds the rear cornering latch, `abs_side_select` and the rear side logic. The observer that writes 0x400B1A
+> also runs with DSC off. Detail: `09_chassis_sensor_use.md` §7.6.
+
 
 `abs_yaw_deviation_monitor` **0x4A254**: computes **e = yaw_rate(0x408ECC) − AYC target B1A(0x400B1A)**
 and a lateral-dependent threshold (ABS-block curve **0x40C5A**), storing e into ABS RAM
@@ -152,7 +160,7 @@ ROM MISR re-sign.
 - `abs_pair_logic` 0x54D9A + gate `abs_pair_gate` 0x54B70; pacing `abs_gma_hold_frames` 0x54BE8.
 - `abs_rear_lead_select` 0x5184C.
 - `abs_decel_threshold_builder` 0x47BDC (front 0x40412 / rear 0x405F2 / g-term 0x40674).
-- `abs_yaw_deviation_monitor` 0x4A254 (gated).
+- `abs_yaw_deviation_monitor` 0x4A254 (every ABS frame; §5 correction).
 - Vehicle model loaders 0x5E424 / 0x5DE44 → RAM 0x400AE8..AF8 / 0x400AA4..AD8 (DSC-only consumers).
 - ABS-block lateral/yaw cal curves: 0x40E26, 0x40E0A, 0x40E42, 0x40C5A (all inside ABS block 0x4039C..0x40EA6).
 - Variant model tables (file offsets): l_f 0xDEF42, l_r 0xDEF5A, mass 0xDEF72, Jz 0xDEF8A, Cf 0xDEECA, Cr 0xDEEE2.
@@ -172,7 +180,7 @@ at **0x408ECA** (`ld.b;sextb;abs()` at 0x51C2C, 0x51C40, 0x51C54). **Neither is 
 
 **3. Use [CONFIRMED].** P_lo alone decides code 1 (P_drv < P_lo); P_lo and P_hi together give `pct` for
 code 32 (§2(a)). 0x40E26 also releases the rear cornering latch (driver pressure < 100·curve(|lat|)).
-**0x40C5A does not factor in**: it belongs to the AYC-gated `abs_yaw_deviation_monitor` 0x4A254.
+**0x40C5A does not factor in**: it belongs to `abs_yaw_deviation_monitor` 0x4A254 (§5).
 
 **4. Tuning direction [INFERRED].** Raising P_lo widens the light-pedal band where the rears run independent
 with no knock-down. For a given pedal pressure between the curves, raising P_hi lowers `pct` and so the

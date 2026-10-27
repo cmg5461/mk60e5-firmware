@@ -13,14 +13,14 @@ Confidence: **high** = behavior read from code and cross-checked against an exte
 |---|---|---|---|
 | 0x06C906 | `reset_entry` | high | vector 0 (first word of vector table at 0x40000) |
 | 0x0710FC | `s16 curve_interp_s16(const curve_t *rec, s16 x)` | high | piecewise-linear reader; strict-less segment search, Q10 truncating multiply, clamp [lo,hi]. Layout `{s16 lo, hi, n; x[n-1]; y[n]; slope[n]}`: out = y[i] + x·slope[i]/1024 (truncating), i = count of x < X (the scan runs one slot into y[0], harmless). Instances: BCO pedal curve 0x4177A (x {38,62,100,150,200}, y {15,9,11,50,50,50}, slope {269,427,404,0,0,0}), 0x41802, 0x417D0. M3 analogue of 1M 0x71158. Byte-verified on multiple curves |
-| 0x05DE44 | `vehmodel_load_singletrack_coeffs` | high | indexed by `0x4031AA+1` (variant), `ld.h [base+2*var]`; writes single-track state-space coeffs to RAM 0x400AA4..0x400AD8 |
-| 0x05E424 | `vehmodel_load_axle_derived` | high | indexed by `0x4031AA+1`; writes axle-derived terms to RAM 0x400AE8..0x400AF8; contains the `Cr*l_r − Cf*l_f` understeer term (fixes Cf=0xD6ECA, Cr=0xD6EE2) |
+| 0x05DE44 | `void vehmodel_load_singletrack_coeffs(void)` | high | indexed by `0x4031AA+1` (variant), `ld.h [base+2*var]`; writes single-track coeffs to RAM 0x400AA4..0x400AE6 (formulas: § "Vehicle-model derived coefficients"). Only reader (with 0x5E424) of the vehicle-model rows |
+| 0x05E424 | `void vehmodel_load_axle_derived(void)` | high | indexed by `0x4031AA+1`; writes 0x400AE8..0x400AF8 (v_ch terms, sensor lever arms, wheel-yaw factor); contains the `Cr*l_r − Cf*l_f` understeer term (fixes Cf=0xD6ECA, Cr=0xD6EE2). Replayed against the image 2026-10-26: a neutral model divides by 0, an oversteering one divides unsigned by a negative |
 | 0x054D9A | `abs_pair_logic` | high | contains the ABS entry-slip evaluation; loads curve 0x40DB6, x = vref (0x408DA8), calls 0x710FC at +0x1B0/+0x2C8/+0x540 (0x54F4A/55062/552DA are **call sites**, not separate fns), result compared vs `vref − wheelspeed` |
-| 0x0C795E | `tcs_driveslip_curve` | high | addr = 0xF625C+0x22·mode (mode=`0x4031AA+7`), replaced by 0xF61F6+0x22·mode when `0x402F6C` bit4 set; x = vref (0x403066) |
-| 0x0C7996 | `tcs_driveslip_total` | med | `tcs_driveslip_curve + s16(0x4030B6)/4` → RAM 0x402FC2 |
-| 0x0C7948 | `tcs_curve_f61e6` | med | reader of the 0xF61E6 curve |
-| 0x0CB576 | `tcs_cap_eval` | high | addr = 0xF654C+0x22·mode, output ÷20; divisor from TCS+0x1A4 table; 2nd stage 0xF65B2+0x22·idx |
-| 0x06D102 | `clamp_s16` (probable) | med | called after divs/multiply chains in the model loaders |
+| 0x0C795E | `tcs_driveslip_curve` | high | brake-TCS (channel A) base threshold: addr = 0xF625C+0x22·m (m = `0x4031AA+7`), replaced by 0xF61F6+0x22·m when `0x402F6C` b4 (gearbox type 1/3, never on a valid M3 coding); x = vref_tcs 0x403066. `TCS_7846816A.md` §4.1 |
+| 0x0C7996 | `tcs_driveslip_total` | high | `tcs_driveslip_curve + trunc(s16(0x4030B6)/4)` → 0x402FC2 (replayed, TCS doc §13) |
+| 0x0C7948 | `tcs_curve_f61e6` | med | reader of the 0xF61E6 curve (inside `tcs_state_b` 0xC7818) |
+| 0x0CB576 | `asr_target_cap_up` (was `tcs_cap_eval`) | high | ASR (channel B) split-side target raise, only when \|ay\| 0x403098 > 0.25 g: min(curve(0xF654C+0x22·m, vref)/20, (0x403098 − 2500)/0x41160[m]), further capped by a 0x4030B8 term; the companion lower is `asr_target_cap_down` 0xCB622 (0xF65B2+0x22·m, 0x41166/0x4116C). TCS doc §5.1 |
+| 0x06D102 | `s16 sat_s16(s32 x)` | high | clamp to [−32768, 32767] (`bmaski 15` / 0xFFFF8000 compare), then `sexth`. Called after divs/multiply chains in the model loaders and CSI |
 | 0x08E25E | (not a function) | – | mid-function code inside `sub_08E144` (byte-identical to 1M 0x8E066, also mid-function), never called, does not touch the coding block. The M3 variant is read directly (`ld.b 0x4031AA+1`); the `0x8E066(24, sel)` calls seen near the model loaders are `state_nibble_get`, not a coding accessor |
 
 ## Variables (RAM / coding)
@@ -28,11 +28,11 @@ Confidence: **high** = behavior read from code and cross-checked against an exte
 | Address | Name | Conf | Evidence |
 |---|---|---|---|
 | 0x004031AA | `coding_block` (12 B: +1 variant, +2 gearbox, +3/+4 brake front/rear, +5 steering-ratio set, +6 feature row, +7 DSC mode m (run time), +8 RPA threshold, +9 hill-start level, +10 LVC rpm limit; +0/+11 unused) | high | indexed `ld.b` in both model loaders and the TCS curve/cap readers; field table in `CODING_BYTES_7846816A.md` |
-| 0x00402F6C | `tcs_flags` (bit4 selects drive-slip set A vs B) | high | tested in `tcs_driveslip_curve` |
+| 0x00402F6C | `asr_flags` (was `tcs_flags`) | high | b7 ASR active, b6 ASR request (slip over target), b5 second ASR entry path (writer open), b4 = `gearbox_type` ∈ {1,3} (slot 6 0xCC26C; selects the alternate brake-TCS set 0xF61F6), b2 = 0x402F6A b1. Byte +1 (0x402F6D): b3 torque-reduction request, b2 torque-increase (MSR) request (arbiter 0xCC2C2). TCS doc |
 | 0x00403066 | `vref_tcs` (reference speed = min of front wheels, 0.01 km/h) | high | x input to TCS drive-slip curve |
 | 0x00408DA8 | `vref_abs` (0.01 km/h) | high | x input to `abs_entry_slip_eval` |
-| 0x00402FC2 | `tcs_driveslip_threshold` | med | store target of `tcs_driveslip_total` |
-| 0x00400AA4 | `vehmodel_ram` (single-track coeffs block, ..0x400AF8) | high | store targets of the two model loaders |
+| 0x00402FC2 | `tcs_driveslip_threshold` | high | store target of `tcs_driveslip_total`; zeroed while channel A is inhibited |
+| 0x00400AA4 | `vehmodel_ram` (single-track coeffs block, ..0x400AF8) | high | store targets of the two model loaders; per-word formulas in § "Vehicle-model derived coefficients" |
 | 0x00409534 | `diag_routine_id` (u8) | high | SID-31 routine id (RLI) from the diag RX buffer; jump-table index in `kwp_31` (`0xB2B22`, `index = id−5`) |
 | 0x00409535 | `diag_routine_arg` (u8) | high | SID-31 argument byte; **must be 0** for cal routines `0x20/0x22/0x24` (`0xB2C74`), else NRC `0x12` |
 | 0x00409537 | `diag_access_token` (u8) | high | KWP "last-qualifying-op" sequence token. `31` routines need 3 (set by StartCommunication `0xB33B0`); coding write needs 51 (set by `22 30 00` read). Compared, never auto-set, by the dispatcher/handlers |
@@ -57,7 +57,19 @@ Confidence: **high** = behavior read from code and cross-checked against an exte
   variants 0–4 == 5–9 (Competition twins of sedan/Custom ESM/?/coupe/convertible),
   10/11 unique (GTS coupe / GTS sedan)): l_f 0xD6F42 (Q10 m), l_r 0xD6F5A (Q10 m),
   mass 0xD6F72 (kg), Jz 0xD6F8A (kg·m²), Cf 0xD6ECA, Cr 0xD6EE2 (stiffness, units TBD),
-  track front 0xD6FA2, track rear 0xD6FBA (mm), override-enable flag 0xD7032 (all 0).
+  track front 0xD6FA2, track rear 0xD6FBA (**Q10 m**, not mm), override-enable flag 0xD7032 (all 0).
+  All rows: s16[12]. Patcher param patch: `mk60e5_patcher` `basic/vehicle_model`. More rows (2026-10-26):
+
+  | Address | Name | Type / unit | Stock | Conf | Evidence |
+  |---|---|---|---|---|---|
+  | 0xD6F2A | `vm_sensor_x` | s16[12], Q10 m | −1204 (−1.176 m) | med | −(yaw/lat sensor distance behind the front axle). 0x5E424: l_f + x, x, L + x → lever arms 0x400AEC / AF0 / AF2 |
+  | 0xD6F12 | `vm_sensor_y` | s16[12], Q10 m | 446 (0.436 m) | med | sensor lateral offset from the centreline, toward +ay. 0x400AEE = round(10240000 / (167·y)); `ay_axle_est_calc` adds ω²·y: (yaw/256)²/AEE mg matches ω²·0.4355 m exactly. 0 skips the term |
+  | 0xD6EFA | `vm_aux_h` | s16[12] | 532 | low | divisor in 0x400ACA/ACC = 112613·t²/1024/(m·532). Possibly CG height (0.52 m in Q10); role not traced |
+  | 0xD7002 | `vm_pair_d7002` | s16[12][2] (stride 4, `ixw`) | {50, 20} ×12 | med | 0x400AE4/AE6 = pair · Cf · 1024 / 40039. Spans the old "row" 0xD701A |
+  | 0xD6FD2 | `vm_pair_d6fd2` | s16[12][2] (assumed, same pattern) | {10000, 14000} ×12 | low | single reader 0x5ED9E (observer); spans 0xD6FEA |
+  | 0xD6E3A..0xD6EB2 | `vm_override_{a,b,c}_{f,r}` | s16[12] ×6 | 687/694, 300/306, 9609/9513 | med | copied to 0x400AC6..ACE/AD0 instead of the track-derived values when 0xD7032[var] ≠ 0 and var ≠ 1; dead on this ROM |
+
+  The steering-ratio sets 0x40EB4 / 0x40ECC (s16[3][4] each: SW counts, ratio × 1024) are in § CSI.
 - **ABS entry-slip curve** 0x40DB6 (lo0,hi900,n2,bp5000,c150/115,k−4/+3; threshold ~1.3–2.0 km/h).
 - **ABS decel scalars** (ABS=0x4039C): gain front +0x27E=40, gain rear +0x280=25, floor +0x282=−240,
   base +0x284=−116; floor<20 +0x2A8 (12×, −127 then −120); floor<60 +0x2C0 (12×, −132×10, −140×2);
@@ -414,6 +426,40 @@ typedef struct {
 | 0x060682 | `ayc_threshold_clamp` | med | clamps B6C/B70 to per-mode ceilings |
 
 AYC RAM: target B1A 0x400B1A, measured B46 (F-CAN 0x0CD), entry B6C, hold B70, P/D B76/B78, mode 0x4031B1.
+
+AYC calibrations (byte values from the image; roles from `yawmodel/REPORT.md`, FACTS Cycle 7, XDF notes). Yaw units
+1/20000 rad/s (349 = 1°/s). m = DSC mode 0x4031B1 (m0 DSC on, m1 rest-of-world MDM, m2 US MDM = coding c10 b5).
+
+| Address | Name | Type | Stock | Conf |
+|---|---|---|---|---|
+| 0x413BA / 0x413BC | `ayc_entry_base_a` / `_b` | s16 | 1396 (4°/s) / 2792 (8°/s); set A/B selector not traced | high |
+| 0x413BE | `ayc_hold_seed[2]` | s16[2] | 698 / 2094 | med |
+| 0x4141E | `ayc_hold_offset[m]` | s16[3] | 698 ×3 (B70 = B6C − this) | high |
+| 0x41424 / 0x4142A | `ayc_entry_ceiling[m]` / `ayc_hold_ceiling[m]` | s16[3] | 10471/10471/8028, 9773/9773/7330 | high |
+| 0x41478 / 0x41490 | `ayc_thr_speed_a_x[m][4]` / `_y` | s16[3][4] | x 0.01 km/h, y /128 (m0/m1 320→128) | high |
+| 0x414D8 / 0x414F0 | `ayc_thr_speed_b_x[m][4]` / `_y` | s16[3][4] | set B | high |
+| 0x413AA / 0x413AE | `ayc_pd_gain_base[2]` / `_2[2]` | s16[2] | 47/47, 36/36 (B76 P, B78 D) | high |
+| 0x41448 / 0x41460 | `ayc_pgain_pct_x[m][4]` / `_y` | s16[3][4] | m0/m1 30/60/70/100 %, m2 70/80/100/100 % | high |
+| 0x41430 | `ayc_pgain_pct2[m][4]` | s16[3][4] | m0/m1 80/80/90/100 % | med |
+| 0x411FE / 0x4120A | `ayc_torque_ceil_x[m][2]` / `_y` | s16[3][2] | x 50/80 (lat), y m0 150/400, m1 200/2000, m2 180/330 | high |
+| 0x41216 | `ayc_torque_scale_pct[m]` | s16[3] | 78 ×3 | med |
+| 0xD6DA4 | `ayc_feature_enable[m]` | s16[3] | 1/0/0; feature not identified | low |
+| 0x4155E | `ayc_us_rear_share` | s16, /256 | 256 (understeer: rear only) | high |
+| 0x413C4 | `ayc_small_yaw_rear_gain` | s16, /256 | 64 | high |
+| 0x41552 | `ayc_req_rate_cap[2]` | s16[2] | 300 / 500 | high |
+| 0x411B4 | `ayc_prefill_front_outer` | s16, 0.01 bar | 500 | high |
+| 0x415E8 | `ayc_driver_press_gate_pct` | s16, % | 60 | med |
+| 0x415F8 / 0x41610 / 0x41628 | `ayc_obs_tyre_{alim, fk, mu}[var]` | s16[12] | 1835 / 90 / 11905 (17854 for var 1, 6) | med |
+| 0xD704A / 0xD70AA | `ayc_obs_lag_y[var][4]` (Q13) / `_x` | s16[12][4] | v0–9 7229/6560/5200/3014; 10/11 differ | med |
+
+AYC RAM (med; the Bxx shorthand above = 0x400Bxx, B46 = AYC copy of measured yaw from `ayc_input_gather`): 0x400B6C `ayc_entry_thr` (s16), 0x400B70 `ayc_hold_thr` (s16), 0x400B76 / 0x400B78 `ayc_kp` / `ayc_kd` (s16),
+0x400B1C `ayc_moment` (s16, ~0.1 bar per count per wheel), 0x400B0C `ayc_wheel_demand[4]` (s16), 0x400B30
+`ayc_torque_cap` (s16), 0x400BB8 b7:6 `ayc_dist_mode`, 0x400C42 / 0x400C44 `obs_beta` / `obs_yaw` (s16).
+
+TCS drive-slip records (`curve_t`, 0x22 B each), read by `tcs_driveslip_curve`: set B 0xF625C + 0x22·m (always used
+on the M3), set A 0xF61F6 + 0x22·m (gearbox type 1/3 only). These are the **brake-TCS** base thresholds; the entry
+limit adds 5 km/h and a low-speed extra (`TCS_7846816A.md` §4.1). Set B at 15 / 25 / 50 / 80 km/h: m0 2.7 / 1.0 / 2.3 / 3.8, m1 8.7 / 8.1 / 6.5 / 6.8, m2 7.7 / 7.1 /
+5.5 / 5.8 km/h; all ≈ equal above 100 km/h.
 **v_ch is runtime-derived from the variant model (loader 0x5E424), not a constant**: M3 varies 105.5–142.1 km/h
 by coding variant (1M fixed 97.65). **m=1 is the most permissive** (torque ceiling 2000 vs m0 400 / m2 330).
 DSC-mode→driver-mode (DSC/DTC/MDM/OFF) mapping is live EEPROM/RAM state — not statically resolvable.
@@ -454,7 +500,14 @@ DSC-mode→driver-mode (DSC/DTC/MDM/OFF) mapping is live EEPROM/RAM state — no
 | 0x091A0E / 0x091A26 | `s16 clamp_sym16(s16 x, s16 lim)` | high | clamp to [−lim, lim]; 0x91A26 does not sign-extend its input |
 | 0x09020C | `void steer_offset_learn(void)` | high | zero-offset estimator. Every call: corrected angle 0x402132 = 0x4020D0 − offset 0x4020A6/64. Every 100 calls (0x402134), with 0x4020FD b7 + 0x402147 b7 and not 0x402884 b3: `offset += (clamp(0x4020D2, offset/64 ± 228)·64 − offset) / D`, D = min(curve 0xDA8FA/0xDA8FE (alt 0xDA902 if 0x4020FD b4) over \|0x4020DC\|, curve 0xDA906/0xDA90A over \|0x40211C\|)·1200/[0x400B2C]; then clamp ±0x7249 (457 counts). **±228 is a step clamp, not a window.** Also 0x402136 += vref/360 (cap 60000). `DSC_STEERING_AND_VEHICLE_MODEL_7846816A.md` §2 |
 | 0x090408 | `steer_rate_update` | low-med | steering rate 0x402130: differentiator on raw 0x4020D0 with hold counters 0x4049F2–0x4049F8, then IIR (k ≈ 204/256). Units not confirmed (≈ counts/s) |
-| 0x090D10 | `yawref_stage_main` (label `yaw_ref_closedform` at 0x90E5C) | high | r_ref via AE8/AEA; writes 0x4020EC; = 1M 0x90AF8/0x90C44 |
+| 0x090D10 | `void yawref_stage_main(void)` (label `yaw_ref_closedform` at 0x90E5C, mid-function) | high | builds the redundant yaw rates (1/20000 rad/s): front-wheel 0x40215A and rear-wheel 0x40215C = LP 221/256 of `wheel_yaw_k` 0x400AF4 · (speed difference 0x402A24−0x402A22 / 0x402A28−0x402A26, side not pinned); closed-form r_ref 0x4020EC = 4·δ(0x40212E)·v/16 / ((v²/16 + 2·AE8·AEA)/(8·AEA)), clamped to ±(0x558C/(v/16))<<8 (1.27 g friction limit) → LP 221/256 0x40215E; lateral 0x402160 = ay(0x402AB6)·88290·8/v (v > 10.8 km/h), same clamp. Also LPs 0x4020EE (205/256) and 0x402166 (241/256) of r_ref; 0x402168 = 0x40215A, 0x40216A LP 227/256 of it; = 1M 0x90AF8/0x90C44 |
+| 0x09001E | `void ay_axle_est_update(void)` | high | 0x40212C += (0x4020DA − 0x40212C)·189/256 (LP ay, mg); c = (yaw 0x402100/256)²/AEE (0 if AEE = 0); `ay_axle_est_calc` with lever arm AEC / AF2 / AF0 → 0x402126 CG / 0x402125 rear axle / 0x402124 front axle; 0x402AB6 = clamp(0x40212C/10, ±127) |
+| 0x09053C | `void yaw_steer_equiv_update(void)` | med | den = (AE8/4)·(1 + v²/v_ch²) computed as AE8/4 + (v²/16)/(8·AEA); above vref 10.01 km/h converts 0x40215A / 0x40215C / measured yaw 0x402100 / 0x402160 into steering-equivalent road-wheel angles 0x40217A / C / E / 0x402180 (δ = r·L·(1 + v²/v_ch²)/v). Readers 0xB987E.. (`steering_angle_init_monitor` 0xB97D4) and 0xBA6F6.. |
+| 0x090520 | `s16 yaw_to_steer_equiv(s16 yaw, s16 den)` | med | sat16(4 · `div_sat16`(yaw·den, vref 0x408DA8)) |
+| 0x0919E2 | `s16 div_sat16(s32 num, s16 den)` | high | num clamped to ±32767·den (`clamp_sym32`), then `divs` |
+| 0x0919D0 | `s32 clamp_sym32(s32 x, s32 lim)` | high | clamp to [−lim, lim] |
+| 0x0919FA | `s16 sat_toward(s16 x, s16 ref)` | high | ref + sat_s16(x − ref) |
+| 0x0BB888 | `void steer_yaw_consistency_check(void)` | med | 0x402A60 = sat16(16·(0x402A3E·v/16)/AF6 − 16·(ay 0x402AB6·v/16)/AF8), the linear bicycle yaw v·(δ − K·ay)/L (AF6 ∝ L, AF8 ∝ v_ch²); counter 0x402ABD counts up (≤ 175) while \|0x402A60\| − \|r_ref LP 0x40215E\| > 698 (2°/s), else clamps to ≤ 50. 0x402A3E comes from `steering_angle_init_monitor` 0xB97D4 (a steering angle, [I]) |
 | 0x0C5C78 | `canrx_steer_angle_0C9` | med | F-CAN 0x0C9 sig 43 (var 0x020); valid window, ·1029/1024 → 0x401644 |
 | 0x0C583C | `cluster_sensor_get(idx)` | high | idx0..5 → 0x402F1C/20/24/1E/22/26 (F-CAN 0x0CD/0x0D1 yaw/ay cluster). idx5 = 0x402F26 = 0x0D1 bytes 4–5 = longitudinal accel (inferred) |
 | 0x08FE70 | `csi_cond_sensor2` | high | ay channel; = 1M 0x8FC78 |
@@ -472,6 +525,72 @@ per NCS, 1 = copy of 0; field limit 3, a set 3 would overlap y set 0 / the sign 
 x {299, 3199} / 0xDA8FE y {3000, 9000} / 0xDA902 alt y {700, 3000}; 0xDA906 x {1745, 6981} / 0xDA90A y {3000, 700};
 restore clamps 0xDA974 = {29257, 30581, 16000, 21600}. Code literals: step clamp 228, hard clamp 0x7249, fault
 0x3924, raw range 16457, divisor ×1200.
+
+## Vehicle-model derived coefficients and yaw references (2026-10-26)
+
+From the loaders 0x5DE44 / 0x5E424, the yaw-reference builder 0x90D10 and its consumers. Formulas were read from code
+and checked by replaying both loaders against the image: stock variant 0 gives the values shown (AF4 = 36 and v_ch =
+128.8 km/h match FACTS), and the closed forms for AA4–AB8, AC2, ACA, ADA–AE2, AE8, AEA, AF4 and AF6 match the replay
+within 1 count for 280 random cars. Inputs are the coded column of the vehicle-model rows: l_f, l_r, L = l_f + l_r, t_f,
+t_r (Q10 m), m (kg), Jz (kg·m²), Cf, Cr, sensor x / y (Q10 m). Divisions truncate. "sat" = `sat_s16`. All RAM is
+s16 unless noted.
+
+| RAM | Name | Formula | Stock v0 | Conf |
+|---|---|---|---|---|
+| 0x400AA4 | `vm_lr_over_jz` | −763548·l_r / Jz / 128 | −2810 | high |
+| 0x400AA6 | `vm_inv_cf` | 614399998 / Cf / 16 | 5101 | high |
+| 0x400AA8 | `vm_cf_a` | (Cf·65536 / 37499) / 10 | 1315 | high |
+| 0x400AAA | `vm_inv_m_a` | 14380460 / m | 8047 | high |
+| 0x400AAC | `vm_lf_over_lr_cr` | sat(552960002 / (16·l_r) · l_f / Cr) | 3261 | high |
+| 0x400AAE | `vm_cf_b` | Cf·131072 / 24999 / 3 (wraps above Cf 18745) | 13154 | high |
+| 0x400AB0 | `vm_front_axle_load` | sat(180·m·l_r / (L·3665 / 256)) = 12.57 × front axle load (kg) | 11234 | high |
+| 0x400AB2 | `vm_cr_b` | Cr·131072 / 99999 (wraps above Cr 25000) | 13888 | high |
+| 0x400AB4 | `vm_lf_over_jz` | 572661·l_f / Jz / 128 | 2107 | high |
+| 0x400AB6 | `vm_inv_m_b` | 19173933 / m (wraps below m 586) | 10729 | high |
+| 0x400AB8 | `vm_balance_a` | 17854·Cf / l_r · l_f / (10·Cr) | 1268 | high |
+| 0x400ABA / ABC / AC0 | `vm_lf_arm` / `vm_lr_arm` ×2 | −l_f·10815/1024, l_r·10815/1024, l_r·10815/1024 | −14923 / 14923 | high |
+| 0x400ABE | `vm_const_abe` | 24278 (constant) | 24278 | high |
+| 0x400AC2 | `vm_understeer_grad` | sat((966037735 / (Cf·Cr/m)) · ((Cr·l_r − Cf·l_f)/2048) / 16 / L), ∝ understeer gradient K | 1013 | high |
+| 0x400AC4 | `vm_wheelbase_a` | L·338/1024 | 932 | high |
+| 0x400AC6 / AC8 | `vm_track_f` / `_r` | t·464/1024 (override rows when 0xD7032[var] ≠ 0) | 713 / 712 | high |
+| 0x400ACA / ACC | `vm_track_sq_f` / `_r` | (112613·t/1024)·t / (m·vm_aux_h) | 286 / 286 | high |
+| 0x400ACE / AD0 | `vm_inv_track_f` / `_r` | 14563328 / t | 9246 / 9258 | high |
+| 0x400AD2 / AD4 | `vm_track_f_b` / `_r_b` | t·180/1024 | 276 / 276 | high |
+| 0x400AD6 | `vm_track_f_c` | t_f·100/1024 | 153 | high |
+| 0x400AD8 | `vm_vch2_obs` | ∝ L²·Cf·Cr / (m·(Cr·l_r − Cf·l_f)) ≈ 0.871·v_ch² (km/h)². Saturates at v_ch ≈ 194 km/h. Read by `sub_05F942` (0x5F9CC, ÷ 0x400B2C) | 14444 | high |
+| 0x400ADA | `vm_cf_l2` | L²/1024 · Cf / l_r · 1013 / m. Saturates above ≈ 3.1 m wheelbase at M3 per-kg stiffness | 23550 | high |
+| 0x400ADC | `vm_balance_q9` | sat(512·Cf·l_f / (Cr·l_r)), the understeer balance (< 512 = understeer) | 363 | high |
+| 0x400ADE | `vm_jz_over_mlr` | sat(Jz·23040 / (l_r·m/32)) | 875 | high |
+| 0x400AE0 | `vm_cf_front` | ((L·Cf·16/m)/32 · 12271 / l_r) / 4, no saturation (wraps) | 12920 | high |
+| 0x400AE2 | `vm_jz_cf` | (Jz·Cf/m)·1024 / l_r · 719 / Cr, no saturation | 621 | high |
+| 0x400AE4 / AE6 | `vm_pair_cf` | `vm_pair_d7002`[var][0 / 1] · Cf · 1024 / 40039 | 9625 / 3850 | high |
+| 0x400AE8 | `vm_wheelbase_vch` | L·675/1024; v_ch² = 32·AEA·AE8 (0.01 km/h)² | 1862 | high |
+| 0x400AEA | `vm_vch_term` | sat(383·((Cf·Cr/m)·L / 128) / ((Cr·l_r − Cf·l_f)/32)) | 2784 | high |
+| 0x400AEC / AF0 / AF2 | `vm_arm_cg` / `_front` / `_rear` | (p·10000 ± 890000)/1916/1024 with p = l_f + x, x, L + x (rounded toward the sign of p): position relative to the sensor, + = rearward, ≈ 0.1916 m per count | 1 / −6 / 8 | high |
+| 0x400AEE | `vm_cent_div` | (167·y/2 + 10240000)/167/y (0 when y = 0) | 137 | high |
+| 0x400AF4 | `wheel_yaw_k` | round(56888 / t_f): wheel-speed difference → yaw (1/20000 rad/s) | 36 | high |
+| 0x400AF6 | `vm_wheelbase_b` | (100000·L/148)/1024, ∝ L | 1864 | high |
+| 0x400AF8 | `vm_vch2_b` | ∝ v_ch² (AD8/AF8 = 61.5 for any input) | 235 | high |
+
+Yaw references and steering equivalents (1/20000 rad/s unless noted):
+
+| RAM | Name | Type | Meaning | Conf |
+|---|---|---|---|---|
+| 0x4020EC | `yaw_ref_closed` | s16 | closed-form steering yaw reference r = δ·v/(L·(1+v²/v_ch²)), 1.27 g friction-clamped | high |
+| 0x4020EE / 0x402166 | `yaw_ref_lp205` / `yaw_ref_lp241` | s16 | low-passes of 0x4020EC (205/256, 241/256) | high |
+| 0x40215A | `yaw_wheel_front` | s16 | front-axle wheel-speed yaw, LP 221/256 | high |
+| 0x40215C | `yaw_wheel_rear` | s16 | rear-axle wheel-speed yaw, LP 221/256 | high |
+| 0x40215E | `yaw_ref_closed_lp` | s16 | LP 221/256 of 0x4020EC | high |
+| 0x402160 | `yaw_from_ay` | s16 | ay·88290·8/v (above 10.8 km/h), friction-clamped | high |
+| 0x402168 / 0x40216A | `yaw_wheel_front_copy` / `_lp227` | s16 | copy and LP 227/256 of 0x40215A | high |
+| 0x40217A / 7C / 7E / 80 | `steer_equiv_{wheel_f, wheel_r, yaw_meas, ay}` | s16, road-wheel units | the four yaw rates as equivalent road-wheel angles, δ = r·L·(1+v²/v_ch²)/v | med |
+| 0x402A22 / 24 / 26 / 28 | `wheel_speed_yaw_in[4]` | s16 | wheel records 0..3 (`0x40BF00`+26+64·w) × (745 + rec+53 byte)/1001; inputs to the wheel yaw | med |
+| 0x402A3E | `steer_mon_angle` | s16 | steering angle held by `steering_angle_init_monitor` 0xB97D4 | low |
+| 0x402A60 | `yaw_lin_model` | s16 | v·(δ − K·ay)/L from `steer_yaw_consistency_check` | med |
+| 0x402ABD | `steer_yaw_mismatch_cnt` | u8 | up to 175 while \|0x402A60\| exceeds \|0x40215E\| by > 2°/s | med |
+| 0x40212C | `ay_lp` | s16, mg | LP 189/256 of 0x4020DA | high |
+| 0x402AB6 | `ay_centi` | s8, 0.01 g | clamp(0x40212C/10, ±127); `abs_ay_get` value | high |
+| 0x402124 / 125 / 126 | `ay_est_front` / `_rear` / `_cg` | s8, 0.01 g | `ay_axle_est_calc` at the front axle / rear axle / CG | high |
 
 ## Brake coding — COA / BCO (cycle 3 — bodies byte-identical to 1M)
 
@@ -497,7 +616,7 @@ restore clamps 0xDA974 = {29257, 30581, 16000, 21600}. Code literals: step clamp
 | 0x0CFD60 | `u16 coding_A9(void)` | high | bit 9 of 0x4031F4 (byte 13 b3, soft-stop assist) |
 | 0x093E1C | `s16 master_pressure_get(u8 want, sensor_sig_t *out)` | high | fixed single-sensor getter: always the master cylinder value, never selects between sensors; out->value = 0x401FF8; fitted `sensor_fitted(5)`; invalid from 0x402888 b5 / 0x402884 b4; returns `want` when valid (st b7) |
 | 0x093C22 | `s16 lat_resid_get(u8 want, sensor_sig_t *out)` | high | out->value = (s8)0x402126; fitted `sensor_fitted(6)`; invalid from 0x402888 b2 / 0x402884 b5 |
-| 0x08FFE8 | `s8 ay_axle_est_calc(s16 a, s16 b, s16 c, s16 d)` | med | clamp(c + b − (a·yaw_accel 0x402102)>>8, ±1270)/10 (0.01 g): b = low-passed ay 0x40212C, c = (yaw 0x402100/256)²/0x400AEE, a = 0x400AEC / AF2 / AF0 → 0x402126 / 125 / 124 (0x90082/96/…). A model-based axle lateral-acceleration estimate, roughly ay when yaw accel is 0; see BCO doc §11 |
+| 0x08FFE8 | `s8 ay_axle_est_calc(s16 arm, s16 ay, s16 cent, s16 d)` | high | clamp(cent + ay − (arm·yaw_accel 0x402102)>>8, ±1270)/10 (0.01 g): the sensor's lateral acceleration moved to a point `arm` along the car (rigid body: ay_P = ay_S + α·x + ω²·y_S). ay = LP ay 0x40212C (mg), cent = (yaw 0x402100/256)²/0x400AEE (ω²·y_S, mg), arm = lever arm 0x400AEC (CG) / AF2 (rear axle) / AF0 (front axle), in ≈ 0.19 m steps → 0x402126 / 125 / 124 (from `ay_axle_est_update` 0x9001E); see BCO doc §11 |
 | 0x0835F0 | `s8 req_slot_store(u8 ch, u32 id, u8 *tuple3)` | med | channel table 0x4018F0 + 32·ch, max 4 entries (3-byte tuple + id word) |
 | 0x06A8F8 | `s8 req_id_enabled(u8 id)` | med | gate in `req_arbiter_submit`; non-zero for id 17 |
 | 0x08338A | `u8 req_id_blocked(u8 id)` | med | gate in `req_arbiter_submit`; 0 for id 17 |
@@ -634,27 +753,121 @@ Root 0xD7B84 → class 0xD7E64 → object array 0xD7E40; object→task-id map 0x
 | 0x0D7D1C / 0x0D7C18 / 0x0D7DDC / 0x0D7D7C / 0x0D7C78 | `rt_obj_task3` / `rt_obj_task4` / `rt_obj_task2` / `rt_obj_task1` / `rt_obj_task0` | high | +0 vtbl, +8 RAM block |
 | 0x0D7CE8 / 0x0D7D48 / 0x0D7DA8 | `rt_vtbl_task3` / `rt_vtbl_task1` / `rt_vtbl_task2` | high | slot +40 = task3_10ms_body / task1_2p5ms_body / task2_1ms_body; tasks 0 and 4 have no body slot |
 
-## TCS controller + engine-torque-reduction path (cycle 4 — byte/opcode verified)
+## TCS controller + engine-torque path (cycle 4; roles corrected 2026-10-26, `TCS_7846816A.md`)
 
 | Address | Name | Conf | Evidence |
 |---|---|---|---|
-| 0x0CC9A0 | `tcs_torque_ctrl_entry` (dispatch slot 17) | high | → 0xCC9B4, tail 0xCD7FE; = 1M 0xCCF5C |
-| 0x0CD1E8 | `tcs_torque_pi` | high | P clamp 0x41068/6A, I clamp 0x4106E/70, out 0x40304C, flag 0x40303C bit7. Positive output only, decel-gated; channel C of the traction state scheme, MSR-like [I]; DSC-off zeroing at 0xCD34A only with `dme_0A8_flags` b4 |
-| 0x0CD070 | `tcs_pi_gain_select` | med | gains 0x41072–78, driveline-ratio thr 0x41172 |
-| 0x0CCED4 | `tcs_slip_target` | high | curve 0x41046 → 0x403054 |
-| 0x0CD7FE | `tcs_reduction_floor` | med | writes floor 0x403060; **retuned vs 1M** |
-| 0x0C846A | `tcs_gross_slip_check` | high | min(1500, 4000−vref); limit is **hard-coded** (not cal); = 1M 0xC8384 |
-| 0x0C7D48 | `tcs_entry_gate` | high | gates **hard-coded** (>120, >300, vref<3000) vs 1M cal fields |
-| 0x0CC2C2 | `dme_torque_request_compose` (slot 23) | high | writes 0x402F74/76, type flags 0x402F6D; = 1M 0xCC87E |
-| 0x0CC26C | `dme_torque_inputs_scale` (slot 6) | high | DME torque RX·S/100 |
-| 0x07E7A4 | `can_dme_iface_update` (0x0B6 pack at 0x7F530) | high/med | sole writer of 0x4046E6/E8 |
+| 0x0CC9A0 | `msr_cycle` (was `tcs_torque_ctrl_entry`; dispatch slot 17) | high | MSR (channel C): → 0xCC9B4, tail 0xCD7FE; = 1M 0xCCF5C |
+| 0x0CD1E8 | `msr_pid` (was `tcs_torque_pi`) | high | MSR PID. D term clamp 0x41068/6A (±2500), integrator-input clamp 0x4106E/70 (±200; earlier "P / I clamp" was wrong), I ≤ 2·drag, output 0x40304C = u − drag, flag 0x40303C b7; decel-dependent deadband; DSC-off zeroing at 0xCD34A only with `dme_0A8_flags` b4. TCS doc §6.3 |
+| 0x0CD070 | `msr_gains` (was `tcs_pi_gain_select`) | med | Kd 0x41072 = 180, Ki 0x41074 = 100, Kp 0x41076 = 60, ABS-mode Kp 0x41078 = 25; gear scaling about pivot 0x41172 = 70 |
+| 0x0CCED4 | `msr_slip_target` (was `tcs_slip_target`) | high | curve 0x41046(vref) ×2 idle / ×1.5 active below it, + decel term, + 5 % vref, − curve 0x41030(4·0x4030A8) → 0x403054 (replayed, TCS doc §6.2) |
+| 0x0CD7FE | `msr_floor` (was `tcs_reduction_floor`) | med | writes 0x403060 / 0x403062 b7, used by the arbiter as a lower bound on the MSR request; retuned vs 1M; formula open |
+| 0x0C846A | `tcs_a_phase_hint` (was `tcs_gross_slip_check`) | med | brake-TCS freeze decision → `0x402FFF[w]` b6 (demand held in 0xC8576). Classifies demand vs PM (± 3.5 bar, 0.75 bar) into 0–3; only with rec+0x10 b4; freeze cancelled when filtered slip > clamp(40 − vref, 0, 15) km/h (hard-coded; 1M had cal fields) and ASR active (0x402F6C b7) outside split-µ, or in release with 0x402F70 < 1500 under the same condition. TCS doc §8.1; = 1M 0xC8384 |
+| 0x0C7D48 | `tcs_lowspeed_pair_exit` (was `tcs_entry_gate`) | med | below 30 km/h, when the other rear also spins (filtered > 1.2, raw > 3 km/h, rate ≥ 0, PM < 5 bar), returns 1 = exit for the wheel with more pressure / beyond 20 bar and sets 0x402FFC b5 (rear) / b6 (front) |
+| 0x0CC2C2 | `dme_torque_request_compose` (slot 23) | high | reduction (ASR / ABS 0x408D58 / AYC 0x400B30 / external) or increase (MSR / external) → 0x402F74/76, type 0x402F6D b3/b2; replayed (TCS doc §7); = 1M 0xCC87E |
+| 0x0CC26C | `dme_torque_inputs_scale` (slot 6) | high | 0x402F70 = 0x401146·S/100, 0x402F72 = 0x401144·S/100 (S = 0x4030A0>>6), clamp s16; 0x402F6C b4 = gearbox type ∈ {1,3} |
+| 0x07E7A4 | `can_dme_iface_update` (0x0B6 pack at 0x7F530) | high | sole writer of 0x4046E6/E8: reduction → sig19 = F74·819/4096, sig18 = F76·819/4096, type 2; increase → both F74·819/4096, type 1; none → 0x800, type 0; fields clamped ±2047 |
 | 0x07AB52/0x07AB58/0x07AB48 | `can_tx_0B6_sig19/sig18/sig20` | high | getters for 0x4046E8/E6 + type |
-| 0x0CBF58 | `msr_cycle_entry` (slot 16) | med | MSR/engine-drag; tail → dsc_mode_select |
+| 0x0CBF58 | `asr_cycle` (was `msr_cycle_entry`; slot 16) | high | **engine ASR** (channel B): targets 0xCB27A, controller 0xCAF26, inhibits 0xCE1E8, 0xCB708; tail → dsc_mode_select |
 
-**Torque-reduction path (RESOLVES the open TCS question):** TCS PI (0xCD1E8) → torque delta 0x40304C /
-floor 0x403060 → arbiter `dme_torque_request_compose` 0xCC2C2 (merges TCS/ASR + MSR + AYC `engine_torque_request`
-+ external limit) → **CAN TX 0x0B6** (DSC→DME, DLC5, 20 ms): sig19/sig18 = torque values (·0x333/4096 ≈ ÷5, inverse
-of the ÷DME-LSB), sig20 = request type (0 none / 1 single=ASR / 2 pair). 0x800 = "no request". Negative = reduce torque.
+**Torque path (corrected 2026-10-26):** the ASR torque limit is channel B (`tcs_b_entry` 0xCAD00, `tcs_b_control`
+0xCAB4E) → 0x402F7A / 0x402F7C. The MSR request is channel C (`msr_pid` 0xCD1E8) → 0x40304C, floor 0x403060.
+`dme_torque_request_compose` 0xCC2C2 merges these with AYC 0x400B30, ABS 0x408D58 and the dormant external limit,
+then **CAN TX 0x0B6** (DSC→DME, DLC 5, 20 ms). sig20 = request type: 0 none, **1 increase (MSR)**, **2 reduction**
+(pair sig19/sig18). 0x800 = "no request". The cycle-4 reading (TCS PI → reduction, type 1 = ASR) was wrong.
+
+## Traction control (TCS / ASR / MSR) — 2026-10-26 (`TCS_7846816A.md`)
+
+Channel roles: **A = brake TCS** (rear wheels, arbiter id 2), **B = engine ASR** (torque limit), **C = MSR** (torque
+increase). All 10 ms, task 3. "Replayed" = matched by `tools/mcore_replay.py` against the doc's formula (§13).
+
+| Address | Name | Conf | Evidence |
+|---|---|---|---|
+| 0x0C953C | `tcs_wheel_signals` | high | from the wheel loop 0x8F05C: `tcs_slip_raw`, per rear `tcs_slip_filter` + `tcs_slip_rate`, 0xCC7DE, `tcs_axle_osc_detect`, 0xCBAE4, tail 0xC9298 |
+| 0x0C9450 | `tcs_slip_raw` | high | 0x40307E[w] = rec+0x1C − same-side front tracker; rears + cornering term ((v·k1(x))>>10·k2(v))>>10, x = 2048·y/max(v,50), y = \|yaw\|/75 or 2·0x4030A8; k1 0xF6158/68, k2 0xF6178/8A. Replayed |
+| 0x0C9368 | `tcs_slip_filter` | high | 0x403086[w] = s + trunc((256N−2560)/N)·(f − s)/256, N = 150 (rec+0x10 b4) / 110 (split-µ) / 30. Replayed |
+| 0x0C93E2 | `tcs_slip_rate` | med | 0x40308E[w] = 10q + 233/256·(rate − 10q), q = trunc(28·Δ/10) (≈ 1 mg units) |
+| 0x0C91A4 | `tcs_axle_osc_detect` | med | 0x402FFC b1 (56-frame hold) on opposite-sign rear rates beyond ±320 mg with low slip; pairs from 0xF619C |
+| 0x0CDBA0 | `tcs_vref_update` | high | front trackers 0x403076/78 via 0xCD9D0 / 0xCDB00 (braking) / 0xCDB42; vref_tcs 0x403066 = min; AYC re-seed; floor 0xCDAA6 |
+| 0x0CD9D0 | `tcs_front_tracker(f) → f'` | high | rise ≤ 2.14 km/h/frame ×3 then jump; hold 10/30 frames; fall 0.05 / 0.11 / 0.45 km/h per frame. Replayed |
+| 0x0CC0DC | `tcs_front_dv_est` | med | 0x4030A8 = capped \|FL − FR\|/4 (0.04 km/h, yaw proxy); 0x403098 = \|ay\|·100 (0.0001 g) via 0xCC208, side 0x402F7F b7; zero above 180 km/h (0xCBFD4) |
+| 0x0CC568 | `tcs_rear_speed_lp` | med | 0x40309E = lp of mean raw rear speed, N from 0xF61A0 (30/112/150/150) |
+| 0x0CC4E0 | `tcs_driveline_ratio` | med | 0x40306A = clamp(lp(rpm·58/0x40309E), 15, 180); 0x4030A0 = clamp(lp(0x40306A<<6), 1410, 10256); S = 0x4030A0>>6 |
+| 0x0C95B8 | `tcs_engine_bog_margin` | high | 0x403024: below 20 km/h, lp((curve 0xF6380(pedal) − rpm)/16 − 3.5·lp(rpm gradient)) clamp −50…240; else ×7/8. Replayed |
+| 0x0C9A22 | `tcs_split_mu_detect` | med | 0x402F7E b7 (split-µ) from rear PM imbalance below 50 km/h vs curve 0xF6634(0x4030AF) |
+| 0x0CF120 | `tcs_a_slot14` | high | skips channel A (and zeroes 0x402FC2) while 0x402F6A b3; else 0xC8238 |
+| 0x0C8238 | `tcs_a_frame` | high | 0xC81BE, limits per rear, rec+3 → rec+4 copy, `tcs_a_wheel_eval` per rear |
+| 0x0C81BE | `tcs_a_mdm_mode` | high | 0x402FC0 b6 = 1 in MDM (unless both rears non-idle); cleared outside MDM when a rear slip < 2 km/h |
+| 0x0C7A92 | `tcs_a_limits` | high | entry 0x403014[w] = T + E − R + 500, exit 0x40300C[w] = T + E/2 − R + 300, ≥ 30000 → both 30000. Replayed |
+| 0x0C79B6 | `tcs_a_rate_term` | high | trunc(p·rate/100), p = 2 (split-µ, rec+0x10 b4 clear) else 10 |
+| 0x0C7A3C | `tcs_a_extras` | high | curve 0xF62EE+28·m(vref) when not split-µ, 0x402F7E b4 clear and vref ≥ 2.5 km/h |
+| 0x0C79E8 | `tcs_a_split_addon` | med | split-µ only: min(0xF62C8[m]·0x4030AF/178, curve 0xF62CE) on one side (0xF62C8 = 0 → 0) |
+| 0x0C7A78 | `tcs_a_mdm_lockout` | high | +20000 if tcs_mode 3 and 0x402FC0 b6 clear (practically unreachable) |
+| 0x0C7E40 | `tcs_a_wheel_eval` | med | per-rear command b4 enter / b5 hold / b6 exit / b3 both idle; gates 0x403024 ≤ 80 / > 110 / > 150; pair exits |
+| 0x0C7BB4 | `tcs_a_phase_update(cmd)` | med | rec+3 phase bits b7 idle, b6 hold, b5 release, b4 build, b3 end, b2 release entry, b1 active, b0 entry |
+| 0x0CF17A | `tcs_a_slot15` | high | 0xC95B8, 0xC82F0, then 0xC8866 (or 0xCF13C reset + zero 0x402FC2 when inhibited) |
+| 0x0C82F0 | `tcs_a_active_update` | high | 0x402FC0 b4 = b0 = any rear rec+3 b1; inhibit / ABS 0x408DA2 b6 → both idle |
+| 0x0C8866 | `tcs_a_pressure_frame` | high | per rear: 0xC83C4 (fast-fill counter), `tcs_a_demand` 0xC88F8, `tcs_a_target` 0xC8576; then `tcs_a_submit` |
+| 0x0C88F8 | `tcs_a_demand` | med | by phase: idle → 0, release → 0xC8C5A, build → 0xC9084, hold → keep (≤ cap − 1 bar) |
+| 0x0C9084 | `tcs_a_build` | med | fast fill 0xC8E6E, first step 0xC8D14, +5 bar every N frames (`tcs_a_build_interval` 0xC8D8A, map 0xF643A), MDM cap 0xC9024 |
+| 0x0C8C5A | `tcs_a_release` | med | first step 0xC8ADA (d % of peak), then −max(15 %, 3 bar) every N frames (`tcs_a_release_interval` 0xC89C0, map 0xF63B8) |
+| 0x0C8576 | `tcs_a_target` | med | 0x402FEC[w] = demand capped by `0x89A7C(2)` = 130 bar; rises smoothed ¾ old + ¼ new outside the fast fill |
+| 0x0C8740 | `tcs_a_submit` | high | `req_arbiter_submit(1, 2, w, PM, 0x402FEC[w], target − PM)` per non-idle rear; 0x835F0 circuit requests for circuits 0/1 |
+| 0x089A7C | `req_id_max_pressure(id)` | high | id 0 → COA 0x419E4, 1 → 200, 2 → 13000 (130 bar), else 0 |
+| 0x0CEEDC | `tcs_disc_thermal` | med | all four discs, all braking. 23-frame round robin (0x403038): 0xCEC7C flag, then heat (0xCEB0C, PM·v·k[brake code]) / cool (0xCEBAE, speed-dependent, 3 regimes) per wheel, so once per 230 ms each. Start: off-time cool-down 0xCED38 from CAN 0x310 time (0xCED08; skipped while the time is invalid). Power-down save to NVM 0xCEA0E (high bytes + timestamp, job 0xF61A8). 0x402FC0 b1 set ≥ 0x9976 / clear ≤ 0x6F9B (rears) → 0x402FFF[w] b3. TCS doc §4.7 |
+| 0x0CB27A | `tcs_b_targets` | med | 0x402FB6/B8 = curves 0xF66E0/0xF669E+22·m + cornering terms + split caps, floor max(70, vref/100) |
+| 0x0C96B8 | `tcs_b_sort` | high | lead wheel 0x402F83 b4; 0x402FAA..B4 = targets, filtered slips, PM in lead/other order |
+| 0x0CA1E0 | `tcs_b_request` | med | 0x402F6C b6 while lead slip ≥ target ± 0.10 km/h (more cases below 20 km/h / split-µ). Hold threshold vs 0x40309C = curve 0xF64F8, or 1500 when 0x402F7F b1 or (brake-TCS entry limit 0x403018/1A = 30000 ∧ 0x402F7E b7 ∧ b5): reads channel A state (TCS doc §8.1) |
+| 0x0CAD00 | `tcs_b_entry` | med | starts ASR (0xCACA4) when engine torque 0x402F70 > 0x402F92 + 100 with the request bit (or b5 and > 800); start limit, cut 0x402FA4 |
+| 0x0CAF26 | `tcs_b_control_frame` | med | 0xCA1E0, 0xC97AC; active: 0xCAB4E (restore 0xCA94C, 0xCA860 / 0xCA006), 0xCA3E4, 0xCA074 exit; inactive: 0xCAD00 |
+| 0x0CA074 | `tcs_b_exit` | med | exit request when the limit has headroom (2.50/3.50 by rpm), driver demand below limit, DSC off or pedal < 13; commits after 19 frames; 0x402F7A = 0x7FFF |
+| 0x0CC9B4 | `msr_frame` | med | MSR slip 0xCCC8C, target, PID or idle (0x40304C = −drag) |
+| 0x0CCC8C | `msr_slip_inputs` | med | d = front reference − rear raw per side, filtered 0x403042[2] (`msr_slip_filter` 0xCCBE8, N 0x41066) |
+| 0x0CE3D0 | `tcs_a_inhibit_update` | high | builds mask → 0x402F6A b3 (channel A inhibit): fault reaction b4, 0x40288C b5, 0x4030A4 = 3, DSC off, ABS vref > 120 km/h idle, DME 0x40114F b5, 0x402F6C b5, 0x402FFF[w] b3 (latches release on 0x402F86 b2) |
+
+| RAM | Name | Type / unit | Meaning |
+|---|---|---|---|
+| 0x403076 / 0x403078 | `tcs_front_ref_L/R` | s16, 0.01 km/h | front trackers; hold 0x40307A/7B, rise count 0x40307C/7D (u8) |
+| 0x40307E | `tcs_slip_raw[4]` | s16, 0.01 km/h | wheel − same-side tracker (+ cornering term on rears) |
+| 0x403086 | `tcs_slip_filt[4]` | s16, 0.01 km/h | filtered drive slip (rears) |
+| 0x40308E | `tcs_slip_rate[4]` | s16, ≈ 1 mg | filtered slip rate (rears) |
+| 0x403014 / 0x40300C | `tcs_a_entry[4]` / `tcs_a_exit[4]` | s16, 0.01 km/h | brake-TCS limits |
+| 0x402FC4 | `tcs_a_wheel[4]` | 10 B | +0 PM (from 0x4016E2), +2 demand, +4 u8 fast-fill counter, +6 peak (0.01 bar) |
+| 0x402FEC | `tcs_a_target[4]` | s16, 0.01 bar | target sent to arbiter id 2 |
+| 0x40301C / 0x403020 | `tcs_a_steps[4]` / `tcs_a_interval[4]` | u8 | step count (≤ 20) / frames since step |
+| 0x402FFF | `tcs_a_wheel_flags[4]` | u8 | b1 pair hand-over, b3 disc overheat, b6 freeze, b2 ← b6 |
+| 0x402FC0 | `tcs_a_flags` | u8 | b4 = b0 brake TCS active (0x19E bit 1), b6 MDM pair mode, b1 rear disc overheat |
+| 0x402FF4 | `tcs_disc_energy[4]` | u16 | thermal accumulator; 0x37CE / 0x6F9B / 0x9976 / 0xFB1E ≈ 200 / 400 / 550 / 900 at 0.014 per count [I °C] |
+| 0x402FFC | `tcs_pair_flags` | u8 | b1 axle oscillation, b5 / b6 low-speed pair (rear / front) |
+| 0x403024 | `tcs_engine_bog_margin` | s16, 8 rpm | (n_ref − rpm)/16 based, below 20 km/h |
+| 0x4030A8 | `tcs_front_dv` | u8, 0.04 km/h | \|FL − FR\| yaw proxy |
+| 0x403098 / 0x4030AC | `tcs_ay_abs` / peak | s16, 0.0001 g | \|ay\| |
+| 0x40306A / 0x4030A0 | `tcs_ratio` / `tcs_ratio_lp` | s16 | driveline ratio; S = 0x4030A0>>6 |
+| 0x402F70 / 0x402F72 | `tcs_eng_torque` / `tcs_drv_demand` | s16, wheel domain | DME torques ·S/100 |
+| 0x402F7A / 0x402F7C | `asr_torque_limit` / `asr_torque_2` | s16, wheel domain | ASR limit (0x7FFF none) / second value |
+| 0x402FA4 | `asr_cut_pending` | s16 | torque cut at entry, restored in steps |
+| 0x402FB6 / 0x402FB8 | `asr_target_L/R` | s16, 0.01 km/h | ASR allowed slip |
+| 0x402FAA…0x402FB4 | `asr_sorted` | s16[6] | lead/other target, slip, PM |
+| 0x402F7E | `tcs_state_bits` | u8 | b7 split-µ, b6/b5 side, b4, b2 \|ay\| > 0.42 g, b0 front side; +1 b7 ay < 0, b2 / b5 ASR bits |
+| 0x402F6A | `tcs_inhibit_summary` | u8 | **b3 channel A inhibited** (0xCE3D0), b2 / b1 MSR / ASR summaries (0xCE748 / 0xCE812), b0/b4/b5/b6 as before |
+| 0x403042 / 0x403040 | `msr_slip[2]` / `msr_slip_rate` | s16 | MSR slip per side / rate |
+| 0x403054 | `msr_target` | s16, 0.01 km/h | |
+| 0x40304A / 0x403050 / 0x403052 | `msr_i` / `msr_p` / `msr_d` | s16 | PID terms |
+| 0x40304C | `msr_request` | s16, wheel domain | u − drag (active) / −drag (idle) |
+| 0x402F74 / 0x402F76 | `dme_req_a` / `dme_req_b` | s16, engine domain | arbiter outputs → 0x0B6 sig19 / sig18 |
+
+TCS calibrations (const ROM unless "TCS+"; m = mode index): brake TCS 0xF625C + 34m (`curve_t` n5, threshold),
+0xF61F6 + 34m (alt, unused on M3), 0xF62EE + 28m (n4, low-speed extra), 0xF62C2[m] (s16[3] −4/0/0, cornering per
+0x4030A8), 0xF62C8[m] (0), 0xF62CE (n2), TCS+0x40FC8 (n3, hold re-entry accel), 0xF61B4 (n3, hold rate),
+0xF61CA (n4, exit offset), 0xF6342 (n4, zero), 0xF635E (n5, MDM cap ÷10 bar), 0xF6408 / 0xF6424 (n4 / n3, fast
+fill), 0xF648A[m] (8/4/8), maps 0xF643A (u16[5][8], build frames) and 0xF63B8 (u16[5][8], release frames),
+0xF6158/68/78/8A (cornering k1/k2 xs/ys), 0xF619C (oscillation pairs), 0xF6380 / 0xF639C (n4, pedal → n_ref);
+ASR 0xF66E0 + 22m / 0xF669E + 22m (n3, targets), 0xF6688 (n3, zero), 0xF6722[m] (20/30/30), 0xF6728[m]
+(−2500/0/0), 0xF654C / 0xF65B2 + 34m (n5, split caps), TCS+0x41160/66/6C (cap divisors), 0xF64F8 + 28m (n4),
+0xF6618 (zero), 0xF6634 (n5, split-µ), 0xF64C6 / 0xF64CC / 0xF64E2, 0xF6496 / 0xF64AE, TCS+0x40FDE–0x41010 (output
+stage); MSR TCS+0x41046 (n3, target), TCS+0x41030 (n3), TCS+0x41064/66 (90, filters), TCS+0x41068/6A (±2500),
+TCS+0x4106E/70 (±200), TCS+0x41072/74/76/78 (180/100/60/25), TCS+0x41172 (70), TCS+0x4102C (2000), TCS+0x4106C
+(400); disc 0xF674E / 0xF6752 (65 / 45 by brake code), 0xF672E–0xF674A (cooling). XDF labels here are stale.
 
 ## Hydraulic actuation (cycle 4 — byte-verified data; valve/pump roles inferred)
 
@@ -852,7 +1065,7 @@ Signal-table backbone re-walked and byte-verified; semantic names are inference 
 | 0x07F530 | `can_tx_0B6_pack` | high | 0x4046E6/E8 = 0x402F76/74·0x333/4096 (≈÷5, inverse of RX ×5), clamp ±2047, type 0x402F6D |
 | 0x07AB52/58/48 | `can_tx_0B6_sig19/sig18/sig20` getters | high | 0x4046E8/E6/(0x4046D4>>5&3) |
 | 0x07D24C | `can_tx_checksum8` | high | S = Σ(DLC bytes) + CAN id; out = low8(S + S>>8); last signal of every TX |
-| 0x07AEAA | `can_tx_19E_status_flags` (sig39) | high | ST_CLCTR bitfield: b0 ← 0x408DA2 b7 (front in ABS cycle), b1 TCS, b2 AYC, b3 DSC, b4 TCS mode, b5 ← 0x408DA0 b1 (rear-only control); see FACTS ST_CLCTR |
+| 0x07AEAA | `can_tx_19E_status_flags` (sig39) | high | ST_CLCTR bitfield: b0 ← 0x408DA2 b7 (front in ABS cycle), b1 TCS, b2 AYC, b3 DSC, b4 MSR (user-confirmed), b5 ← 0x408DA0 b1 (rear-only control); see FACTS ST_CLCTR |
 | 0x07AD74 / 0x07AF52 / 0x07ACFA / 0x07AD6A / 0x07B05C | `can_tx_19E_abs_status` / `_dsc_status` / `_event_counter` / `_torque_intervention` / `_lvc_flag` | high (code) | 0x19E bytes 1–3; full decode in CAN_TX_TABLE_7846816A.md "Frame 0x19E" |
 | 0x07AEFA / 0x07B018 / 0x07ADA2 | `can_tx_19E_bls_state` / `_feature5_status` / `_brake_applied` | high (code) | 0x19E byte 5 |
 | 0x07AD2A | `can_tx_19E_driver_pressure` | high | 0x19E byte 6: 0x93F00(2) → 0x401FF8 ÷100, clamp 254, 0xFF on fault |
@@ -1261,7 +1474,7 @@ typedef struct {
 |---|---|---|---|
 | 0x0CF5C2 | `sensor_fitted(n)` | high | returns ROM byte 0xF6756[n] (n ≤ 35, else 0xFF). n = 5 pressure, 6 lateral, 7 yaw, 8 steering, 9 ax |
 | 0x093AC0 | `abs_ay_get(want, out)` | high | value s8 0x402AB6 (sign-extended) when valid, else `ay_wheel_estimate_get()`; invalid on 0x402888 b2 or 0x402884 b5 |
-| 0x093B3A | `abs_ay_aux1_get(want, out)` | med | s8 0x402124, same validity bits as `abs_ay_get`. Meaning not decoded (lateral family) |
+| 0x093B3A | `abs_ay_aux1_get(want, out)` | med | s8 0x402124 = front-axle lateral accel estimate (0.01 g, `ay_axle_est_update`), same validity bits as `abs_ay_get` |
 | 0x093C22 | `abs_ay_aux2_get(want, out)` | med | s8 0x402126, same validity bits. Meaning not decoded |
 | 0x094308 | `abs_yaw_get(want, out)` | high | s16 0x402100 (1/20000 rad/s); invalid on 0x402888 b3 or 0x402884 b7 |
 | 0x094376 | `abs_yaw_accel_get(want, out)` | med-high | s16 0x402102; same validity bits as `abs_yaw_get` |
@@ -1278,9 +1491,9 @@ typedef struct {
 | 0x0B484A | `fcan_fault_commit` | med-high | 0x4028B1 b7 → 0x402893 b6 and hold counter 0x4028BC = 255 (b6 clears when it runs out). 0x4028B1 b5\|b7 → `fault_set(0xA0040)` (b7) or `fault_set(0xA0800)`; when 0x400956 b3 the path waits for a value > 2000 and calls 0xB5DF2(2) instead. Clears 0x4028B1 b7 |
 | 0x0530E4 | `abs_yaw_stable_update` | med | (called from 0x447EE) counter 0x408EF4 → 0x408E5F b4 = low yaw for ≥ 63 frames; forced 0 unless 0x408E6D b7, b4 and b5; zeroed when \|steering\| > cal 0x4040E. Cals: calm yaw 0x40404 = 1047, set at 0x4040C = 63 frames, hysteresis 0x40406 = 28, decay 0x40408 = 1571 / 0x4040A = 3002, steering 0x4040E = 2971 counts (≈ 130°); `agents/abs_full/09_chassis_sensor_use.md` §7.2 |
 | 0x0C7794 | `tcs_mode_set(m)` | high | 0x4030A2 = m |
-| 0x0C779A | `tcs_state_a` | med-high | traction channel A state. Fault word u32 0x403004 (byte 3 b2 masked out), active flag 0x402FC0 b4 (= 0x19E TCS bit). 2 if 0x4030A4 = 2; 3 if 0x4030A3 = 5; **6 (5 if 0x402F6A b0) = inhibited**: fault word ≠ 0 and not active; **7 = DSC off**: masked bit (DSC-off latch) set and not active; mode 0x4030A2 = 3: 8 idle / 10 active (12 with a fault); else 4 idle / 9 active (11 with a fault) |
-| 0x0C7818 | `tcs_state_b` | med-high | same state scheme; fault word u16 0x402F84 (byte 1 b2 masked), active 0x402F6C b7, alt state when 0x402F6A & 2. Read by `lamp_state_gather` as "TCS" |
-| 0x0C789C | `tcs_state_c` | med-high | same state scheme; fault word u16 0x403048 (byte 1 b2 masked), active 0x40303C b7 (`tcs_torque_pi` flag), alt state when 0x402F6A & 4 |
+| 0x0C779A | `tcs_state_a` | med-high | **brake TCS** (channel A) state. Fault word u32 0x403004 (byte 3 b2 masked out), active flag 0x402FC0 b4 (= 0x19E TCS bit). 2 if 0x4030A4 = 2; 3 if 0x4030A3 = 5; **6 (5 if 0x402F6A b0) = inhibited**: fault word ≠ 0 and not active; **7 = DSC off**: masked bit (DSC-off latch) set and not active; mode 0x4030A2 = 3: 8 idle / 10 active (12 with a fault); else 4 idle / 9 active (11 with a fault) |
+| 0x0C7818 | `tcs_state_b` | med-high | **engine ASR** (channel B) state; same state scheme; fault word u16 0x402F84 (byte 1 b2 masked), active 0x402F6C b7, alt state when 0x402F6A & 2. Read by `lamp_state_gather` as "TCS" |
+| 0x0C789C | `tcs_state_c` | med-high | **MSR** (channel C) state; same state scheme; fault word u16 0x403048 (byte 1 b2 masked), active 0x40303C b7 (`msr_pid` flag), alt state when 0x402F6A & 4 |
 | 0x0CE3D0 | `tcs_a_inhibit_update` | high | 0x403004 b7 = 1 while 0x402880 b4; cleared only when 0x402880 b4 is clear and 0x402F86 b2 is set (latched otherwise) |
 | 0x0CE638 | `tcs_c_inhibit_update` | high | 0x403048 b6 from 0x402880 b5, same latch/release on 0x402F86 b2 |
 | 0x0CE7A4 | `tcs_b_inhibit_update` | high | 0x402F84 b1 = 0x402880 b3 (not latched); 0x402F84 b7 = 0x40288C b5 |
@@ -1385,9 +1598,9 @@ typedef struct {
 | 0x00408EE2 | `abs_steer_rwa_peak` (s16) | low-med | peak road-wheel angle in the turn direction (0x5A4E4) |
 | 0x00403064 | `tcs_sensor_valid` (u8) | high | b7 ax, b6 lateral, b5 brake pressure, b4 road-wheel angle, b3 yaw (`tcs_sensor_latch`) |
 | 0x0040306C / 0x0040306E / 0x00403070 / 0x00403072 / 0x00403074 | `tcs_ax` / `tcs_ay` / `tcs_brake_pressure` / `tcs_roadwheel_angle` / `tcs_yaw` (s16) | high | latched by `tcs_sensor_latch`. Readers: ax 0xC76A4; lat 0xCB474, `tcs_reduction_floor` 0xCD804 (needs b6); road-wheel angle 0xCB49E; yaw 0xC948E (needs b3), 0xCB484 |
-| 0x0040114F | `dme_0A8_flags` (u8) | med | b4 = 0x0A8 byte 5 bits 0–1 = 1 (`can_rx_0A8_flag`; meaning unknown); b5/b6 = 0x0A8 state 3 / 2 (b5 = "torque not adjustable", 5E19). b4 + valid DME frames: `tcs_torque_pi` caps its output at 6·S and, in DSC off, forces it to 0 (0xCD33A–0xCD350) |
+| 0x0040114F | `dme_0A8_flags` (u8) | med | b4 = 0x0A8 byte 5 bits 0–1 = 1 (`can_rx_0A8_flag`; meaning unknown); b5/b6 = 0x0A8 state 3 / 2 (b5 = "torque not adjustable", 5E19). b4 + valid DME frames: `msr_pid` caps its output at 6·S and, in DSC off, forces it to 0 (0xCD33A–0xCD350) |
 
-**Traction channel C is MSR-like (inferred).** `tcs_torque_pi` only produces a positive request (the integrator
+**Traction channel C is MSR (confirmed 2026-10-26: the arbiter 0xCC2C2 turns its flag into the torque-increase request 0x402F6D b2 = 0x19E bit 4 "MSR"; `TCS_7846816A.md` §6).** `msr_pid` (was `tcs_torque_pi`) only produces a positive request (the integrator
 0x40304A is floored at 0), and only while the wheel-derived decel `0x408DAF` is negative. Its channel is blocked
 by `tcs_c_fault_word` b2 when the pedal is above 13 %, and by b5 while channel A, B or AYC is active. It has no
 DSC-off bit, so it stays enabled in `tcs_mode` = 2 (channels A and B go to state 7).

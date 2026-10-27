@@ -34,7 +34,8 @@ high-grip wheel on an axle.** This is BMW's Giermomentenaufbau-Begrenzung analog
   `pct` % (`0x408DE0`) of a headroom term (LOCKEST − CMD or `0x408F42` − CMD). CONFIRMED structure. The
   lateral-g-gated **+80 build step** (|lat| 40/65/80, cap 25000) is a different arm, code **256** at
   0x59064, reached via `abs_decision_resolve` (`03_lateral_g_influence.md` §2(b)).
-- **AYC→ABS yaw-deviation feedback** (only with AYC active, `03_lateral_g_influence.md` §5):
+- **ABS yaw-deviation feedback** (originally read as AYC-only; corrected 2026-10-25, it runs every ABS frame,
+  `03_lateral_g_influence.md` §5):
   `abs_yaw_deviation_monitor 0x4A254` computes `e = measured_yaw 0x408ECC − target 0x400B1A` (AYC observer
   target), writes `0x408E9C/0x408EA2`, and runs a **persistence counter `0x408EA6` (cap ~20, `0x4A364`)** driven
   by a gain curve at **`0x40C5A`** (ABS cal, x = lateral accel via `0x6D0CC`; `[lo0,hi3490,n9,

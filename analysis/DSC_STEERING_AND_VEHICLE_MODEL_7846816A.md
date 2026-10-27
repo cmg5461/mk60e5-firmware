@@ -204,6 +204,14 @@ variant-10 branch (`CODING_BYTES_7846816A.md`). Rows are 12 × s16, stride 2 (XD
 | Jz 0xD6F8A | kg·m² | measured if known; stock Jz / (m·l_f·l_r) = 0.75–0.99 (most 0.88–0.97) |
 | track 0xD6FA2 / 0xD6FBA | **Q10 m, not mm** | real tracks; also sets the wheel-speed yaw term 0x400AF4 = round(56888 / track_Q10) |
 | Cf 0xD6ECA, Cr 0xD6EE2 | units [open] | fit (below) |
+| sensor x 0xD6F2A | −Q10 m | −(yaw / lateral sensor distance behind the front axle); M3 −1204 = 1.176 m [I]. 0x5E424 forms l_f + x, x, L + x → 0x400AEC / 0x400AF0 / 0x400AF2, the CG / front / rear lever arms of `ay_axle_est_calc` 0x8FFE8 (≈ 0.19 m steps) |
+
+Patch: `mk60e5_patcher` `patches/basic/vehicle_model` writes all of the above plus the steering curve (§4.5) into
+every variant column and ratio set, from profile params. Its README has the starting-value formulas. Replaying
+both loaders: observer coefficient 0x400AD8 (read at 0x5F9CC) ∝ v_ch², stock 14444 at 128.8 km/h, so it saturates
+at v_ch ≈ 194 km/h. A neutral model (Cr·l_r = Cf·l_f, i.e. Cf / Cr = W_f / W_r) divides by zero in 0x5E424, and an
+oversteering one divides unsigned by a negative. So a rear-heavy car needs Cf / Cr rescaled, not left stock, and a
+near-neutral car needs a deliberately finite v_ch.
 
 **Cornering stiffness sets the yaw reference.** Loader 0x5E424 derives v_ch at run time (v_ch² = 32·AEA·AE8,
 RAM 0x400AE8 / 0x400AEA) from the column, with the understeer term Cr·l_r − Cf·l_f; in textbook form [I]
@@ -229,6 +237,9 @@ past full lock (it is also the input clamp). Then trim against the yaw overlay (
 percent apart on identical hardware.
 
 ### 4.6 Brakes and AYC gains
+
+How AYC works end to end (target, error thresholds, PD response, distribution, modes, ABS coupling, numeric limits):
+`AYC_7846816A.md`.
 
 - AYC requests ~0.1 bar per moment count per wheel through the same COA p-V curves as ABS
   (`ayc_moment_to_wheel_pressure` 0x616A4), so the brake model must fit the hardware (MR2 / Volvo caliper work).

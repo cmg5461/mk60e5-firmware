@@ -112,7 +112,8 @@ steering → 0x408EDE/EE4/EE6, with validity bits in 0x408E6D. (`03_lateral_g_in
    driver-pressure thresholds. With lat + pressure valid and the rear cornering latch: driver pressure below
    P_lo → code 1 (rears independent); a dumping wheel with driver pressure above P_lo → code 32 with
    **pct = 100·(P_drv − P_lo)/(P_hi − P_lo)** (0x51F42). `abs_decision_pressure_exec` 0x58FF4 (code 32 @0x59222)
-   then **reduces** the command: `CMD = PM − pct·(LOCKEST−CMD)/100`.
+   then **reduces** a rear's command to max(1 bar, PM − pct·G/100), G = the source wheel's dump depth LOCKEST − CMD.
+   pct is not clamped and wraps at 256 %; which rear is reduced is open (`09_chassis_sensor_use.md` §2.1 item 7).
 2. **Lateral-g build step** [C]: code 256 (via `abs_decision_resolve`) adds +0.8 bar steps to light-pressure
    wheels at |lat| ≥ 0.65–0.8 g (exec @0x59064).
 3. **µ-split pair logic** 0x54D9A [C]: gated on yaw; rebuild paced by predicted yaw (yaw + yaw accel/2), steering
@@ -209,7 +210,7 @@ Unaffected: slip / decel thresholds, phase machine, dump / hold / reapply, EBD, 
 Ranked by expected impact for a 1.3 g race-tire car braking at/near the grip limit:
 
 1. **Code-32 cornering rear knock-down** — the mid-corner pressure cut: exec 0x58FF4
-   `CMD = PM − pct·(LOCKEST−CMD)/100`, pct from the driver pressure's position between the lateral-g curves
+   max(1 bar, PM − pct·G/100) (`09_chassis_sensor_use.md` §2.1 item 7), pct from the driver pressure's position between the lateral-g curves
    **0x40E26** (P_lo) and **0x40E0A** (P_hi) (XDF "ABS cornering lat-g pressure term A / B"). Raising P_lo widens the light-pedal band
    with independent rears and no knock-down; raising P_hi lowers pct at a given pedal. Only active with working
    chassis sensors. [I direction]
@@ -224,7 +225,9 @@ Ranked by expected impact for a 1.3 g race-tire car braking at/near the grip lim
    the ax byte (`0x4049FC`), lateral byte (`0x408ECA`) and decel estimate (`0x408DAF`) all saturate at ±1.27 g;
    the g-term input is byte-wide without ax trust and wraps above 1.27 g with it (the curve itself runs to
    1.83 g). A slick/aero car decelerating harder than that outruns vref, apparent slip
-   grows and ABS over-releases. These are code literals and byte-wide signals — a code patch, not a cal edit
+   grows and ABS over-releases. The error builds through the stop. Once it reaches the gross-slip limit, the car
+   is held at ≈ 1.19 g for the rest of the stop: about +6 % distance at 1.5 g and +22 % at 1.8 g from 200 km/h
+   (point-mass model; FACTS "Size of the effect"). These are code literals and byte-wide signals — a code patch, not a cal edit
    (`10_vref_and_ax.md` §5). Arguably the first thing to address on a high-grip car, ahead of 1–4.
 
 **Not levers for ABS:** the vehicle model (mass/l_f/l_r/Cf/Cr/Jz) — DSC-only; the COA P-V tables — feel/
