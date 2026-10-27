@@ -164,7 +164,8 @@ Other locals:
     - wheel accel < −1 g, `rec+0x24` < E+22 and sp+84; or `0x40902E[3w]` b3;
     - 0x4EED8: `0x409057` count ≥ 5, wheel in a cycle, `0x408DA2` b7 clear (also `0x409057` b6);
     - rear clause 0x4EF72, gated by `0x408E5F` b1 or `0x400B09` b6: RR with `rec+6` < 0 and lat ≥ 6, or RL with
-      lat < −5 → EV0.b0 if in a cycle, else EV0.b5 (direction-selective rear dump).
+      lat < −5 → EV0.b0 if in a cycle, else EV0.b5 (direction-selective rear dump). With ISO 8855 signs (positive
+      lateral = left turn) this is the outside rear.
 
     Every site latches `rec+6` → `0x409026`.
 18. **EV1 bits 0x4EF7E–0x4F02C** [C].

@@ -112,13 +112,15 @@ steering → 0x408EDE/EE4/EE6, with validity bits in 0x408E6D. (`03_lateral_g_in
    driver-pressure thresholds. With lat + pressure valid and the rear cornering latch: driver pressure below
    P_lo → code 1 (rears independent); a dumping wheel with driver pressure above P_lo → code 32 with
    **pct = 100·(P_drv − P_lo)/(P_hi − P_lo)** (0x51F42). `abs_decision_pressure_exec` 0x58FF4 (code 32 @0x59222)
-   then **reduces** a rear's command to max(1 bar, PM − pct·G/100), G = the source wheel's dump depth LOCKEST − CMD.
-   pct is not clamped and wraps at 256 %; which rear is reduced is open (`09_chassis_sensor_use.md` §2.1 item 7).
+   then sets the **other** rear's command to max(1 bar, PM − pct·G/100), G = the lead rear's dump depth
+   LOCKEST − CMD: the other rear follows the lead rear's dumps, scaled by pct. pct is not clamped and wraps at 256 %
+   (`09_chassis_sensor_use.md` §2.1 item 7).
 2. **Lateral-g build step** [C]: code 256 (via `abs_decision_resolve`) adds +0.8 bar steps to light-pressure
    wheels at |lat| ≥ 0.65–0.8 g (exec @0x59064).
 3. **µ-split pair logic** 0x54D9A [C]: gated on yaw; rebuild paced by predicted yaw (yaw + yaw accel/2), steering
    rate and steering added since the event began.
-4. **Inside/outside rear lead** 0x5184C [C]: lateral-accel sign/magnitude picks the lead rear.
+4. **Lead rear** 0x5184C [C]: the rear further into its ABS cycle leads (`0x408DA0` b7: 1 = RL). The lateral sign only
+   flags whether that is the inside rear (decision word bit 9; positive lateral = left turn, ISO 8855).
 5. **Dump steps** are cut to ½ / ⅓ on the selected front above 0.5 / 0.8 g [C].
 
 Steering reaches ABS directly: it gates the yaw-stable flag `0x408E5F` b4 (reset above ≈ 130° steering-wheel

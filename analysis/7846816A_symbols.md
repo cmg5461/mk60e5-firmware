@@ -1511,17 +1511,17 @@ typedef struct {
 | 0x00402F35 | `fcan_monitor_flags` (u8) | med | **b4 = F-CAN fault reporting enabled** (`fcan_comm_state_update` 0xC4F0E); b6 (0xC7470) and b7 (0xC7480) set from request bytes; b3/b7 block b4 |
 | 0x00408D64 | `ay_wheel_estimate` (s8, ≈ 0.01 g) | low-med | written only by 0xD21C4 / 0xD21BC |
 | 0x00408E6D | `abs_sensor_valid` (u8 bitfield) | high | built by `abs_sensor_gather` each cycle: **b0** 0x408EC8 valid, **b2** no cluster fault (`cluster_fault_any` = 0), **b3** set from the ax getter at 0x5D868 but **cleared again at 0x5D914 in the same pass** (no other writer of 0x408E6D found, so consumers such as vref 0x4513E always see 0; ax validity survives only in 0x408E1B b4 and 0x408DEC b2 = ax invalid), **b4** yaw, **b5** steering (both angle getters valid), **b6** brake pressure (0x408EB2; zero-pressure plausibility counter 0x408EBA < 50), **b7** lateral (getter valid and 0x402888 & 0x09 = 0). Lateral users test b7 (rear select-low 0x5197E, classifier 0x51BF2 with b6, many others); the straight latch 0x521EC needs b7+b5+b4 (mask 0xB0); the rear cornering latch 0x4E8B6, vref route 2 and `abs_chassis_frame_init` need b7+b6+b5+b4 (0xF0) |
-| 0x00408ECA | `abs_ay` (s8, ≈ 0.01 g) | high | from `abs_ay_get`, written **every cycle even when invalid** (then = `ay_wheel_estimate`) |
+| 0x00408ECA | `abs_ay` (s8, ≈ 0.01 g) | high | positive = left-hand turn (ISO 8855); from `abs_ay_get`, written **every cycle even when invalid** (then = `ay_wheel_estimate`) |
 | 0x00408ECB | `abs_ay_aux1` (s8) | med | from 0x93B3A, written only when b7 |
 | 0x00408EC8 | `abs_ay_aux2` (s16) | med | from 0x93C22, valid b0 |
-| 0x00408ECC | `abs_yaw` (s16, 1/20000 rad/s) | high | from `abs_yaw_get`; **0 when invalid** |
+| 0x00408ECC | `abs_yaw` (s16, 1/20000 rad/s) | high | positive = left-hand turn (ISO 8855); from `abs_yaw_get`; **0 when invalid** |
 | 0x00408ECE | `abs_yaw_accel` (s16) | high | from 0x94376; 0 when invalid (no valid bit) |
-| 0x00408EDE / 0x00408EE4 / 0x00408EE6 | `abs_steer_angle` / `abs_steer_roadwheel` / `abs_steer_rate` (s16) | med | offset-corrected steering-wheel angle / road-wheel angle / steering rate, from 0x94120 / 0x9403C / 0x940AE; 0 unless b5. Consumers: angle → `abs_yaw_stable_update` 0x530E4 (cal 0x4040E), `abs_gma_hold_frames` 0x54BE8, front staged dump peak `0x400A92`; road-wheel → `abs_countersteer_check`, peak 0x408EE2; rate → `abs_gma_hold_frames`. Front µ-split outputs 0x400A90 / 0x400A97 b0 have no readers |
+| 0x00408EDE / 0x00408EE4 / 0x00408EE6 | `abs_steer_angle` / `abs_steer_roadwheel` / `abs_steer_rate` (s16) | med | positive = left (ISO 8855); offset-corrected steering-wheel angle / road-wheel angle / steering rate, from 0x94120 / 0x9403C / 0x940AE; 0 unless b5. Consumers: angle → `abs_yaw_stable_update` 0x530E4 (cal 0x4040E), `abs_gma_hold_frames` 0x54BE8, front staged dump peak `0x400A92`; road-wheel → `abs_countersteer_check`, peak 0x408EE2; rate → `abs_gma_hold_frames`. Front µ-split outputs 0x400A90 / 0x400A97 b0 have no readers |
 | 0x00408EB4 | `abs_pressure_aux` (s16) | med | from 0x93E8E (0x402000) |
 | 0x00408E5F | `abs_cornering_flags` (u8) | med | b6:5 pair-gate state S (`abs_pair_gate` 0x54B70); b2 used with b4 by `abs_pair_gate_split_yaw` (writer not traced); b1 gates the direction-selective rear dump 0x4EF72; b4 yaw-stable (0x530E4); b4 gates the straight/homogeneous latch b7 (0x521D4), classifier shortcut 0x51E46, pair-gate predicate 0x547D8, one ax plausibility route in 0x49572 |
 | 0x00408EF4 | `abs_yaw_stable_cnt` (u8) | med | frames of low yaw for 0x408E5F b4 |
 | 0x0040200C | `dsc_sensor_cal_flags` (u8 bitfield) | high (read side) / low (setter) | DSC chassis-sensor "ready to calibrate" flags / `31`-routine precondition gate. **Bits read by `kwp_31` 0xB2D08–0xB2D44 (verified): b0 long-accel, b5 steering, b6 lateral, b7 pressure** — clear bit → the matching cal routine returns NRC `0x22`. The bits are maintained by the chassis-sensor conditioning task (`~0x089E00`–`0x08A5xx`), a register-heavy per-sensor state machine **not reliably linearised from static analysis** — do NOT trust a specific numeric guard here without a bench check. Each bit means roughly "that sensor is coded-fitted (`sensor_fitted(n)`, ROM `0xF6756[n]`: 5 pressure, 6 lateral, 8 steering, 9 ax) AND currently reading valid/plausible with no active fault and no competing valve/sensor cal owning the state (`valve_cal_type 0x404970`)". `0x089EC0` is a *getter* of b7 (returns a status code 3/16), not the setter. Routine-body completion bits (separate from these ready bits): b2 (`0xB2E50`), b3/b4 (`0xB2E46`), `0x40200D` b7 (`31 24` body `0xB2E82`). **[cap] the exact per-bit set conditions need a bench capture of `0x40200C` across sensor states.** |
-| 0x00402132 | `steer_angle_corr` (s16) | high | offset-corrected steering-wheel angle (raw 0x4020D0 − offset 0x4020A6/64), ≈ 0.044°/count [unverified] |
+| 0x00402132 | `steer_angle_corr` (s16) | high | positive = left (ISO 8855); offset-corrected steering-wheel angle (raw 0x4020D0 − offset 0x4020A6/64), ≈ 0.044°/count [unverified] |
 | 0x004020A6 | `steer_offset` (s16, Q6 counts) | high | learned steering zero offset (`steer_offset_learn`); clamp ±29257 (457 counts ≈ 20°), fault 0x120001 above 14628 (≈ 10°); saved in EEPROM record 0x4020AE |
 | 0x0040212E | `steer_roadwheel_angle` (s16, LSB = steering LSB / 28.67) | high | 29360·angle / ratio (`steer_ratio_convert`) |
 | 0x00401644 | `steer_angle_can` (s16 counts) | med | 0x0C9 sig 43 ·1029/1024 |
@@ -1557,7 +1557,7 @@ typedef struct {
                                  (lateral-g) build, 128 special (0x40493A b5), 16/1024/2 from abs_pair_logic      */
     uint8_t  pct;       /* +2  0x408DE0: code-32 position of driver pressure between the two lateral-g curves, % */
     uint8_t  _pad[7];
-    uint16_t idx;       /* +10 0x408DE8: b9 rear lead (abs_rear_lead_select); b15:14 / b13:12 two wheel indices  */
+    uint16_t idx;       /* +10 0x408DE8: b9 lead rear is the inside rear (abs_rear_lead_select); b13:12 lead rear s, b11:10 and b15:14 the other rear t (code-32 exec) */
 } abs_decision_t;
 ```
 

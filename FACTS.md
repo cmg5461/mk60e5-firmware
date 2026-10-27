@@ -500,6 +500,12 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
 
 ## Yaw / single-track model + DSC mode (detail `analysis/agents/yawmodel/REPORT.md`)
 
+- **[verified] Sign convention (owner, 2026-10-26).** Lateral accel and yaw rate follow ISO 8855: positive = left-hand
+  turn. Wheels 0..3 = FL, FR, RL, RR (0 and 2 left). The CAN 0x1A0 encoders scale by positive constants, so AccY /
+  YawRate carry the same sign. Consequences: the rear cornering latch sits on the inside rear, the AYC/ABS yaw error
+  e = yaw − target means oversteer only when it points in the turn direction, and `0x408DF0` b7 / b6 are the
+  left / right-turn side flags (09 §2.2–2.3).
+
 - **[verified]** The vehicle-model scalars feed a real **single-track (bicycle) model**. Roles confirmed:
   l_f 1331 / l_r 1393 (Q10 m, front share 51.1%), **mass 1739 kg**, **Jz 3039 kg·m²** (Jz/m ≈ l_f·l_r
   confirms units), Cf 7186 / Cr 12857 (cornering stiffness). Two forms: a **dynamic observer** (AYC fn
@@ -1794,8 +1800,8 @@ Units: speed/slip 0.01 km/h, accel/decel 0.01 g, pressure 0.01 bar (pinned by CA
   0x40E26 = 14→40 bar. A lateral-LOAD (outside-wheel) pressure term that GROWS with cornering — **NOT a
   knockdown.** [CONFIRMED scaling]. Two curves → separate regs (0x40E0A→r8+boost primary, 0x40E26→r11
   companion); not multiplied/min'd. Exact store role (per-wheel ceiling vs reference) UNCONFIRMED.
-- **The code-32 REAR KNOCKDOWN is separate:** exec 0x58FF4 (0x59222) sets a rear's `CMD(0x408F22)` = max(1 bar,
-  PM − pct·G/100), G = the source wheel's dump depth LOCKEST − CMD (wheel roles open, 09 §2.1 item 7), where `pct` = small byte 0x408DE0 **(producer traced 2026-10-15: pct = 100·(P_drv − P_lo)/(P_hi − P_lo) with
+- **The code-32 REAR KNOCKDOWN is separate:** exec 0x58FF4 (0x59222) sets the non-lead rear's `CMD(0x408F22)` = max(1 bar,
+  PM − pct·G/100), G = the lead rear's dump depth LOCKEST − CMD (09 §2.1 item 7), where `pct` = small byte 0x408DE0 **(producer traced 2026-10-15: pct = 100·(P_drv − P_lo)/(P_hi − P_lo) with
   P_lo/P_hi from these two curves; "ABS with and without the SZL")**; plus rear select-low 0x5184C. This —
   not the 0x40E0A/26 curves — is what pulls rear pressure at turn-in. (The user logged a "big rear reduction"
   with ST_CLCTR=32. That CAN bit is NOT code 32: it means a rear-only ABS cycle or the rear decel-gate latch,
@@ -2256,7 +2262,10 @@ yaw-stable flag `0x408E5F` b4 never sets.
   turn direction, or \|lat\| > T, or the yaw-limited / yaw-recovery flags. T = cal 0x40B06 (0.80 g) lowered by turn-in
   yaw accel, then **max(T, cal 0x403E4 = 0.40 g)**. Only the yaw-target triggers need steering; with
   `abs_cluster_without_szl` the latch sets on \|lat\| > T alone. Releases when driver pressure < P_lo; b5 holds while a
-  rear is cycling. Detail: 09 §2.2.
+  rear is cycling. **Sides (ISO 8855, wheels 0/2 left):** RL is latched only in a left turn and RR in a right turn,
+  so the latch is on the inside rear, and trigger 1 means the car rotates more than the model. The lead rear
+  (`0x408DA0` b7: 1 = RL) is the one further into its cycle; code 32 makes the other rear follow its dumps.
+  Detail: 09 §2.2–2.3.
 - **[verified] pct 0x408DE0 is not clamped and wraps.** 0x51F42 stores 100·(P_drv − P_lo)/(P_hi − P_lo) with `st.b`;
   the exec reads it with `ld.b` (0x59272). With the latch the code-32 branch runs above P_hi, so pct passes 100 and
   wraps to near 0 at P_lo + 2.56·(P_hi − P_lo) (about 46 bar of pedal at 0.4 g lateral, 68 bar at 1.0 g). Effect on

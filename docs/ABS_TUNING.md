@@ -17,6 +17,7 @@ parameter sets each part. Written for readers who know control systems but not t
 | `0.01 bar` | pressure. `5000` = 50 bar |
 | `0.01 g` | acceleration, negative = slowing. `-300` = −3 g |
 | `0.01 km/h` | speed and slip. `400` = 4 km/h |
+| sign | ISO 8855: positive steering angle, lateral g and yaw rate = left; driving forwards in a normal turn all three share a sign. Wheels 0..3 = FL, FR, RL, RR (0 and 2 are the left side) |
 | frame | 10 ms |
 | curve | `[lo, hi, n, x breakpoints (n−1), intercepts (n), slopes (n)]`, s16; `y = clamp(c[i] + trunc(x·k[i]/1024), lo, hi)`. The `hi` word (curve address + 2) is an easy output clamp |
 
@@ -177,7 +178,7 @@ flowchart TD
 |---|---|---|
 | Combined rear axle | sum of both rears' *X* past 1.2–1.45 × the allowance, with slip tests; a counter adds 1 per 10 km/h of vref each frame (cap 7) and fires at 5 | starts a dump on a rear that is not yet slipping on its own |
 | Rear in pre-control | `0x408E98` > 80 and (*X* < 0 or slip > half the gross-slip curve) | |
-| Direction-selective rear | lateral ≥ 6 (RR) or < −5 (RL) with *X* < 0 | reads the lateral byte without its valid bit, so without the steering sensor it uses the wheel-speed lateral estimate; gated by `0x408E5F` b1 or `0x400B09` b6 |
+| Direction-selective rear | lateral ≥ 6 (RR) or < −5 (RL) with *X* < 0: the outside rear (RR in a left turn) | reads the lateral byte without its valid bit, so without the steering sensor it uses the wheel-speed lateral estimate; gated by `0x408E5F` b1 or `0x400B09` b6 |
 | Re-dump (EV0.b0) | from Hold or Reapply, the same two routes (route A adds 1 km/h while holding with *X* ≥ 0) | what ends a reapply |
 
 ### Example (assumed inputs, not a log)
@@ -437,7 +438,8 @@ Everything in this section needs valid lateral and yaw (`0x408E6D` b7 / b4). On 
 sensor (SZL) marks both invalid, so all of it is off. The patcher's `performance/abs_cluster_without_szl`
 makes lateral and yaw valid for ABS with no SZL while steering stays invalid. Sources:
 `analysis/agents/abs_full/09_chassis_sensor_use.md` (mechanisms), `03_lateral_g_influence.md`, `10_vref_and_ax.md`.
-Lateral is the signed byte `0x408ECA`, 0.01 g per count [I]. Yaw is s16 at 1/20000 rad/s, so 349 = 1 °/s.
+Lateral is the signed byte `0x408ECA`, 0.01 g per count [I]. Yaw is s16 at 1/20000 rad/s, so 349 = 1 °/s. Both are
+positive in a left-hand turn (ISO 8855).
 
 ### Which features are live
 
@@ -501,9 +503,10 @@ The default is **code 64**: both rears follow the lower-pressure rear (select-lo
   - the yaw cornering flag clear.
 - **Light pedal in a corner → code 1.** Driver pressure `0x408EB2` < P_lo(\|lat\|).
 - **Firmer pedal on a dumping rear → code 32.** pct = 100·(P_drv − P_lo)/(P_hi − P_lo). The exec sets a rear's
-  command to max(1 bar, PM − pct·G/100), where G is the dump depth (P_lock − CMD) of the wheel named in the decision
-  word. The knockdown grows from 0 at P_lo to one dump depth at P_hi. Which rear it acts on is open; it is probably
-  the lead rear itself (`09_chassis_sensor_use.md` §2.1 item 7).
+  command for the **other** rear to max(1 bar, PM − pct·G/100), where G is the lead rear's dump depth (P_lock − CMD)
+  and the lead rear is the one further into its ABS cycle. So the other rear follows the lead rear's dumps: not at
+  all at P_lo (it holds), one dump depth below its own pressure at P_hi. In a corner the inside rear normally
+  leads, so this is the outside rear following the inside rear (`09_chassis_sensor_use.md` §2.1 item 7, §2.3).
 - **pct is not clamped.** While the latch holds, code 32 also runs above P_hi, where pct exceeds 100 %. It is stored
   as a byte, so at P_lo + 2.56·(P_hi − P_lo) it wraps back to near 0: about 46 bar of pedal at 0.4 g lateral, 52 bar
   at 0.6 g, 68 bar at 1.0 g. In a firm trail-brake the knockdown can therefore jump from its largest to almost none
@@ -524,13 +527,14 @@ A car with more rear weight than the M3 [I] can take a higher P_lo / P_hi before
 
 ### 10.4 Rear cornering latch — event classifier 0x4E908
 
-When it sets on a rear, that rear gets the cornering treatment in §10.3, and the other rear stays on its normal
-handling. On setting it snapshots lateral, driver pressure, yaw and yaw error. It releases when driver pressure
+It sits on the **inside** rear: RL only in a left turn, RR only in a right turn (ISO 8855: positive lateral and yaw =
+left turn; wheels 0 / 2 = left). While it holds, the classifier uses the §10.3 lateral branch, which decides how
+much the outside rear follows the inside rear's dumps. On setting it snapshots lateral, driver pressure, yaw and yaw error. It releases when driver pressure
 falls below P_lo (`0x40E26`).
 
 It sets when any one of these triggers fires:
-1. the yaw error `e` = yaw − DSC target is ≥ 1 count in the turn direction (the car is at or past the model's
-   yaw);
+1. the yaw error `e` = yaw − DSC target is ≥ 1 count in the turn direction: the car rotates at least as much as the
+   model asks, the oversteer side;
 2. \|lat\| > T;
 3. the yaw-limited flag E+37 b7;
 4. the classifier's yaw-recovery flag.
@@ -589,7 +593,7 @@ can start without an SZL [I]. The steering terms in the pacing read 0. The gate 
 
 | Use | Where | Values |
 |---|---|---|
-| Which rear leads the select-low | `abs_rear_lead_select` 0x5199A–0x519DA | lat +6 / −5 / −10, aux ±11 |
+| Flag that the lead rear is the inside rear (decision word bit 9; the lead itself is picked from the rears' ABS phase) | `abs_rear_lead_select` 0x5199A–0x519DA | lat +6 / −5, aux +11 / −10 |
 | Corner dump-step cut on the selected front | `abs_dump_frame_flags` 0x4B160 | \|lat\| > 0.50 g → D/2, > 0.80 g → D/3. The front is picked by the side flags `0x408DF0` b7/b6 (wheel-speed based, set in 0x5CAF4) [I] |
 | Lateral build step, code 256 | `abs_decision_resolve` 0x58C4E, exec 0x59064 | \|lat\| ≥ 0.40 g; +0.8 bar when \|lat\| > 0.80 g with PM < 40 bar, or 0.65–0.80 g with PM < 30 bar |
 | Front staged-dump cancel in a corner | `abs_front_stage_cancel` 0x540D4 | \|lat\| > 0.35 g |

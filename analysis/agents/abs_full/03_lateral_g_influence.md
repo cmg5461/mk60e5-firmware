@@ -19,7 +19,8 @@ reaches the ABS region but is gated by AYC being active, so for a DSC-off / "ABS
 ## 1. Where the sensors enter
 
 `abs_sensor_gather` **0x5D82C** fills these every frame; validity bits are in `abs_sensor_valid` 0x408E6D
-(b7 lateral, b6 brake pressure, b5 steering, b4 yaw):
+(b7 lateral, b6 brake pressure, b5 steering, b4 yaw). Signs: ISO 8855: positive steering angle, lateral accel and yaw rate = left (all three share a sign in a normal
+forward turn); wheels 0..3 = FL, FR, RL, RR (confirmed by the owner 2026-10-26):
 
 | ABS RAM | Signal | Source |
 |---|---|---|
@@ -49,10 +50,11 @@ Writes the decision code 0x408DDE and the `pct` byte 0x408DE0 (`09_chassis_senso
   `pct = 100·(P_drv − P_lo)/(P_hi − P_lo)` (0x51F42).
 - A straight-line shortcut (|lat| < 9, yaw-stable, balanced front pressures) → code 1.
 
-`abs_decision_pressure_exec` **0x58FF4**, code-32 arm **0x59222**, then sets a rear's command to
-max(1 bar, PM − pct·G/100), G being the dump depth `LOCKEST − CMD` of the wheel in the decision word's source field:
+`abs_decision_pressure_exec` **0x58FF4**, code-32 arm **0x59222**, then sets the non-lead rear's command to
+max(1 bar, PM − pct·G/100), G being the lead rear's dump depth `LOCKEST − CMD`, so the other rear follows the lead
+rear's dumps:
 the knock-down grows as the driver's pressure moves from the light-braking curve toward the upper one. pct is not
-clamped and wraps at 256 %. Wheel roles and detail: `09_chassis_sensor_use.md` §2.1 items 6–7.
+clamped and wraps at 256 %. Detail: `09_chassis_sensor_use.md` §2.1 items 6–7, §2.3.
 
 ### (b) Lateral-g build step — decision code 256 [CONFIRMED]
 `abs_decision_resolve` 0x58B30 maps code 128 to **256** or 2; on the path at 0x58C4E–0x58C5E the choice is
@@ -69,9 +71,10 @@ wheel's +3 bar rebuild steps with `abs_gma_hold_frames` 0x54BE8 (slip, speed, de
 yaw + yaw accel/2, steering rate, steering added since the event began). `09_chassis_sensor_use.md` §2.4, §7.3.
 
 ### (d) Inside/outside rear-wheel lead [CONFIRMED]
-`abs_rear_lead_select` **0x5184C** uses the **sign and magnitude of lateral accel 0x408ECA** — thresholds +6,
-−5, −10 and 0x408ECB vs ±11 (0x5199A–0x519DA) — to decide which rear leads the select-low and to set bit9 in
-the decision word (0x408DDE+10). Needs lateral valid (b7, 0x5197E).
+`abs_rear_lead_select` **0x5184C** picks the lead rear (`0x408DA0` b7) from the two rears' ABS phase, not from
+lateral g. The lateral byte only sets bit 9 of the decision word (0x408DDE+10): lead rear = inside rear, by the
+sign of lateral accel 0x408ECA (+6 / −5) or 0x408ECB (+11 / −10) or the side flags `0x408DF0` b7/b6 (0x5199A–0x519DA,
+needs lateral valid, 0x5197E). Corrected 2026-10-26; `09_chassis_sensor_use.md` §2.3.
 
 ### (e) Rear cornering latch and dump step size [CONFIRMED]
 - The event classifier's rear cornering latch (0x4E908, needs lateral, pressure, steering and yaw valid)

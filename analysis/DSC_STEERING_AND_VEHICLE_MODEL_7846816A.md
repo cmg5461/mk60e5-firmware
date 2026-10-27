@@ -185,7 +185,7 @@ steering-based yaw target").
 | Item | What to do | Ref |
 |---|---|---|
 | Steering zero | Mount the SZL centred within 1–2°; run `31 21 00` wheels straight. The learner covers a few degrees; > 10° faults (§2.1). | §2 |
-| Steering sign | Must match the M3 convention; reversed sign inverts the GMA rate term, the countersteer test and the yaw reference | `09` §7.5 |
+| Steering sign | Must match the M3 convention: ISO 8855, positive = left, the same sign as lateral and yaw when driving forwards (owner-confirmed 2026-10-26); reversed sign inverts the GMA rate term, the countersteer test and the yaw reference | `09` §7.5 |
 | Steering scale | An E9x SZL keeps it (·1029/1024 in the CAN handler) | §1 |
 | Cluster orientation | Mount as in the M3; CSI per-variant sign tables 0x40EE4 / 0x40EFC / 0x40F14 are −1 for every variant (roles per XDF: ay / ? / yaw [low]) | symbols CSI |
 | Tyre size | BFU circumference 0x41CF4 / 0x41CF6 = 2073 mm, teeth 0x41CF8 / 0x41CFA = 48. Tolerance learning applies only ~3 % at start-up, so patch for a real size change. vref scales the yaw reference directly. | `TYRE_TOLERANCE_LEARNING_7846816A.md` |
