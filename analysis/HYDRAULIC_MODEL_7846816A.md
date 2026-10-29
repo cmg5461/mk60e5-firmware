@@ -171,6 +171,10 @@ p-V curve, set 0 (volume counts at pressure; 0.1 mm³ per count):
 LPA curve, `lpa_update` 0x827BA **[code]**: volume 0 / 100 / 1000 / 15000 counts -> pressure 0 / 1.3 / 1.3 / 5.0 bar.
 So the accumulator sits at 1.3 bar with almost any fluid in it, rising only past ~100 mm³.
 
+**The valve constants are shared across variants.** k_in 957 / 421, k_cross 219 / 421, k_back 705 and k_out 755 / 465
+are identical in every newer-layout MK60E5 image checked: M3, non-M, 6791524A, and the ARM 6775387A / 6776067A. Only the
+p-V curves (calipers) change per car. FACTS: "HCU valve constants across BMW MK60E5 variants".
+
 Other calibration blocks: `FACTS.md` and the symbols file ("COA block 0x41978").
 
 ---

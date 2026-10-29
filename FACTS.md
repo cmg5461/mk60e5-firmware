@@ -1872,8 +1872,9 @@ Read directly from `analysis/7846816A_main.lst` (M3) in a single pass. **Not ben
 - **Inline decel limiter:** step = max(step, `(0x408DAF − margin)·360/1000`), margin **50** (or **30** when a
   front has `rec+12` b2), and at least `margin·0.36`. Skipped when an invalid wheel was seen, in controller
   modes 1/2/4, or when `0x400966` b6. (Earlier docs said margin 20…30; that is the helper's margin.)
-- **Decel estimate `0x408DAF`** (s8, writer 0x534E6) = `0x408EE8 / 21`, or `0x408DB4` in one state. Writer of
-  `0x408EE8` not found. `0x408DB8` (writer 0x532F0) is a vref slope: `(0x408DBA − vref)·453/16/(10n−10)`,
+- **Decel estimate `0x408DAF`** (s8, writer 0x534E6) = `0x408EE8 / 21`, or `0x408DB4` in one state. `0x408EE8` is
+  written by `sub_053720`: an IIR 20/21 of the mean wheel accel rec+0x22, slew ±200, clamp ±2667
+  (`10_vref_and_ax.md`). `0x408DB8` (writer 0x532F0) is a vref slope: `(0x408DBA − vref)·453/16/(10n−10)`,
   clamp ±127. Both are speed-derived, so the fallback path is self-referential once all four wheels slip.
 - Shadow integrator `0x408E7E` takes the same step and is kept ≤ vref. Floor `0x4032D0` applied after.
 
@@ -2596,3 +2597,23 @@ Doc: `analysis/TCS_7846816A.md`. Symbols: "Traction control (TCS / ASR / MSR)" a
 - **[verified] Replayer bug fixed.** `tools/mcore_replay.py` treated `clrt rx` / `clrf rx` as flag operations; they
   clear rx when C = 1 / 0. Replays through code containing them should be re-run (e.g. the AYC range 0x5E936–0x5FA2A
   has three).
+
+## [disasm + tool 2026-10-28] HCU valve constants across BMW MK60E5 variants
+
+**Every newer-layout MK60E5 image carries the same valve constants. Only the p-V (caliper) curves change per car.**
+
+| Image | CPU | k_in f / r | 2nd pair | k_back | k_out f / r |
+|---|---|---|---|---|---|
+| 7846816A (E9x M3) | M·CORE | 957 / 421 | 219 / 421 | 705 | 755 / 465 |
+| 6862873A (E90 non-M) | M·CORE | 957 / 421 | 219 / 421 | 705 | 755 / 465 |
+| 6791524A | M·CORE | 957 / 421 | 219 / 421 | 705 | 755 / 465 |
+| 6775387A, 6776067A | ARM | 957 / 421 | 219 / 421 | 705 | 755 / 465 |
+| 4029563A, 7841983A (E60 M5) | ARM | older per-level valve model; not comparable one to one | | | |
+
+- **k_out is a real dump-depth lever.** On the M3 the outlet opening is open-loop: `outlet_dump_time_for_target` 0x85958
+  computes t = 10·(V(target) − V(ref)) / valve_flow(Δp, k_out 0x41B30[w/2], 80). During the dump, PM is the COA model, which
+  uses the same k_out. So **raising k_out shortens every outlet opening by 1/factor**, real dumps get proportionally shallower,
+  and the controller doesn't see it until PM re-syncs to measured after the dump. Lowering k_out deepens them.
+- **k_back 0x41B2E (705)** is the inlet check-valve backflow, used by `wheel_volume_delta` 0x8216E. It only matters in model
+  phases: dumps with the pedal below wheel pressure, and sensor-fault fallback.
+
