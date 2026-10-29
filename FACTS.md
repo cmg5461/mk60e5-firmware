@@ -500,8 +500,10 @@ Two independent checks fault when the sensors don't deliver the VDA encoded stre
 
 ## Yaw / single-track model + DSC mode (detail `analysis/agents/yawmodel/REPORT.md`)
 
-- **[verified] Sign convention (owner, 2026-10-26).** Lateral accel and yaw rate follow ISO 8855: positive = left-hand
-  turn. Wheels 0..3 = FL, FR, RL, RR (0 and 2 left). The CAN 0x1A0 encoders scale by positive constants, so AccY /
+- **[verified] Sign convention (owner, 2026-10-26).** Steering angle, lateral accel and yaw rate follow ISO 8855: positive =
+  left; driving forwards in a normal turn all three share a sign (countersteer = steering opposite to lat / yaw). The
+  ABS steering chain keeps the sign (offset subtraction, positive ratio) and CAN 0x0C4 relays 0x401644 with a positive
+  scale. Wheels 0..3 = FL, FR, RL, RR (0 and 2 left). The CAN 0x1A0 encoders scale by positive constants, so AccY /
   YawRate carry the same sign. Consequences: the rear cornering latch sits on the inside rear, the AYC/ABS yaw error
   e = yaw − target means oversteer only when it points in the turn direction, and `0x408DF0` b7 / b6 are the
   left / right-turn side flags (09 §2.2–2.3).
