@@ -5,8 +5,9 @@ and what the real plant (valves, accumulator, pump) does around it. This is the 
 logic, valve current profiles and slip control are elsewhere (`INLET_VALVE_CONTROL_7846816A.md`,
 `ABS_ALGORITHM_M3_7846816A.md`, `agents/abs_full/04_pressure_actuation.md`).
 
-CPU addresses throughout. Pressure unit **0.01 bar**; volume unit is the p-V curve count, **taken as 0.1 mm³**
-(user-stated; bounded by FACTS.md "Hydraulic-model volume unit": 0.1-0.3 mm³). Companion material:
+CPU addresses throughout. Pressure unit **0.01 bar**; volume unit is the p-V curve count, **0.1 mm³**
+(five converging sources: decimal-unit convention, master capacity, caliper compliance, inlet orifice, pump
+displacement; FACTS.md "Hydraulic-model volume unit"). Companion material:
 `tools/hyd_sim.py` (a bootleg simulation, section 9) and `analysis/hyd_sim_csv/`. Symbol names and signatures
 are in `7846816A_symbols.md` ("Circuit volume model", "Pump volume model").
 
@@ -129,7 +130,7 @@ Cd.A = 1.77e-6 mm² x k at full opening (rho 1050 kg/m³, 0.1 mm³/count). Diame
 | Rear outlet | 465 | 0.066 | 0.37 / 0.35 / 0.32 |
 | USV / back-flow | 705 | 0.100 | 0.46 / 0.43 / 0.40 |
 
-Diameter scales with sqrt(unit / 0.1 mm³). `FACTS.md` ~2004 has the bounds. The user sectioned an MK100 body: a
+These depend on Cd only; the unit is fixed at 0.1 mm³ (`FACTS.md`, "Hydraulic-model volume unit"). The user sectioned an MK100 body: a
 needle inlet with a 0.5-0.8 mm seat, so these are lumped Cd.A values, not bores.
 
 ### Reynolds number [inferred, simulated]
@@ -227,7 +228,9 @@ which is the spin-up. Its behaviour when the motor stops is in untraced branches
 
 `pump_volume_frame[c]` 0x4016FA = `d x share/20` (from the master side via the HSV) + `min(rest, LPA volume)` +
 `min(rest2, supply store)`. **In ABS the HSV share is 0**, so the pump delivers only what the LPA holds,
-at most 340 counts/frame (3.4 cm³/s at 0.1 mm³/count). The supply store (cap 1150) fills only while share >= 1 and
+at most 340 counts/frame (3.4 cm³/s). That matches the MK100 pump: 5.6 mm bore × 1.83 mm stroke = 45.1 mm³ per
+revolution per circuit, so 3.4 cm³/s is about 4,500 rpm. If `pump_flow_est` is motor rpm (4300 unloaded, 2600 at
+250 bar), the model delivers 474 counts = 47.4 mm³ per revolution, about 5 % over the swept volume [inferred]. The supply store (cap 1150) fills only while share >= 1 and
 is empty in ABS.
 
 `lpa_pump_draw` 0x825B6: share >= 1 -> 250/frame if LPA pressure >= driver, else 0 (the pump takes the higher of
@@ -393,13 +396,13 @@ which is not this plant. The real loop also has the 5 ms current control, which 
 5. Pump flow-estimate behaviour when the motor is off (0x4019F8 b5, 0x408DA1 b4).
 6. Temperature compensation in the volume model (`wheel_volume_temp_comp` 0x81EE0; fill-rate temperature bands
    0xDA5F8/0xDA5FC in `pump_supply_store_update`).
-7. The unit: a measured volume or flow (one wheel) would pin the volume unit and Cd together.
+7. Cd: a measured flow through one valve would pin the effective Cd (the volume unit is settled at 0.1 mm³).
 8. Validate against a log: a dump on one wheel with the other wheel's inlet open and the LPA state known would test
    the node-blip magnitude and the LPA drain time.
 
 ## 10. Related
 
-`FACTS.md`: "Pump volume model" (~1961), "Hydraulic-model volume unit" (~2004), check-valve topology.
+`FACTS.md`: "Pump volume model" (~1961), "Hydraulic-model volume unit", check-valve topology.
 `7846816A_symbols.md`: hydraulic actuation and the two volume-model sections.
 `INLET_VALVE_CONTROL_7846816A.md`: request to valve current.
 `agents/abs_full/04_pressure_actuation.md`: PM selection, sensors, pulse timing.

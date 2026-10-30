@@ -2017,7 +2017,7 @@ Symbols: `analysis/7846816A_symbols.md`, "Pump volume model". Overview and ABS-o
   - The result is stored to 0x401D32[c] at 0x86288.
 
   How the two wheels are combined is not traced. 0x401D32 and the 0x41B34 cap are both in the p-V curve's
-  volume unit, which has not been identified.
+  volume unit (0.1 mm³ per count; see "Hydraulic-model volume unit"), so the M3 cap is 115 mm³.
 - **[verified, main path]** `pump_flow_estimate_update` 0x81782 is called by `hydraulic_model_step` at 0x82F22.
   - x = the sum of circuit pressure 0x4016EA[c] / 2 over circuits with 0x4016FA[c] ≠ 0.
   - target = interp(x, ROM axis 0xDA604 {0, 25000}, **0x41B38 {4300, 2600}**).
@@ -2036,25 +2036,38 @@ Symbols: `analysis/7846816A_symbols.md`, "Pump volume model". Overview and ABS-o
 - **[inferred]** The pump characteristic and the valve-flow coefficients are identical, which suggests the same
   pump and valve block. Whether the cap is brake tuning or reflects supply-side hardware is open.
 
-## [estimate 2026-10-16] Hydraulic-model volume unit: about 0.1–0.3 mm³ per count
+## [established 2026-10-30] Hydraulic-model volume unit: 0.1 mm³ per count
 
 The firmware never states the unit of the p-V curves, the LPA curve or the valve-flow gains. They are
 consistent with each other (all calibration), and no code constant ties them to a physical unit. The flow law is a bare
 orifice equation, Q = isqrt(|Δp in 0.01 bar|) × opening (max 80) × k / 4096 per 10 ms, so k absorbs
-Cd·A·√(2/ρ) and the unit scaling. Three independent bounds:
+Cd·A·√(2/ρ) and the unit scaling. **The unit is 0.1 mm³ per count.** Five independent lines of evidence converge on it:
 
-- **[inferred] Master cylinder capacity.** At 120 bar the M3 front circuit is 2 × 13300 counts. A tandem master
-  supplies roughly 8–9 cm³ per circuit over its whole stroke, so 1 mm³/count is impossible and the unit
-  must be well below about 0.3 mm³.
-- **[inferred] Caliper compliance.** At 0.1–0.25 mm³/count, a 57 mm front piston comes to 0.5–1.3 mm of
-  equivalent travel at 120 bar and 0.06–0.14 mm at 4 bar (pad clearance). Both are plausible.
-- **[user + inferred] Orifice flow.** u ≈ 707 × Cd × A[mm²] / k mm³/count. The user sectioned an MK100 body:
-  its inlet valve is a sprung-open needle with a seat of about 0.5–0.8 mm, and flow toward the caliper
-  pushes the needle off the seat. With k_in front = 957 and Cd ≈ 0.65 this gives about 0.09–0.24 mm³/count.
+1. **[inferred] Convention.** Every other physical quantity in the firmware is a standard unit scaled by a power of 10:
+   pressure 0.01 bar (pinned by CAN), speed 0.01 km/h, time in 10 ms frames, wheel acceleration 0.01 g,
+   lateral acceleration 1 mg. A decimal
+   volume unit is expected, and 0.1 mm³ is the only power of 10 that fits the bounds below.
+2. **[inferred] Master cylinder capacity.** At 120 bar the M3 front circuit is 2 × 13300 counts = 2.7 cm³ at
+   0.1 mm³. A tandem master supplies roughly 8–9 cm³ per circuit over its whole stroke, so 1 mm³/count (27 cm³)
+   is impossible and anything above about 0.3 mm³ is implausible.
+3. **[inferred] Caliper compliance.** At 0.1 mm³/count, a 57 mm front piston comes to about 0.5 mm of
+   equivalent travel at 120 bar and 0.06 mm at 4 bar (pad clearance). Both are realistic.
+4. **[user + inferred] Inlet orifice.** u ≈ 707 × Cd × A[mm²] / k mm³/count. The user sectioned an MK100 body:
+   its inlet valve is a sprung-open needle with a seat of about 0.5–0.8 mm, and flow toward the caliper
+   pushes the needle off the seat. With k_in front = 957 and Cd ≈ 0.65 this gives about 0.09–0.24 mm³/count.
+5. **[user + inferred, 2026-10-30] Pump displacement.** The user measured the MK100 pump pistons (one per
+   circuit): bore 5.6 mm, stroke 1.83 mm, so 24.6 mm² × 1.83 mm = **45.1 mm³ per revolution per circuit**. The
+   model delivers at most 340 counts per 10 ms frame per circuit (0x41B44 at `pump_flow_est` 4300). At 0.1 mm³
+   that is 3.4 cm³/s, or 75 rev/s (about 4,500 rpm), a normal ABS pump-motor speed; 0.3 mm³ would need about
+   13,600 rpm. If `pump_flow_est` 0x40170C is motor speed in rpm (4300 unloaded falling to 2600 at 250 bar, a DC
+   motor load line), then 340 counts per 0.717 rev = 474 counts/rev, and 45.1 mm³ / 474 = **0.095 mm³/count**,
+   within about 5 % of 0.1 (volumetric efficiency about 0.95). The rpm reading is unconfirmed (the motor-off
+   branches of `pump_flow_estimate_update`, 0x4019F8 b5 / 0x408DA1 b4, are untraced), but the speed bound
+   alone puts the unit at about 0.07–0.13 mm³/count for 3,000–6,000 rpm.
 
-**Working value: about 0.1–0.3 mm³/count, probably 0.1 (a round decimal, like 0.01 bar).** On that basis the "full"
-LPA (15000) is about 1.5–4.5 cm³. For scale, the user measured an MK100 LPA bore of 24 mm × 30 mm. The LPA curve
-then implies a spring preload of about 59 N (1.3 bar on 452 mm²) and a spring rate of about 15–50 N/mm. The
+On that basis the "full" LPA (15000) is 1.5 cm³. For scale, the user measured an MK100 LPA bore of 24 mm × 30 mm
+(452 mm²), so 1.5 cm³ is about 3.3 mm of piston travel. The LPA curve then implies a spring preload of about 59 N
+(1.3 bar on 452 mm²) and a spring rate of about 50 N/mm. The
 needle-valve geometry supports the inlet-valve model: current sets the Δp at which the valve cracks open
 (F_mag = F_spring + Δp × A_seat; 2–5 N at 100 bar). A return flow cannot pass the inlet valve itself, which is
 why the model's backflow path (k_back) depends on the USV level rather than the inlet level.

@@ -940,7 +940,7 @@ Dispatcher 0x8CCB8 is a flat 41-slot sequencer; slots 0–39 named (med) in `ana
 
 Traced from the listing; detail in FACTS.md, "Pump volume model, and M3 vs 335 hydraulic calibration".
 Circuits: c = 0 is wheels 0/1 and c = 1 is wheels 2/3 (ROM map 0xDA1B8). Volumes use the p-V curve unit
-(estimated at about 0.1–0.3 mm³ per count; see FACTS.md, "Hydraulic-model volume unit"); pressures are 0.01 bar.
+(0.1 mm³ per count; see FACTS.md, "Hydraulic-model volume unit"); pressures are 0.01 bar.
 Overview, valve topology and simulator: `HYDRAULIC_MODEL_7846816A.md`.
 
 | Address | Name | Conf | Evidence |
@@ -976,7 +976,7 @@ Overview, valve topology and simulator: `HYDRAULIC_MODEL_7846816A.md`.
 
 `circuit_volume_update(c)` 0x826C0 runs once per circuit from `hydraulic_model_step`. The order is 826C0(0),
 `lpa_update`(0), 826C0(1), `lpa_update`(1). Wheels per circuit come from 0xDA1B8. Pressures are 0.01 bar; volumes
-are in the p-V curve unit (about 0.1–0.3 mm³ per count, estimated). "Level" = valve opening 0..10. pV_w(p) = interp(p, axis 0x41B4E, front 0x41B62 +
+are in the p-V curve unit (0.1 mm³ per count). "Level" = valve opening 0..10. pV_w(p) = interp(p, axis 0x41B4E, front 0x41B62 +
 20 * coding byte 3 or rear 0x41B8A + 20 * byte 4, n = 10). Interpretations of USV/HSV are inferred.
 
 | Address | Name | Conf | Evidence |
@@ -1161,8 +1161,11 @@ ABS/vref RAM shifted +0x24; code shift −0x220/−0x200. Full work in `analysis
 | 0x045F54 | `abs_pressure_frame` | high | per-wheel slip update, phase dispatch, dump-stage coord, decision chain |
 | 0x04D270 | `abs_event_classifier` | med-high | builds the per-wheel threshold scratch, then → abs_phase_sm |
 | 0x0504D0 | `abs_wheel_phase_dispatch` | high | switch on rec[0] → 5 phase handlers |
-| 0x050580 | `abs_phase_armed_handler` (0x80) | med-high | RAMP=8000; CMD=min(PM+500, arbiter out) |
-| 0x050894 | `abs_phase_precontrol_handler` (0xC0) | med | slow ramp to 25000; ROM curve 0xD6AFC |
+| 0x050580 | `abs_phase_armed_handler` (0x80) | high | rate 8000; hold request → rate 0. Rear while a wheel cycles: CMD = min(PM + 5 bar, arbiter output 0x408F6E), rate 500, **100 when decision code = 1 or 0x408E5F b7**; front lateral pre-limit on 0x409049 b0 (curve 0x403B4). `agents/abs_full/08_phase_control.md` §5.5 |
+| 0x050894 | `abs_phase_precontrol_handler` (0xC0) | high | rate 0, CMD = PM; creep by `abs_precontrol_build_rate` after 2 frames or when re-accelerating (≤ 25000); CMD ≤ arbiter + 5 bar; latch branches use ROM curve 0xD6AFC. §5.5 |
+| 0x057DA4 | `abs_precontrol_build_rate` | high | pre-control: curve 0x403E6(PM) 8 → 3 bar/frame, front rec+6 rules (200 / 0), rear code-1 slip rule (150 / 0); else curve 0x409E4 front / 0x40A00 rear |
+| 0x059C6C | `abs_mode_update` | high | dispatcher slot 34. Writes `abs_mode_flags` 0x408DA1 bits 7:5 = 1 (standstill counter 0x408EC0 reaches 30), 2, 3 (both fronts' low-speed flag 0x409056 b0); 0x408E68 b0 = counter ≥ 30; limit 0x408EC4 = max(vref − 0x408E5C, 0.65·vref, 15 km/h). `08_phase_control.md` §6.1 |
+| 0x045556 | `abs_mode5_check` | med | mode = 5 when 0x408E5C ≥ 1000 and 0x408DA2 b6 clear |
 | 0x04AAA8 | `abs_phase_dump_handler` (0x21) | high | → 0x55F06 target; events bit31 re-accel / bit30 |
 | 0x04CA3C | `abs_phase_hold_handler` (0x09) | high | entry 0x57200; TGT = PMMIN + headroom·n/16 |
 | 0x04B680 | `abs_phase_reapply_handler` (0x11/0x15) | high | step code → 0x581BA; PM+1000 end clamp |
@@ -1585,7 +1588,10 @@ typedef struct {
 | 0x00408DE0 | `abs_decision_pct` (u8, %) | high | `abs_decision_t.pct`; written only at 0x51F42: pct = 100·(P_drv − P_lo)/(P_hi − P_lo), P_lo = 100·curve 0x40E26(\|lat\|), P_hi = 100·curve 0x40E0A(\|lat\|) (+500 above \|lat\| 80). Not clamped: above P_hi it exceeds 100 and wraps modulo 256 (`st.b` / `ld.b`). Read by `abs_decision_pressure_exec` code 32 (0x59272) |
 | 0x00409024 | `abs_yaw_corner_flags` (u8) | med | b0+b6 set when \|yaw\| > curve 0x40E42(−decel) during ABS (0x51BB8); b0 cleared when \|yaw\| < half the curve. b0 blocks the classifier straight shortcut and the straight latch. Never set without yaw |
 | 0x00409049 | `abs_rear_latch` (u8 per wheel at 0x409049 + 4·w) | med-high | b2+b5 rear cornering latch (0x4E908; needs `0x408E6D & 0xF0` = 0xF0 and 0x408DC6 b2), b3 rear decel-gate latch (0x4DF9E). b5 enables the code-32 / code-1 lateral branch of the classifier. Latch triggers, threshold T (`0x409132` + 10·w, cals 0x40B06 / 0x403E4 floor) and release: 09 §2.2 |
-| 0x00408DA1 | `abs_mode_flags` (u8) | med | b4 braking / ABS regime (gates `abs_decel_est_clamp_ax` 0x538E8, blocks ax-trust set at 0x49A9E, selects the `vref_update` rise/fall regime); bits 7:5 controller mode (0 = normal ABS) |
+| 0x00408DA1 | `abs_mode_flags` (u8) | med | b4 braking / ABS regime (gates `abs_decel_est_clamp_ax` 0x538E8, blocks ax-trust set at 0x49A9E, selects the `vref_update` rise/fall regime); bits 7:5 controller mode (0 = normal ABS); non-zero blocks the slip-triggered events; writers and values in `agents/abs_full/08_phase_control.md` §6.1 |
+| 0x00408EC0 | `abs_standstill_count` (u8) | high | frames at rest, saturates at 30 → mode 1 (`abs_mode_update`) |
+| 0x00409056 | per-wheel flags (u8, stride 2) | high | b0 low speed (< 4 km/h and counter ≥ 30; read by `abs_mode_update` for mode 3), b1 / b2 classifier gross-slip bits |
+| 0x00409026 | `abs_dump_entry_rec6` (s16[4]) | high | rec+6 latched at each EV0.b5 / EV0.b0; while dumping the decel flag is rec+6 < half of it |
 | 0x00408DAF | `abs_decel_est` (s8, 0.01 g) | med-high | wheel-derived vehicle decel (`0x408EE8`/21, writer 0x534E6); clamped to `abs_ax` ± 0.2 g during ABS when ax is trusted (0x538E8); feeds the vref fall limiter 0x45104 and the decel-threshold g-term |
 | 0x00408E80 | `abs_ax` (s16, 0.01 g) | med-high | longitudinal accel used by ABS, written by `abs_sensor_gather` 0x5D82C: ax getter 0x93828 (byte 0x4049FC, ±1.27 g) when valid, else `abs_decel_est` |
 | 0x00408E8C | `abs_ax_alive_count` (u8) | med | (0x495C4–0x4961C) held at ≥ 25 while the ax-type signal 0x408E94 differs from its copy 0x408E8A; counts down above 10 km/h (with 0x40095C b0) when it stops changing; at 0 `abs_ax_flags` b7 is dropped. Trust set needs ≥ 16 (0x49AAC) |

@@ -110,7 +110,8 @@ Other locals:
    0x4DB80 / 0x4DBCA when `rec+6` < 0, or `rec+0x24` < E+22, or a decel-gate combination holds.
 8. **Front cancel 0x4DBF8–0x4DD50** [C structure]. Clears sp+60 and sp+44 for fronts under conditions on vref,
    `rec+0x18` b3, the peak byte, `0x4090B6` > 75, `0x40903A` flags and driver pressure (cancels a front dump
-   start). Rear path 0x4DD12 does the same when neither rear is in pre-control / dump and wheel accel > +1 g.
+   start). Rear path 0x4DD12 does the same when either rear is in pre-control or dump (RL / RR rec[0] & 0x60), the
+   wheel has `0x40902E` & 0x12, and wheel accel > +1 g.
 9. **EV0.b7, EV0.b6 0x4DD6A–0x4DEC2** [C].
    - EV0.b7 (armed → 0x84): sp+72 and slip2 < E+10 (wheel faster than reference).
    - EV0.b6 (pre-control): `rec+6` < 0 (or the `0x408DF1` b4 path), `rec+0x24` < E+22 (+30 / +10 margins
@@ -171,7 +172,7 @@ Other locals:
 18. **EV1 bits 0x4EF7E–0x4F02C** [C].
     - b7 hold → reapply: after `0x4D21C`, hold counter `rec+0x17 & 7` ≥ 3.
     - b6: sp+72, slip2 < E+10, mode bits clear, `0x40905E` b6 clear.
-    - b5: slip2 ≥ E+10, or (sp+72 clear and `0x408DA1` b4 clear).
+    - b5: slip2 ≥ E+10, or (sp+72 clear and `0x408DA1` b4 set).
     - b4: slip2 ≥ E+10.
 19. **Bookkeeping 0x4F02E–0x4F1AC** [C]. On EV0.b0: `0x409056` b1 and rear direction bit `0x40903B[3w]` b0.
     `*0x400980` wheel: `0x408DB5` b6 = slip ≥ curve(0xD6CE2)/4. Fronts not in dump / hold: `0x408DED` b4 (FL) /
@@ -586,6 +587,30 @@ the first-step rate variants in 0x57952 and the full N0 adjustment in 0x4C368.
 
 ---
 
+### 5.5 Armed and pre-control handlers  [C]
+
+**Armed `abs_phase_armed_handler` 0x50580.** Default rate 8000 (full build).
+- Hold request (`0x40905E`[3w]+1 b7): sub-phase `0x408FCC` = 2, request `0x408D9C` b7, rate 0, CMD = CMD_max = PM.
+- **Rear while a wheel is in a cycle** (`0x408E68` & 0x30, `0x408DA2` b6, `0x408DA1` b3 clear, no hold request):
+  sub-phase 1. CMD = min(PM (CMD if request b5) + 5 bar, `0x408F6E` arbiter output); CMD_max = arbiter output.
+  Rate 500, but **100 when the decision code `0x408DDE` = 1 (rears uncoupled) or `0x408E5F` b7**.
+- Otherwise: sub-phase 0, CMD = CMD_max = arbiter output; rate 200 front / 300 rear when `0x40905E`+2 b4.
+- Front lateral pre-limit when `0x409049`[4w] b0, `0x408DC6` b2 and `0x408E6D` b7. It uses the partner's PM, curve
+  0x403B4(|lat|) → `0x409136`[10w], and lat / yaw bands on `0x408ECB` / `0x408EDB` / `0x408ECE`. Rate 0, 200 or
+  cal 0x403E2. `0x409049` b0 is cleared otherwise.
+
+**Pre-control `abs_phase_precontrol_handler` 0x50894.** If mode ≠ 0 and `0x408DEE` b4: drop request b7 and return.
+- Otherwise request b7, rate 0, CMD = PM.
+- On a frame after the first in pre-control with request b5: when counter rec+0x30 ≥ 2, `rec+0x18` b2, or wheel accel ≥ 1,
+  CMD += r and rate = r (CMD ≤ 250 bar), with r = `abs_precontrol_build_rate` 0x57DA4. That's curve 0x403E6(PM),
+  8 → 3 bar/frame between 0 and 20 bar. Front with rec+6 < −200: r = 200 when `0x408E7B` < 50, and r = 0 with
+  `0x409014` ≥ 10 and rec+6 < −300. Rear with code 1 and vref − wheel > 0.5 km/h: r = 150, or 0 above 2 km/h. Outside
+  pre-control the curves are 0x409E4 front and 0x40A00 rear.
+- CMD ≤ arbiter + 5 bar, CMD_max = min(CMD + 10 bar, arbiter + 5 bar), rec+0x30 += 1.
+- Latch branches: the rear decel-gate latch `0x409049` b3 (hold at arbiter; after 4 frames compares PM with
+  curve 0xD6AFC(driver pressure) + `0x408E72`), the cornering latch b2 (yaw-sign tests), and the `0x40902F` b7 stay
+  latch.
+
 ## 6. End-of-event reset  [C]
 
 `0x45808` (called by `0x45EC4` after the wheel loop), 0x458E0–0x45964: when `0x401FF2 & 0xA0 == 0x80` and the
@@ -594,6 +619,24 @@ ABS mode field `0x408DA1` bits 7:5 ≥ 5, every wheel gets `rec[0]` = 0x80 with 
 advances the `0x408DA1` mode field.
 
 ---
+
+### 6.1 ABS mode field `0x408DA1` bits 7:5  [C, meaning I]
+
+0 is normal ABS. Any non-zero mode blocks the slip-triggered events: EV0.b5 route A, the EV0.b0 slip path and EV0.b1.
+It also lets a decel-route dump start only when the wheel is below `0x408EC4` = max(vref − `0x408E5C`, 0.65·vref,
+15 km/h), written by the driver; at mode 0 it's 320 km/h.
+
+| Mode | Writer | Condition |
+|---|---|---|
+| 1 | `abs_mode_update` 0x59C6C (dispatcher slot 34) | standstill counter `0x408EC0` reaches 30. It counts frames at rest: ax valid (`0x408E6D` b3) and `*0x40097C` / `*0x400980` < 4 km/h with `0x40493A` b6, or rec+0x16 b7 on a front. It is reset only while below 30. Also sets `0x408F02`[w] bits 14:12 = 7 and rec+0x0C high nibble 0xE |
+| 2 | 0x59C6C | mode 1 and `0x408DED` b5 |
+| 3 | 0x59C6C | ABS active (`0x408DA1` b4), mode < 5, both fronts' low-speed flag `0x409056`[w] b0, and either counter ≥ 30 with `0x408E68` b6, or (`0x408E68` b1 or `0x402A12` b1) without `0x408E68` b6 |
+| 5 | 0x45556 | `0x408E5C` ≥ 1000 (not decoded) and `0x408DA2` b6 clear |
+| 6 | `abs_state_aggregate` 0x45808 | mode 5 while ABS is active |
+| 7 | 0x45808 | `0x408E5C` ≥ 1000, mode 0, counter < 30, `0x401FF2` b7 clear, a wheel in a cycle (`0x408DA2` b0) |
+
+The low-speed flag `0x409056`[w] b0 is set after the phase machine (step 20): wheel speed or `0x40094A`[w] < 4 km/h,
+and counter ≥ 30. Readers of mode 3: `vehicle_standstill_update` 0xD381C and AYC 0x645D8. `0x408E68` b0 = counter ≥ 30.
 
 ## 7. Rear select-low (decision layer, runs after the handlers)  [C]
 
@@ -616,5 +659,6 @@ advances the `0x408DA1` mode field.
 - Writers of `0x401D00`, `0x401C14`, `abs_p_passthru` (`rec+0x1C` = `tyre_tol_learn`, `rec+0x24` = 0x46390, both
   now traced: `WHEEL_SPEED_CHAIN_7846816A.md`); meaning of
   `0x408DF0` b7 / b6, `0x408E6A`, `0x408E7B`.
-- Arbiter → `0x401AAA` rate path; driver of the `0x408DA1` mode field.
-- Pre-control (0x50894) and armed (0x50580) handlers not decoded.
+- Arbiter → `0x401AAA` rate path. The `0x408DA1` mode field is now traced (§6.1); `0x408E5C`, the input to modes 5 / 7,
+  isn't decoded, and neither is how mode 3 is left.
+- Pre-control and armed handlers: summary in §5.5.

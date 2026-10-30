@@ -273,7 +273,7 @@ flowchart LR
 | pair reapply nudge | `0x40D90` | 80 | Step of the rear-pair stepped reapply (decision code 16). | CAL · high |
 | k_in build flow F/R | `0x41B26` | 957 / 421 | Inlet-valve flow gain. Higher = pressure builds faster for a given Δp. | CAL · high/unit-med |
 | k_out dump flow F/R | `0x41B30` | 755 / 465 | Outlet-valve flow gain. Higher = dumps faster. | CAL · high/unit-med |
-| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (0.01 bar: 1.3–5.0 bar), full at volume 15000. Volume unit about 0.1–0.3 mm³ per count (estimate, FACTS.md), so full is about 1.5–4.5 cm³. | CAL · high |
+| LPA pressure curve | `0x41B16` | 0,130,130,500 | Accumulator model (0.01 bar: 1.3–5.0 bar), full at volume 15000. Volume unit 0.1 mm³ per count, so full is 1.5 cm³. | CAL · high |
 | pump supply-store cap | `0x41B34` | 1150 | The model's limit on the volume that each circuit's pump supply can hold (volume units, not pressure). Pump demand = volume shortfall − this store, so raising it lowers pump demand once the store is full. The 335 images use 650. | CAL · med |
 | pump supply-store fill rate | `0x41B36` | 100 | How fast that store fills while the pump runs (%). Same in the 335 image. | CAL · med |
 | pump flow vs pressure | `0x41B38` | 4300 / 2600 | Modelled pump flow at 0 / 250 bar circuit pressure (axis in ROM 0xDA604). Same in the 335 image. | CAL · med |

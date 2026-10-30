@@ -249,7 +249,7 @@ front down to the first front's lock pressure minus 10/15/20 bar (cal 0x40E64/66
 ## 7. Open / needs-hardware
 - Real-world frequency of the −10 g staged-dump crossings — needs a dynamic bench/vehicle trace.
 - Purpose of cal 0x40DB2 (=10).
-- Pre-control (0x50894) and armed (0x50580) handlers.
+- Pre-control (0x50894) and armed (0x50580) handlers: summary in `08_phase_control.md` §5.5; mode field §6.1.
 
 ---
 
