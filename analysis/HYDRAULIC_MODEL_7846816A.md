@@ -93,7 +93,7 @@ damper and orifice in the real unit; the model has neither.
 | Check valve around inlet | passive | back-flow `-valve_flow(dp, k_back, ...)`, shared k 705, **does not use the inlet level** | [code]/[inferred] (BMW diagram) |
 | Outlet valve (NC) | open only in dump | `valve_flow(p - p_LPA, k_out, level x 8)`; `k_out` 0x41B30 = 755 front / 465 rear | [code] |
 | LPA | fills in dump, drained by pump | volume integrator, curve 0x41B1E -> 0x41B16 | [code] |
-| Pump | runs while LPA has fluid | flow estimate + delivery table; see section 6 | [code] partly, motor decision [open] |
+| Pump | runs while LPA has fluid | motor speed estimate (rpm) + delivery table; see section 6 | [code] partly, motor decision [open] |
 | USV (NO) | never actuated | back-flow opening `(10 - 0x401A1C/2) x 8` = 80 at level 0; no forward restriction | [code] |
 | Check valve around USV | passive | circuit pressure floored at driver pressure (`circuit_feed_pressure_update` 0x8236C); master inflow uses driver pressure directly | [code]/[inferred] |
 | HSV (NC) | **inactive** | the pump-share byte 0x401A1A behaves like an HSV opening: delivery splits into `d x share/20` from the master, the rest from LPA, then the supply store | [inferred] |
@@ -213,24 +213,27 @@ So the fluid model matters most **during a dump**, where it replaces the sensor,
 `lpa_update`: volume += `lpa_inflow` (the two wheels' dumped volume) - `lpa_pump_draw`; zeroed when the unit is idle
 (0x73348() and 0x401C34[0..3] all 0); clamp 15000; pressure from the LPA curve.
 
-### Pump flow estimate [code]
+### Pump motor speed estimate [code; unit inferred]
 
 Per frame, with x = sum over circuits that delivered pump volume of circuit pressure / 2:
 
 > target = interp(x, 0..250 bar -> 4300..2600); `pump_flow_est` 0x40170C += (target - est) x 187/256.
 
-A pump characteristic (flow falls with delivery pressure). The estimate has a time constant of about 4 frames,
-which is the spin-up. Its behaviour when the motor stops is in untraced branches (0x4019F8 b5, 0x408DA1 b4).
+0x40170C is the modelled **pump motor speed in rpm** (the symbol keeps its older name `pump_flow_est`). The curve is
+a DC-motor load line: 4300 rpm (72 Hz) unloaded, slowing to 2600 rpm (43 Hz) against 250 bar. The speed reading
+fits the MK100 pump geometry (see "Delivery per frame") and a normal ABS pump-motor speed of about 75 Hz. The
+estimate has a time constant of about 4 frames, which is the spin-up. Its behaviour when the motor stops is in
+untraced branches (0x4019F8 b5, 0x408DA1 b4).
 
 ### Delivery per frame [code, partly inferred]
 
-> d = interp(flow_est, 0..4300 -> 0..340 counts) (265 when the LPA is empty and driver <= 8 bar and the other circuit is not pumping)
+> d = interp(rpm, 0..4300 -> 0..340 counts) (265 when the LPA is empty and driver <= 8 bar and the other circuit is not pumping)
 
 `pump_volume_frame[c]` 0x4016FA = `d x share/20` (from the master side via the HSV) + `min(rest, LPA volume)` +
 `min(rest2, supply store)`. **In ABS the HSV share is 0**, so the pump delivers only what the LPA holds,
-at most 340 counts/frame (3.4 cm³/s). That matches the MK100 pump: 5.6 mm bore × 1.83 mm stroke = 45.1 mm³ per
-revolution per circuit, so 3.4 cm³/s is about 4,500 rpm. If `pump_flow_est` is motor rpm (4300 unloaded, 2600 at
-250 bar), the model delivers 474 counts = 47.4 mm³ per revolution, about 5 % over the swept volume [inferred]. The supply store (cap 1150) fills only while share >= 1 and
+at most 340 counts/frame (3.4 cm³/s). The delivery table is linear in speed: at 4300 rpm the motor turns 0.717 rev
+per 10 ms frame, so the model delivers 474 counts = 47.4 mm³ per revolution per circuit. The MK100 pump has one
+piston per circuit, 5.6 mm bore × 1.83 mm stroke = 45.1 mm³ swept per revolution, within about 5 % of the model. The supply store (cap 1150) fills only while share >= 1 and
 is empty in ABS.
 
 `lpa_pump_draw` 0x825B6: share >= 1 -> 250/frame if LPA pressure >= driver, else 0 (the pump takes the higher of
@@ -393,7 +396,7 @@ which is not this plant. The real loop also has the 5 ms current control, which 
 2. Motor on/off decision; entry conditions of the LPA branch of `pump_circuit_demand`.
 3. What `0x401D28` (circuit target pressure) is and who writes it.
 4. `circuit_supply_pressure` sources `0x401DB8/BC/B2` (needed to model any closed-USV case).
-5. Pump flow-estimate behaviour when the motor is off (0x4019F8 b5, 0x408DA1 b4).
+5. Pump speed-estimate behaviour when the motor is off (0x4019F8 b5, 0x408DA1 b4).
 6. Temperature compensation in the volume model (`wheel_volume_temp_comp` 0x81EE0; fill-rate temperature bands
    0xDA5F8/0xDA5FC in `pump_supply_store_update`).
 7. Cd: a measured flow through one valve would pin the effective Cd (the volume unit is settled at 0.1 mm³).
