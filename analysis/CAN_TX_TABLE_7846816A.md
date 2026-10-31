@@ -410,7 +410,9 @@ lateral 1 mg, wheel accel 0.01 g. CAN LSBs follow from the getter scale factors.
   `vehicle_dir_get` 0xB96C2 (0x4029DA b7:6: 1 forward, else reverse; −2 when unavailable) when available,
   otherwise an estimator 0x632AC / 0x633AC (not decoded; selected by 0x4010FB b7 and the coding table 0xD710A).
 
-**Not confirmed:** the absolute sign of ay and yaw, the BMW names of the enum values in 1.4, and the meaning of
+**Signs:** steering angle, ay and yaw follow ISO 8855, positive = left (confirmed by the owner 2026-10-26); 0x0C4
+relays 0x401644 with a positive scale. The 0x1A0
+encoders scale by positive constants, so AccY / YawRate on CAN carry the same sign. **Not confirmed:** the BMW names of the enum values in 1.4, and the meaning of
 0x402884 / 0x4029BE bits beyond their role here.
 
 ## Frame 0x0CE (wheel speeds) — signal decode

@@ -113,7 +113,7 @@ dumping the tables they index. The per-field limits come from the table at 0xF68
 
 **1. Pressure↔volume curve (both axles) — the main effect.** About 20 functions in 0x816E8–0x880A8
 (the COA hydraulic model) use `0x41B62 + 20·front` for wheels 0/1 and `0x41B8A + 20·rear` otherwise,
-interpolated on the shared pressure axis 0x41B4E (0.01 bar) via 0x7119E. Volume unit not identified.
+interpolated on the shared pressure axis 0x41B4E (0.01 bar) via 0x7119E. Volume unit 0.1 mm³ per count.
 
 | Pressure (bar) | 4 | 7 | 10 | 15 | 20 | 30 | 60 | 120 | 327 |
 |---|---|---|---|---|---|---|---|---|---|
