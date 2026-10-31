@@ -211,7 +211,7 @@ Algorithm [C]:
    - in slew mode, S += 6 per frame up to 102, then `rec+0x19` b6 is set (the 5Dx1 "extrapolation" condition in
      `wss_wheel_monitor`);
    - out of slew mode, S −= 1 every other frame (cycle counter b0);
-   - with b6 set and outside the braking regime (0x408DA1 b4 clear), S −= 13 per frame and b6 clears below 14.
+   - with b6 set and no wheel in an ABS cycle (0x408DA1 b4 clear), S −= 13 per frame and b6 clears below 14.
 
 So the filter's time constant (1/8 per frame, about 80 ms) and slew limit (0.56 km/h per frame = 56 km/h/s ≈ 1.6 g)
 are in frames, not distance. The filter only acts on implausible steps. [C/I]
@@ -231,8 +231,8 @@ factory-stagger switch 0x408DF1 b7 from the four tyre factor bytes (§6.3). Then
   - With 0x40493A b5 and per-wheel flags 0x40905E it is limited to 2 g, or set to 4 g while vref − v > 5 km/h.
   - Clamped to −10 g … +5 g.
   - It is the "second decel quantity" compared with E+22 in `abs_event_classifier`. [C]
-- **`rec+0x39`** (0x46390): a/16 peak byte. a is clamped ±20.32 g, and forced to +1 g below 5 km/h when a ≥ 0. In the
-  braking regime it tracks the deepest decel during dump phases; otherwise it is 0. [C, details in `08_phase_control.md`]
+- **`rec+0x39`** (0x46390): a/16 peak byte. a is clamped ±20.32 g, and forced to +1 g below 5 km/h when a ≥ 0. While a
+  wheel is in an ABS cycle (0x408DA1 b4) it tracks the deepest decel during dump phases; otherwise it is 0. [C, details in `08_phase_control.md`]
 - **`rec+0x26`** (0x46340): mean |accel|, `rec+0x26` = |a| + 0.82·(`rec+0x26` − |a|), capped at 5 g, held at 0 while
   the phase byte has b3 or b5 set. Read by 0x47298. [C; use open]
 - **`rec+6`** (0x47298, update at 0x47318): excess speed loss. While a < the decel threshold

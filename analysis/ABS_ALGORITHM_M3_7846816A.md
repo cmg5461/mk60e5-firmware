@@ -46,8 +46,8 @@ a general entry gate.
 ## 1. Core loop
 
 - **vref** `vref_update` 0x449D0 → **0x408DA8**: a slew-limited tracker over the compensated wheel speeds, not a
-  max-select. Rise: +22/frame (0.62 g) outside the braking regime (`0x408DA1` b4) only while every wheel is
-  above it; +44/frame (1.25 g) toward the fastest front in the regime; +282 snap in some controller modes.
+  max-select. Rise: +22/frame (0.62 g) while no wheel is in an ABS cycle (`0x408DA1` b4 clear) only while every wheel is
+  above it; +44/frame (1.25 g) toward the fastest front while a wheel is cycling; +282 snap in some controller modes.
   Fall only when vref is above every counted wheel: a fixed step (normally −22/−32/−44, range −11 … −49) bounded
   by a limiter on the wheel-derived decel estimate `0x408DAF`. Floor ~0.6 km/h. [C] (`10_vref_and_ax.md`)
   - The ax-based fall (`vref_fall_from_ax` 0x50FF4, `max(−44, (−|ax| − margin)·0.36)`) runs only with ax trusted

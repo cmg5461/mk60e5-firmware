@@ -222,7 +222,7 @@ clamps 25000/−8000, wheel-speed-delta clamp ±5714 (0x75540/44), accel scale 5
 
 ABS estimation RAM: ax `0x408E80` (s16, 0.01 g; source byte `0x4049FC`), ax-valid copy `0x408E1B` b4 (`0x408E6D`
 b3 is set and cleared again in the same gather pass), ax trusted `0x408E1C` b7, wheel-derived decel estimate `0x408DAF` (s8 = `0x408EE8`/21), vref slope `0x408DB8`, vref shadow
-`0x408E7E`, regime flag `0x408DA1` b4, broadcast speed `0x404720`. Wheel records `wheel_rec` 0x40BF00 + 0x40·w
+`0x408E7E`, ABS-cycle flag `0x408DA1` b4 (a wheel in an ABS cycle), broadcast speed `0x404720`. Wheel records `wheel_rec` 0x40BF00 + 0x40·w
 (w = 0 FL, 1 FR, 2 RL, 3 RR). Timer edge → record, with every speed/accel field and the constants that set it:
 `WHEEL_SPEED_CHAIN_7846816A.md`.
 
@@ -259,7 +259,7 @@ b3 is set and cleared again in the same gather pass), ax trusted `0x408E1C` b7, 
 | 0x0D0480 | `tyre_tol_normalise(u8 *b)` | high | adds 255 − max to all four bytes (slowest wheel = 1.0) |
 | 0x0D0444 | `clamp_s16(lo, hi, x)` | high | r2 = lo, r3 = hi, r4 = x |
 | 0x0B6A08 | `wss_ratio_plausibility` | high | pairwise sorted-speed ratios; band lo 150 → 125 % (20 → 40 km/h, ROM 0xF56E6/EA), hi 250 %; limit 3000 → 1000 (0xF56EE); → 5Dx5 (bit 10) on fast wheel(s), 5Dx3 (bit 11) on a slow wheel |
-| 0x0B651C | `wss_wheel_monitor` | med | per wheel: 5Dx3 start-up comparison, 5Dx1 extrapolation (rec+0x19 b6, vref > 20 km/h), 5Dx4 long-term (dump/hold with rec+0x28 > 2800 in the braking regime); commits pending bits via `fault_set` |
+| 0x0B651C | `wss_wheel_monitor` | med | per wheel: 5Dx3 start-up comparison, 5Dx1 extrapolation (rec+0x19 b6, vref > 20 km/h), 5Dx4 long-term (dump/hold with rec+0x28 > 2800 while a wheel is in an ABS cycle); commits pending bits via `fault_set` |
 | 0x00408DF1 | b7 `abs_front_slip_corrected` | high | set/cleared by `abs_wheel_signal_frame` (factory-stagger switch); makes `abs_event_classifier` use rec+0x1C for the front main slip |
 | 0x40402 | `abs_stagger_expect` (ABS+0x66, s16) | CAL | 25: expected rear − front factor-byte difference per wheel (≈ 2.4 %, the stock 245/265 stagger); window 2·cal − 20 … 2·cal + 10 on the axle sums |
 | 0x00403214 | `tyre_factor_table` (u8[4]) | high | factor = (745 + b)/1000, 255 = 1.0; EEPROM copy 0x403255 (block 22); restored per axle, floored at 225 |
@@ -345,7 +345,7 @@ Chain: ASIC reply words → `wss_dir_protocol_update` 0x75C6C → `wss_dir_proto
 | 0x0040933C / 0x0040934C | `wss_edge_stamp32` / previous (u32[4]) | high | unshifted capture stamps, ISR only (RPA intervals) |
 | 0x004091C8 / 0x004091CC | RPA interval buffer pointers | med | swapped each frame by `wss_frame_latch`; ISRs fill *0x4091CC |
 | 0x0040290C | `wss_lowspeed_cnt` (u8[4] by rec+0x2A, b7:6) | high | `wheel_speed_filter`: 3 while raw < 16 km/h, −1 per frame otherwise |
-| 0x00402910 | `wss_slew_timer` (u8[4]) | high | `wheel_speed_filter` S: +6/frame in slew mode (b6 at 102), −1 every 2nd frame outside, −13 with b6 outside braking regime (b6 clears below 14); 0 while 0x402904 b7 |
+| 0x00402910 | `wss_slew_timer` (u8[4]) | high | `wheel_speed_filter` S: +6/frame in slew mode (b6 at 102), −1 every 2nd frame outside, −13 with b6 while no wheel is in an ABS cycle (b6 clears below 14); 0 while 0x402904 b7 |
 
 **`wheel_direction_update` 0xB9330, per cycle**
 - **Reset** (every cycle while `0x400966` b6 start-up, or `0x402904` b7, which is written by the monitoring and
@@ -1164,7 +1164,8 @@ ABS/vref RAM shifted +0x24; code shift −0x220/−0x200. Full work in `analysis
 | 0x050580 | `abs_phase_armed_handler` (0x80) | high | rate 8000; hold request → rate 0. Rear while a wheel cycles: CMD = min(PM + 5 bar, arbiter output 0x408F6E), rate 500, **100 when decision code = 1 or 0x408E5F b7**; front lateral pre-limit on 0x409049 b0 (curve 0x403B4). `agents/abs_full/08_phase_control.md` §5.5 |
 | 0x050894 | `abs_phase_precontrol_handler` (0xC0) | high | rate 0, CMD = PM; creep by `abs_precontrol_build_rate` after 2 frames or when re-accelerating (≤ 25000); CMD ≤ arbiter + 5 bar; latch branches use ROM curve 0xD6AFC. §5.5 |
 | 0x057DA4 | `abs_precontrol_build_rate` | high | pre-control: curve 0x403E6(PM) 8 → 3 bar/frame, front rec+6 rules (200 / 0), rear code-1 slip rule (150 / 0); else curve 0x409E4 front / 0x40A00 rear |
-| 0x059C6C | `abs_mode_update` | high | dispatcher slot 34. Writes `abs_mode_flags` 0x408DA1 bits 7:5 = 1 (standstill counter 0x408EC0 reaches 30), 2, 3 (both fronts' low-speed flag 0x409056 b0); 0x408E68 b0 = counter ≥ 30; limit 0x408EC4 = max(vref − 0x408E5C, 0.65·vref, 15 km/h). `08_phase_control.md` §6.1 |
+| 0x059C6C | `abs_mode_update` | high | dispatcher slot 34. Writes `abs_mode_flags` 0x408DA1 bits 7:5 = 1 (counter 0x408EC0 reaches 30; it only counts while a wheel is in an ABS cycle and mode < 5, else it is zeroed at 0x59FB6), 2 (from 1, 0x59D54), 3 (both fronts' low-speed flag 0x409056 b0), stores at 0x5A036; mode 6 → 0 in the wheel loop (0x59BE0, also zeroes 0x408E5C); 0x408E68 b0 = counter ≥ 30; limit 0x408EC4 = max(vref − 0x408E5C, 0.65·vref, 15 km/h). `08_phase_control.md` §6.1 |
+| 0x051226 | `abs_event_reset` | high | global end-of-event reset, called after `0x51346` has run for every wheel: from `abs_state_aggregate` 0x45D8C (b4 was set last pass and no wheel has rec[0] b0 now, i.e. the last wheel just left its cycle) and from 0x5DD6E. Clears `abs_mode_flags` b4 and b2, mode 7 → 5 and any other mode → 0 (0x51316–0x5132A); clears 0x408DEA bits, 0x408DA2 b0/b5/b6/b7, 0x408DAD, 0x408EAF, 0x409158–0x40915A, 0x400A92–0x400A9B, 0x408E7A |
 | 0x045556 | `abs_mode5_check` | med | mode = 5 when 0x408E5C ≥ 1000 and 0x408DA2 b6 clear |
 | 0x04AAA8 | `abs_phase_dump_handler` (0x21) | high | → 0x55F06 target; events bit31 re-accel / bit30 |
 | 0x04CA3C | `abs_phase_hold_handler` (0x09) | high | entry 0x57200; TGT = PMMIN + headroom·n/16 |
@@ -1588,7 +1589,7 @@ typedef struct {
 | 0x00408DE0 | `abs_decision_pct` (u8, %) | high | `abs_decision_t.pct`; written only at 0x51F42: pct = 100·(P_drv − P_lo)/(P_hi − P_lo), P_lo = 100·curve 0x40E26(\|lat\|), P_hi = 100·curve 0x40E0A(\|lat\|) (+500 above \|lat\| 80). Not clamped: above P_hi it exceeds 100 and wraps modulo 256 (`st.b` / `ld.b`). Read by `abs_decision_pressure_exec` code 32 (0x59272) |
 | 0x00409024 | `abs_yaw_corner_flags` (u8) | med | b0+b6 set when \|yaw\| > curve 0x40E42(−decel) during ABS (0x51BB8); b0 cleared when \|yaw\| < half the curve. b0 blocks the classifier straight shortcut and the straight latch. Never set without yaw |
 | 0x00409049 | `abs_rear_latch` (u8 per wheel at 0x409049 + 4·w) | med-high | b2+b5 rear cornering latch (0x4E908; needs `0x408E6D & 0xF0` = 0xF0 and 0x408DC6 b2), b3 rear decel-gate latch (0x4DF9E). b5 enables the code-32 / code-1 lateral branch of the classifier. Latch triggers, threshold T (`0x409132` + 10·w, cals 0x40B06 / 0x403E4 floor) and release: 09 §2.2 |
-| 0x00408DA1 | `abs_mode_flags` (u8) | med | b4 braking / ABS regime (gates `abs_decel_est_clamp_ax` 0x538E8, blocks ax-trust set at 0x49A9E, selects the `vref_update` rise/fall regime); bits 7:5 controller mode (0 = normal ABS); non-zero blocks the slip-triggered events; writers and values in `agents/abs_full/08_phase_control.md` §6.1 |
+| 0x00408DA1 | `abs_mode_flags` (u8) | high | Bit map, from all 15 stores (every literal word holding 0x408DA1 is loaded by an lrw in the listing): **b0 / b1** countersteer latch (which bit follows ctx[0] b0, probably the side): `abs_countersteer_check` 0x5CAF4 sets b0 (and clears b1) when ctx[0] b0, else b1 (0x5CCA8 / 0x5CCB2), and clears both when timer 0x409157 runs out (0x5CF94); read as `& 3` (any side) by the E+4 allowance 0x4786C and 0x4C506, 0x4F784, 0x558FE, 0x5A426, 0x5A6AE, 0x5CD12, 0x5D11C. **b2, b3** never set in this image (b2 only cleared, at 0x512C6 and 0x539D4; b3 never written), so their ~20 readers are dead tests. **b4** a wheel is in an ABS cycle this frame: `abs_state_aggregate` 0x45808 clears it every pass (0x45854, old value to 0x408DA2 b1) and sets it (0x4597A) for each wheel with rec[0] b0 (dump / hold / reapply; armed and pre-control don't count); also cleared by `abs_event_reset` 0x51226. Formerly labelled "braking / ABS regime". Gates `abs_decel_est_clamp_ax` 0x538E8, blocks ax-trust set at 0x49A9E, selects the `vref_update` rise/fall branch. **b7:5** controller mode (0 = normal ABS; 1, 2, 3, 5, 6, 7 written, 4 never); non-zero blocks the slip-triggered events. Writers, conditions and exits in `agents/abs_full/08_phase_control.md` §6.1 |
 | 0x00408EC0 | `abs_standstill_count` (u8) | high | frames at rest, saturates at 30 → mode 1 (`abs_mode_update`) |
 | 0x00409056 | per-wheel flags (u8, stride 2) | high | b0 low speed (< 4 km/h and counter ≥ 30; read by `abs_mode_update` for mode 3), b1 / b2 classifier gross-slip bits |
 | 0x00409026 | `abs_dump_entry_rec6` (s16[4]) | high | rec+6 latched at each EV0.b5 / EV0.b0; while dumping the decel flag is rec+6 < half of it |

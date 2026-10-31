@@ -30,7 +30,7 @@ produces the factor, and the second wheel-speed field `rec+0x1C`, were not decod
 - Each wheel has a learned factor byte `b`, factor = (745 + b)/1000 ≈ (769 + b)/1024. b = 255 is 1.0. The bytes
   are renormalised so that the **slowest-turning wheel is 1.0** and faster wheels are scaled **down** to it. The
   range is 0.746–1.0, so at most about a 25 % difference can be learned. [C]
-- Learning runs only with vref > 5 km/h, every wheel valid, not in the braking regime (`0x408DA1` b4), and with the
+- Learning runs only with vref > 5 km/h, every wheel valid, no wheel in an ABS cycle (`0x408DA1` b4 clear), and with the
   rear wheel accels close to the vehicle decel. The slow table steps every 11th pass. [C]
 - The table is saved to EEPROM (block 22). **At start-up each axle gets the larger factor of its two wheels,
   floored at 225 (0.970)**, so at most about 3 % is applied straight away; the rest is relearned while driving. [C]
@@ -136,7 +136,7 @@ Timing and conditions:
 - **After power-up** b7 is 0 (RAM) until the learner reports converged (0x403210 b0, counter ≥ 9). The duration is
   not decoded. Until then the fronts run on raw slip even inside the window.
 - **After a restart** only 2.9 % (floor 225) is restored, which covers the whole window. Above it the remainder is
-  relearned: fronts step at up to 1.5 % per slow-table step (every 11th pass, outside the braking regime). Until
+  relearned: fronts step at up to 1.5 % per slow-table step (every 11th pass, with no wheel in an ABS cycle). Until
   then vref still follows the fronts partly, so the rears show phantom slip of (m − 2.9 %).
 - **Left/right mismatch** over 0.5 % on either axle (uneven wear or pressure) clears b7.
 - **Front-larger stagger** gives D < 0 and b7 = 0. The fronts are then the 1.0 reference, and the rears read
@@ -217,7 +217,7 @@ Called from 0xB6EB4, which is called from the wheel monitor 0xB651C. [C]
 - **Separate start-up check.** The 5Dx3 path in the same routine fires when v0/v2 < 1.05, v2/v3 > 20 and
   `0x40292A` > 1000: one wheel stopped while the others turn. [C]
 - **5Dx4 "long-term".** Raised in 0xB651C (0xB65E4–0xB6618) when a wheel in dump/hold (`rec[0] & 0x28`) has
-  rec+0x28 > 2800 in the braking regime. That is a release held too long, not a ratio test. [C structure, I
+  rec+0x28 > 2800 while a wheel is in an ABS cycle (`0x408DA1` b4). That is a release held too long, not a ratio test. [C structure, I
   meaning]
 
 ## Open

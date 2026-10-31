@@ -29,7 +29,7 @@ Related: `01_core_slip_loop.md` §1 (summary), `09_chassis_sensor_use.md` §2.6 
 | `abs_ax` 0x408E80 | s16 | ax used by ABS. Gather 0x5D82C: = DAF by default, overwritten by the cluster ax (`0x4049FC`, s8, ±1.27 g) when the getter is valid |
 | `abs_ax_flags` 0x408E1C | u8 | b7 = **ax trusted** |
 | `abs_estim_flags` 0x408E1B | u8 | b4 = ax valid |
-| `abs_mode_flags` 0x408DA1 | u8 | b4 = braking / ABS regime; bits 7:5 controller mode |
+| `abs_mode_flags` 0x408DA1 | u8 | b4 = a wheel is in an ABS cycle this frame ("the regime" below; set per wheel with rec[0] b0 by `abs_state_aggregate` 0x45808, cleared every pass); bits 7:5 controller mode |
 | `abs_sensor_valid` 0x408E6D | u8 | b7 lat, b6 pressure, b5 steering, b4 yaw |
 
 ### 1.1 ax trust (`abs_ax_decel_estimator` 0x49572) [C]

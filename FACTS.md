@@ -1856,11 +1856,13 @@ Read directly from `analysis/7846816A_main.lst` (M3) in a single pass. **Not ben
   A wheel with `rec[0]` bit2 set cannot become Cmax/Fmax (looks like an overspeed mark [inferred]).
   Compensation factor = `(0x301 + byte)/1024`, byte from `0x403214[w]` or `rec+53` (learned tyre-tolerance trim,
   applied inline to `rec+0x1A`; fronts take the smaller byte, rears the larger).
-- **Regime bit = `0x408DA1` bit4** (with bits 7:5 clear). Set: rise +44 while vref < Fmax, and the
-  decel-limited fall below applies. Clear: rise only +22 (or +282 snap in controller modes 1/2/4) while
-  vref < Vmin; fall −32. Bits 7:5 ≠ 0: −90 while Vmin < vref. **The earlier "+22 while ABS active" label looks
-  wrong**: bit4 is grouped with the TCS/AYC/DSC active flags in `sub_092C26`, so bit4-set reads as the
-  braking/ABS regime [inferred].
+- **ABS-cycle bit = `0x408DA1` bit4** (with bits 7:5 clear; "the regime" in older notes). Set: rise +44 while
+  vref < Fmax, and the decel-limited fall below applies. Clear: rise only +22 (or +282 snap in controller modes
+  1/2/4) while vref < Vmin; fall −32. Bits 7:5 ≠ 0: −90 while Vmin < vref. **[verified 2026-10-30] bit4 = a wheel
+  is in an ABS cycle this frame**: `abs_state_aggregate` 0x45808 clears it every pass (0x45854, old value to
+  0x408DA2 b1) and sets it (0x4597A) for each wheel with `rec[0]` b0 (dump / hold / reapply). Armed and
+  pre-control don't set it, and ordinary braking doesn't either. It replaces the earlier inferred "braking / ABS
+  regime" label.
 - **vref only falls when vref > Cmax**, i.e. above every wheel. In that state it is an open-loop
   extrapolation; wheel speeds do not enter the step. A wheel that recovers above vref pulls it back up
   (+44/frame).
@@ -2433,7 +2435,7 @@ Not bench-verified.
 Detail: `analysis/TYRE_TOLERANCE_LEARNING_7846816A.md`. Not bench-verified. M3 only.
 - **[verified]** The per-wheel factor in vref (`(0x301 + byte)/1024`) is a learned tyre-tolerance correction
   (`tyre_tol_learn` 0xD144A). The bytes are normalised so the slowest wheel is 1.0 (`0xD0480`), range 0.746–1.0. They
-  are stepped every 11th pass with vref > 5 km/h, no wheel fault, outside the braking regime and with the rear wheel
+  are stepped every 11th pass with vref > 5 km/h, no wheel fault, with no wheel in an ABS cycle (`0x408DA1` b4 clear) and with the rear wheel
   accels near the vehicle decel. Fronts step −1.5 %/+0.1 % per step within 5 %; rears and larger front corrections
   step +1.5 %/−0.1 %.
 - **[verified]** Stored in EEPROM block 22 (0x403255). At start-up each axle gets the larger factor of its two wheels,
