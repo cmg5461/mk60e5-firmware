@@ -808,6 +808,10 @@ def cmd_flashplan(args):
             print("[erase] 31 02 %s (polling) ..." % erase.hex())
             r = uds.routine_poll(bytes([0x31, 0x02]) + erase, timeout=args.erase_timeout)
             print("  erase complete: %s" % r.hex(" "))
+            # BL (sub_0156FA, state 4): reply byte is 01 only if the flash routine's status was
+            # 0x90 (ok); anything else (02) means the erase FAILED even though the poll finished.
+            if len(r) >= 3 and r[2] != 0x01:
+                sys.exit("erase FAILED: %s (expected 71 02 01); not downloading anything." % r.hex(" "))
 
         print("[quiet] 28 02 ; 29 02")
         uds.request(bytes([0x28, 0x02]), expect=False)
