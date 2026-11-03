@@ -104,10 +104,38 @@ Other locals:
    slip ≥ E+8 (some paths E+8 + E+26; one path also needs accel > −2.6 g and E+36 b1 clear), or when the wheel is
    already in a cycle with `rec+6` < 1.5·E+4 and slip > E+8/2. sp+84 with E+36 b1 and b2 (not dumping) latches
    `0x40902E` b3+b2; without sp+84 (not dumping) clears `0x409056` b1.
-7. **EV1.b3 "stay in pre-control" 0x4D8D8–0x4DBCC** [C structure, I detail]. Wheels in pre-control only; blocked by
-   `0x409046` rear flags and `0x408DA2` b5. Inputs: longitudinal accel `0x408E80` (−0.5 g / −0.3 g),
-   `0x408E6A`, `0x408E7B`, coding byte `0x4031AB` == 10; result latched in `0x40902F` b7. EV1.b3 set at
-   0x4DB80 / 0x4DBCA when `rec+6` < 0, or `rec+0x24` < E+22, or a decel-gate combination holds.
+7. **EV1.b3 "stay in pre-control" 0x4D8D8–0x4DBCC** [C; decoded 2026-10-31]. EV1.b3 keeps a wheel in 0xC0
+   (hold); without it a pre-control wheel goes back to armed (0x80) and builds. ax below is `0x408E80` (0.01 g,
+   clamped ±1.27 g); "trusted" is `0x408E1C` b7; brake time is `0x408E6A`; `abs_wheel_flags3` = `0x40902E[3w]`.
+   Three parts, in order:
+   - **A. Set the hold latch `0x40902F[3w]` b7 (0x4D8E6–0x4D990).** Rears skip A when `0x409049`[2/3] b2/b3 (either
+     rear's decel or cornering latch) or `0x408DA2` b5 (a rear in a cycle). Needs all of: wheel in pre-control
+     (`rec[0]` b6); **ax trusted (0x4D912)**; counter `0x409014[w]` ≠ 0; `rec+6` < 0, or (`0x408E7B` > 52,
+     `rec+6` = 0, brake time < 100 and coding variant 10); ax < −0.50 g, or ax < −0.30 g with brake time < 20;
+     and either a low-grip flag (`0x40902E[3w]` & 0x12) or (brake just applied `0x408DEB` b0 and brake time < 50).
+     A latch that is already set falls through to B.
+   - **B. Clear the latch (0x4D992–0x4DA42)** when ax > −0.50 g (or brake time < 20) with the latch set; the wheel is
+     in a cycle (`rec[0]` b0); **ax not trusted (0x4D9C4)**; driver pressure `0x408EB2` − PM `0x408F2A[w]` < 10 bar
+     (nothing left to build); cycle count (rec+0x10 bits 7:5) ≥ 2 with `0x408E7B` < 52; or `0x408E1B` b5.
+   - **C. EV1.b3 (0x4DA44–0x4DB80)**, set by any of:
+     - `rec+6` < 0, or `rec+0x24` < E+22 (sp+126);
+     - **ax < −1.00 g, trusted (0x4DA72), and both a front and a rear in a cycle** (`0x408DA2` & 0xA0 = 0xA0);
+     - low-grip-flag cases on DAF (< −0.10 g within 24 frames of braking with `0x408DEB` b0, or < −0.50 g within
+       60 frames with b0) and `0x408E7B` > 45; `rec+6` < 0.5 km/h cases on DAF / rec+0x20 with `0x408E7B` > 50 or
+       the brake-just-applied window;
+     - rears: DAF < −0.50 g with decision code 1 and further `rec+6` / accel / `0x408DA2` b7 tests;
+     - `0x409049[4w]` b2 / b3 (the rear decel-gate and cornering latches);
+     - the hold latch `0x40902F[3w]` b7 from A.
+
+     A second site 0x4DBCA sets EV1.b3 for fronts with `0x40493A` b4, `0x408DC4` b4, rec+0x24 < E+22 + 30, not in a
+     cycle, brake time ≥ 18 and `0x408DEB` b0.
+
+   **Trusted ax only lengthens holds.** Untrusted, A never sets the latch, B clears it, and the ax < −1 g route is
+   skipped, so EV1.b3 comes only from the wheel's own loss / decel and the DAF cases. Trusted, two extra holds appear:
+   (1) the latch keeps a wheel in pre-control after its loss has recovered, until ax rises above −0.5 g, the wheel
+   enters a cycle, or the pedal is within 10 bar of the wheel; it only arms on a low-grip-flagged wheel or in the
+   first 0.5 s after the brake switch; (2) at ax < −1 g with both axles in ABS, every pre-control wheel is held. The
+   Z4 GT3 never trusts ax, so both are dead there.
 8. **Front cancel 0x4DBF8–0x4DD50** [C structure]. Clears sp+60 and sp+44 for fronts under conditions on vref,
    `rec+0x18` b3, the peak byte, `0x4090B6` > 75, `0x40903A` flags and driver pressure (cancels a front dump
    start). Rear path 0x4DD12 does the same when either rear is in pre-control or dump (RL / RR rec[0] & 0x60), the
