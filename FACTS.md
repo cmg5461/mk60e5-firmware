@@ -97,6 +97,13 @@ Tags: **[verified]** checked in this repo's data · **[user]** reported from the
 
 ## Hardware
 
+- **[verified + user] Five pressure transducers: one on the master/input side and one on each wheel output.**
+  Wheel pressure is **measured**, not estimated: every 10 ms the working pressure PM `0x4016E2[w]` is the wheel
+  sensor value and the volume model is re-synced to it. The model supplies PM only while that wheel's outlet is
+  open (a dump) or a wheel sensor is faulted, and is re-synced from the measurement when the dump ends (hold
+  entry). So valve constants (k_out / k_back) only shape open-loop dump sizing and the in-dump estimate; they
+  can't corrupt the pressures used outside a dump. Detail further down ("HARDWARE: the MK60E5 has FIVE
+  integrated brake-pressure transducers", "Pressure sensing") and `analysis/agents/abs_full/06_pressure_sensors_recheck.md`.
 - **[user]** MK60E5 main MCU marking: `0994.8500 4` / `SC560002MVF92 M98A` / `DCTNP0842B`,
   Freescale with ATE logo. This is the late (M·CORE) flavor. Early MK60E5 units use an ARM
   TMS471 instead; see *Two MK60E5 hardware flavors* below.
