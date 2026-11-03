@@ -44,7 +44,7 @@ Full decode: **`10_vref_and_ax.md`**. Summary:
   circumference: that is already in struct+0x1A through K = 900·C. It is not struct+0x1C either
   (`analysis/TYRE_TOLERANCE_LEARNING_7846816A.md` §3). Picks: Cmax (fastest compensated), Fmax (fastest compensated **front**), Vmin (slowest
   valid raw), Vmax (fastest raw). Faulted wheels are excluded. **CONFIRMED**.
-- **Rise:** outside the braking regime (`0x408DA1` b4 clear) +22/frame (0.62 g) only while vref < Vmin, i.e.
+- **Rise:** while no wheel is in an ABS cycle (`0x408DA1` b4 clear) +22/frame (0.62 g) only while vref < Vmin, i.e.
   every wheel is above it; +282 (snap) in controller modes 1/2/4. In the regime +44/frame (1.25 g) toward
   Fmax. **CONFIRMED**.
 - **Fall:** only when vref > Cmax (above every counted wheel). A fixed step of −11 … −49/frame (0.31–1.39 g,
@@ -249,7 +249,7 @@ front down to the first front's lock pressure minus 10/15/20 bar (cal 0x40E64/66
 ## 7. Open / needs-hardware
 - Real-world frequency of the −10 g staged-dump crossings — needs a dynamic bench/vehicle trace.
 - Purpose of cal 0x40DB2 (=10).
-- Pre-control (0x50894) and armed (0x50580) handlers.
+- Pre-control (0x50894) and armed (0x50580) handlers: summary in `08_phase_control.md` §5.5; mode field §6.1.
 
 ---
 

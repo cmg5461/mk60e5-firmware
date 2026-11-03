@@ -51,7 +51,7 @@ The axles are assigned independently. The captured 335 coding (`wheelspeed/codin
 ### What the code selects
 
 **Pressure↔volume curve** — same COA model as the M3; axis 0x41892 (0.01 bar), front
-`0x418A6 + 20·code`, rear `0x4191E + 20·code`. Volume unit not identified.
+`0x418A6 + 20·code`, rear `0x4191E + 20·code`. Volume unit 0.1 mm³ per count.
 
 | Pressure (bar) | 4 | 7 | 10 | 15 | 20 | 30 | 60 | 120 | 327 |
 |---|---|---|---|---|---|---|---|---|---|

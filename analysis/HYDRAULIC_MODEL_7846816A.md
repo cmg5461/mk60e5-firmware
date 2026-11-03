@@ -5,8 +5,9 @@ and what the real plant (valves, accumulator, pump) does around it. This is the 
 logic, valve current profiles and slip control are elsewhere (`INLET_VALVE_CONTROL_7846816A.md`,
 `ABS_ALGORITHM_M3_7846816A.md`, `agents/abs_full/04_pressure_actuation.md`).
 
-CPU addresses throughout. Pressure unit **0.01 bar**; volume unit is the p-V curve count, **taken as 0.1 mm³**
-(user-stated; bounded by FACTS.md "Hydraulic-model volume unit": 0.1-0.3 mm³). Companion material:
+CPU addresses throughout. Pressure unit **0.01 bar**; volume unit is the p-V curve count, **0.1 mm³**
+(five converging sources: decimal-unit convention, master capacity, caliper compliance, inlet orifice, pump
+displacement; FACTS.md "Hydraulic-model volume unit"). Companion material:
 `tools/hyd_sim.py` (a bootleg simulation, section 9) and `analysis/hyd_sim_csv/`. Symbol names and signatures
 are in `7846816A_symbols.md` ("Circuit volume model", "Pump volume model").
 
@@ -92,7 +93,7 @@ damper and orifice in the real unit; the model has neither.
 | Check valve around inlet | passive | back-flow `-valve_flow(dp, k_back, ...)`, shared k 705, **does not use the inlet level** | [code]/[inferred] (BMW diagram) |
 | Outlet valve (NC) | open only in dump | `valve_flow(p - p_LPA, k_out, level x 8)`; `k_out` 0x41B30 = 755 front / 465 rear | [code] |
 | LPA | fills in dump, drained by pump | volume integrator, curve 0x41B1E -> 0x41B16 | [code] |
-| Pump | runs while LPA has fluid | flow estimate + delivery table; see section 6 | [code] partly, motor decision [open] |
+| Pump | runs while LPA has fluid | motor speed estimate (rpm) + delivery table; see section 6 | [code] partly, motor decision [open] |
 | USV (NO) | never actuated | back-flow opening `(10 - 0x401A1C/2) x 8` = 80 at level 0; no forward restriction | [code] |
 | Check valve around USV | passive | circuit pressure floored at driver pressure (`circuit_feed_pressure_update` 0x8236C); master inflow uses driver pressure directly | [code]/[inferred] |
 | HSV (NC) | **inactive** | the pump-share byte 0x401A1A behaves like an HSV opening: delivery splits into `d x share/20` from the master, the rest from LPA, then the supply store | [inferred] |
@@ -129,7 +130,7 @@ Cd.A = 1.77e-6 mm² x k at full opening (rho 1050 kg/m³, 0.1 mm³/count). Diame
 | Rear outlet | 465 | 0.066 | 0.37 / 0.35 / 0.32 |
 | USV / back-flow | 705 | 0.100 | 0.46 / 0.43 / 0.40 |
 
-Diameter scales with sqrt(unit / 0.1 mm³). `FACTS.md` ~2004 has the bounds. The user sectioned an MK100 body: a
+These depend on Cd only; the unit is fixed at 0.1 mm³ (`FACTS.md`, "Hydraulic-model volume unit"). The user sectioned an MK100 body: a
 needle inlet with a 0.5-0.8 mm seat, so these are lumped Cd.A values, not bores.
 
 ### Reynolds number [inferred, simulated]
@@ -171,6 +172,10 @@ p-V curve, set 0 (volume counts at pressure; 0.1 mm³ per count):
 LPA curve, `lpa_update` 0x827BA **[code]**: volume 0 / 100 / 1000 / 15000 counts -> pressure 0 / 1.3 / 1.3 / 5.0 bar.
 So the accumulator sits at 1.3 bar with almost any fluid in it, rising only past ~100 mm³.
 
+**The valve constants are shared across variants.** k_in 957 / 421, k_cross 219 / 421, k_back 705 and k_out 755 / 465
+are identical in every newer-layout MK60E5 image checked: M3, non-M, 6791524A, and the ARM 6775387A / 6776067A. Only the
+p-V curves (calipers) change per car. FACTS: "HCU valve constants across BMW MK60E5 variants".
+
 Other calibration blocks: `FACTS.md` and the symbols file ("COA block 0x41978").
 
 ---
@@ -208,22 +213,27 @@ So the fluid model matters most **during a dump**, where it replaces the sensor,
 `lpa_update`: volume += `lpa_inflow` (the two wheels' dumped volume) - `lpa_pump_draw`; zeroed when the unit is idle
 (0x73348() and 0x401C34[0..3] all 0); clamp 15000; pressure from the LPA curve.
 
-### Pump flow estimate [code]
+### Pump motor speed estimate [code; unit inferred]
 
 Per frame, with x = sum over circuits that delivered pump volume of circuit pressure / 2:
 
 > target = interp(x, 0..250 bar -> 4300..2600); `pump_flow_est` 0x40170C += (target - est) x 187/256.
 
-A pump characteristic (flow falls with delivery pressure). The estimate has a time constant of about 4 frames,
-which is the spin-up. Its behaviour when the motor stops is in untraced branches (0x4019F8 b5, 0x408DA1 b4).
+0x40170C is the modelled **pump motor speed in rpm** (the symbol keeps its older name `pump_flow_est`). The curve is
+a DC-motor load line: 4300 rpm (72 Hz) unloaded, slowing to 2600 rpm (43 Hz) against 250 bar. The speed reading
+fits the MK100 pump geometry (see "Delivery per frame") and a normal ABS pump-motor speed of about 75 Hz. The
+estimate has a time constant of about 4 frames, which is the spin-up. Its behaviour when the motor stops is in
+untraced branches (0x4019F8 b5, 0x408DA1 b4).
 
 ### Delivery per frame [code, partly inferred]
 
-> d = interp(flow_est, 0..4300 -> 0..340 counts) (265 when the LPA is empty and driver <= 8 bar and the other circuit is not pumping)
+> d = interp(rpm, 0..4300 -> 0..340 counts) (265 when the LPA is empty and driver <= 8 bar and the other circuit is not pumping)
 
 `pump_volume_frame[c]` 0x4016FA = `d x share/20` (from the master side via the HSV) + `min(rest, LPA volume)` +
 `min(rest2, supply store)`. **In ABS the HSV share is 0**, so the pump delivers only what the LPA holds,
-at most 340 counts/frame (3.4 cm³/s at 0.1 mm³/count). The supply store (cap 1150) fills only while share >= 1 and
+at most 340 counts/frame (3.4 cm³/s). The delivery table is linear in speed: at 4300 rpm the motor turns 0.717 rev
+per 10 ms frame, so the model delivers 474 counts = 47.4 mm³ per revolution per circuit. The MK100 pump has one
+piston per circuit, 5.6 mm bore × 1.83 mm stroke = 45.1 mm³ swept per revolution, within about 5 % of the model. The supply store (cap 1150) fills only while share >= 1 and
 is empty in ABS.
 
 `lpa_pump_draw` 0x825B6: share >= 1 -> 250/frame if LPA pressure >= driver, else 0 (the pump takes the higher of
@@ -386,16 +396,16 @@ which is not this plant. The real loop also has the 5 ms current control, which 
 2. Motor on/off decision; entry conditions of the LPA branch of `pump_circuit_demand`.
 3. What `0x401D28` (circuit target pressure) is and who writes it.
 4. `circuit_supply_pressure` sources `0x401DB8/BC/B2` (needed to model any closed-USV case).
-5. Pump flow-estimate behaviour when the motor is off (0x4019F8 b5, 0x408DA1 b4).
+5. Pump speed-estimate behaviour when the motor is off (0x4019F8 b5, 0x408DA1 b4).
 6. Temperature compensation in the volume model (`wheel_volume_temp_comp` 0x81EE0; fill-rate temperature bands
    0xDA5F8/0xDA5FC in `pump_supply_store_update`).
-7. The unit: a measured volume or flow (one wheel) would pin the volume unit and Cd together.
+7. Cd: a measured flow through one valve would pin the effective Cd (the volume unit is settled at 0.1 mm³).
 8. Validate against a log: a dump on one wheel with the other wheel's inlet open and the LPA state known would test
    the node-blip magnitude and the LPA drain time.
 
 ## 10. Related
 
-`FACTS.md`: "Pump volume model" (~1961), "Hydraulic-model volume unit" (~2004), check-valve topology.
+`FACTS.md`: "Pump volume model" (~1961), "Hydraulic-model volume unit", check-valve topology.
 `7846816A_symbols.md`: hydraulic actuation and the two volume-model sections.
 `INLET_VALVE_CONTROL_7846816A.md`: request to valve current.
 `agents/abs_full/04_pressure_actuation.md`: PM selection, sensors, pulse timing.

@@ -227,7 +227,7 @@ condition); cleared at 0x44534 (frame entry), 0x51226 (reset, also clears the ti
   and 0x8CE32): level = 3 + 11·(LPAvol − 3000)/9000
   (0x419C6–0x419CC), plus +3 / +7 / +14 in modes 4 / 5 / 6 (0x419C0–C4), capped at 14, written to
   0x401D08 and read by `pump_motor_control` 0x88EC0 and `pump_volume_frame` 0x82824. **[I]** that
-  0x401D08 is motor demand (from its readers); LPA volume units unknown.
+  0x401D08 is motor demand (from its readers); LPA volume in 0.1 mm³ counts.
 - **ABS side:** while 0x408DF0 b0 is set, `abs_dump_frame_flags` (0x4B18C) skips the forced-dump
   override that raises the re-accelerating threshold to 60/90. Nothing else.
 

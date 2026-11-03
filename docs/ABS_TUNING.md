@@ -17,6 +17,7 @@ parameter sets each part. Written for readers who know control systems but not t
 | `0.01 bar` | pressure. `5000` = 50 bar |
 | `0.01 g` | acceleration, negative = slowing. `-300` = −3 g |
 | `0.01 km/h` | speed and slip. `400` = 4 km/h |
+| sign | ISO 8855: positive steering angle, lateral g and yaw rate = left; driving forwards in a normal turn all three share a sign. Wheels 0..3 = FL, FR, RL, RR (0 and 2 are the left side) |
 | frame | 10 ms |
 | curve | `[lo, hi, n, x breakpoints (n−1), intercepts (n), slopes (n)]`, s16; `y = clamp(c[i] + trunc(x·k[i]/1024), lo, hi)`. The `hi` word (curve address + 2) is an easy output clamp |
 
@@ -177,7 +178,7 @@ flowchart TD
 |---|---|---|
 | Combined rear axle | sum of both rears' *X* past 1.2–1.45 × the allowance, with slip tests; a counter adds 1 per 10 km/h of vref each frame (cap 7) and fires at 5 | starts a dump on a rear that is not yet slipping on its own |
 | Rear in pre-control | `0x408E98` > 80 and (*X* < 0 or slip > half the gross-slip curve) | |
-| Direction-selective rear | lateral ≥ 6 (RR) or < −5 (RL) with *X* < 0 | needs the lateral signal, so off without the steering sensor |
+| Direction-selective rear | lateral ≥ 6 (RR) or < −5 (RL) with *X* < 0: the outside rear (RR in a left turn) | reads the lateral byte without its valid bit, so without the steering sensor it uses the wheel-speed lateral estimate; gated by `0x408E5F` b1 or `0x400B09` b6 |
 | Re-dump (EV0.b0) | from Hold or Reapply, the same two routes (route A adds 1 km/h while holding with *X* ≥ 0) | what ends a reapply |
 
 ### Example (assumed inputs, not a log)
@@ -392,8 +393,8 @@ floors `0x401C14` / `0x401C24` that bound the ceiling and the rate.
 | Mechanism | What it does | Parameters | Needs steering / yaw? |
 |---|---|---|---|
 | Front staged dump (`0x53940`) | When one front dumps with a very hard peak decel early in the stop (vehicle decel < 0.7 g, < 7 frames), the **other** front is pulled to lock − 10 / 15 / 20 bar (floor 20 bar) to limit yaw moment | enable `0x40E9A`, set enables `0x40E94`/`0x40E9C`, peak thresholds `0x40E5E`–`62` (−62/−78/−94 ×0.16 g) and `0x40E9E`–`A2`, ladder `0x40E64`–`68` | no, but rarely fires mid-stop |
-| µ-split pair logic (`0x54D9A`) | Yaw-triggered codes 32 / 1024 / 16 limit the high-grip side | `0x40DD4`, `0x40D90` | **yes**: off without the steering sensor |
-| Rear select-low (`0x5173C`) | Both rears follow the lower-pressure rear (code 64) | – | the independent-rears shortcut (code 1) needs lateral; without it rears are always select-low |
+| µ-split pair logic (`0x54D9A`) | Yaw-triggered codes 32 / 1024 / 16 limit the high-grip side | `0x40DD4`, `0x40D90`, §10.5 | yaw and the yaw-stable flag (so off on a stock image without the steering sensor) |
+| Rear select-low (`0x5173C`) | Both rears follow the lower-pressure rear (code 64) | §10.3 | the independent-rears paths (code 1, code 32) need lateral and yaw; without them rears are always select-low |
 | Forced dump (`0x57024`) | Special entry from the front pressure difference | `0xD6C76` (front, % vs vref), `0x40B46` = 800, `0x40B04` = 700 (0.01 bar), `0x40AE4` = 50 (≈ ms) | no |
 
 ---
@@ -427,18 +428,228 @@ Scaling restores the loop gain, not the latency: with faster wheel dynamics, the
 | wheel recovers, then rebuild overshoots into a new lock | hold fraction m `0x40D62` ↑ (finer steps), build rate `0x40D5E` ↓; if it re-locks right after the continuous ramp starts, the step limit N_max (CODE) |
 | early ABS in slow corners on a high-grip car | decel floor below 60 km/h (`0x4065C`, variant column) or coding variant 10/11 (−1.40 g instead of −1.32 g) |
 | decel held near 1.2 g for the later part of very hard stops (> 1.25 g) | **CODE limit**: vref may fall at most 44 per frame (1.25 g); ax / lateral bytes saturate at ±1.27 g. The vref error builds through the stop, so the over-release starts part-way in, not at the top. Once apparent slip reaches the gross-slip limit, the car is held at ≈ 1.19 g (FACTS "Size of the effect"). Needs a patch |
-| rears release together, little rear braking | rear select-low (code 64) without lateral; matters on mid/rear-engined cars |
+| rears release together, little rear braking | rear select-low (code 64) without lateral; matters on mid/rear-engined cars. With lateral and yaw valid: P_lo / P_hi and the latch threshold `0x40B06` (§10.3–10.4) |
 
 ---
 
-## 10. Limits and open items
+## 10. Cornering features: lateral and yaw
 
-- **Without the steering sensor:** lateral and yaw are invalid, so µ-split pair logic, cornering step cuts,
-  the rear cornering latch and the independent-rears shortcut are all off. The accelerometer is never trusted
-  either (initial trust needs lateral, pressure and the yaw-stable flag), so the decel-threshold g-term and the
-  vref fall limiter run on the wheel-derived decel estimate `0x408DAF`, the 60 km/h decel floor is never
-  skipped, and the rear decel-gate latch cannot fire. The core dump / hold / reapply loop is unaffected
-  (`analysis/agents/abs_full/09_chassis_sensor_use.md`, `10_vref_and_ax.md` §1.1).
+Everything in this section needs valid lateral and yaw (`0x408E6D` b7 / b4). On a stock image a dead steering
+sensor (SZL) marks both invalid, so all of it is off. The patcher's `performance/abs_cluster_without_szl`
+makes lateral and yaw valid for ABS with no SZL while steering stays invalid. Sources:
+`analysis/agents/abs_full/09_chassis_sensor_use.md` (mechanisms), `03_lateral_g_influence.md`, `10_vref_and_ax.md`.
+Lateral is the signed byte `0x408ECA`, 0.01 g per count [I]. Yaw is s16 at 1/20000 rad/s, so 349 = 1 °/s. Both are
+positive in a left-hand turn (ISO 8855).
+
+### Which features are live
+
+| Feature | SZL + cluster | No SZL, stock | No SZL + `abs_cluster_without_szl` |
+|---|---|---|---|
+| Yaw-stable flag (§10.1) | on | off | on, without the 130° steering kill |
+| ax trust → g-term, decel-estimate clamp, vref from ax (§10.2) | on | off | on |
+| Straight-line independent rears, code 1 (§10.3) | on | off | on |
+| Lateral-g rear thresholds, codes 1 / 32 (§10.3) | on | off | on, but only through the latch (§10.4) |
+| Yaw cornering flag `0x409024` (§10.3) | on | off | on |
+| Rear cornering latch (§10.4) | on: yaw error or lateral g | off | on: **lateral g only** |
+| µ-split yaw-moment limiting, GMA (§10.5) | on | off | on [I], steering terms 0 |
+| Rear lead side, corner dump-step cut, code 256 (§10.6) | on | off | on |
+| Yaw-error features (§10.7) | on, follow the DSC model | yaw = 0 | neutral (error held at 0) |
+| Countersteer, GMA steering terms, 130° kill | on | off | off |
+
+### 10.1 Yaw-stable flag — `abs_yaw_stable_update` 0x530E4
+
+`0x408E5F` b4. A counter rises while \|yaw\| is small, and the flag sets once it reaches the threshold. Several
+features need it: the straight-line rear shortcut, ax trust, GMA start and the straight latch.
+
+| Parameter | Address | Tag | Unit | Stock | Effect |
+|---|---|---|---|---|---|
+| low-yaw threshold | `0x40404` | CAL | yaw | 1047 (3.0 °/s) | below it: counter +1 per frame |
+| set threshold | `0x4040C` | CAL | frames | 63 | flag at ≥ 63 frames (0.63 s) |
+| hysteresis | `0x40406` | CAL | frames | 28 | at the cap the counter jumps to 63 + 28 |
+| decrement thresholds | `0x40408` / `0x4040A` | CAL | yaw | 1571 (4.5 °/s) / 3002 (8.6 °/s) | counter −1 / −2 above them, only with \|lat\| ≥ 0.16 g |
+| steering kill | `0x4040E` | CAL | steering counts | 2971 (≈ 130°) | inert without an SZL |
+
+The yaw sensor has to read near zero when the car drives straight. A zero offset near 3 °/s keeps the flag from
+setting. Then ax trust never starts and the straight-line rear shortcut never fires.
+
+### 10.2 ax trust and what it feeds
+
+Initial trust (`abs_ax_decel_estimator` 0x49572) needs a brake application with lateral + pressure valid, the
+yaw-stable flag, and \|lat\| below a limit. ax and the wheel-derived decel must then agree for 5 frames. Once
+trusted, ax:
+- drives the decel-threshold g-term (§3);
+- clamps the decel estimate `0x408DAF` in ABS;
+- can step vref (route 2).
+
+The accelerometer's zero and scale now act on the controller directly, so calibrate them.
+
+| Parameter | Address | Tag | Unit | Stock | Effect |
+|---|---|---|---|---|---|
+| driver pressure for initial trust | `0x40CC6` | CAL | 0.01 bar | 500 | |
+| \|lat\| limit for initial trust | `0x40C9A` | CAL | 0.01 g | 20 | trust only starts in near-straight braking. Half of it on the estimator's yaw route |
+| agreement window T | `0x40D46` | CAL | 0.01 g | 20 | \|DAF − ax\| above T fills the deviation integrator; it drops trust at 500 |
+| agreement count, loss level | `0x49AE0`…, `0x49632`… | CODE | | 5 frames / dev < 20 to set, 500 to lose | |
+| decel-estimate clamp in ABS | `0x53902`–`0x53918` | CODE | 0.01 g | ax ± 20, only while ax < +0.30 g | how far the wheel-derived decel may drift from ax |
+| g-term curve | `0x40674` + 0x40·var | CAL curve | 0.01 g | §3, `02_decel_threshold.md` §4 | input becomes measured ax. `sextb` at `0x47CB6` wraps it above 1.27 g (FACTS "The decel-threshold g-term wraps above 1.27 g") |
+| vref route 2 gates | `0x4513A`–`0x451F6` | CODE | | \|lat\| < 0.30 g, ≥ 21 frames, ax > −0.30 g or `0x408DB5` b7 | when vref follows ax. The −44 per frame (1.25 g) ceiling inside `vref_fall_from_ax` still applies |
+
+### 10.3 Rear-axle strategy — `abs_decision_classify` 0x51B54
+
+The default is **code 64**: both rears follow the lower-pressure rear (select-low). Three things move a rear off it:
+- **Straight-line shortcut → code 1** (rears independent). It needs:
+  - \|lat\| < 0.09 g (0.15 g if the last code was 1);
+  - front pressures within 50 % of each other;
+  - the yaw-stable flag;
+  - the yaw cornering flag clear.
+- **Light pedal in a corner → code 1.** Driver pressure `0x408EB2` < P_lo(\|lat\|).
+- **Firmer pedal on a dumping rear → code 32.** pct = 100·(P_drv − P_lo)/(P_hi − P_lo). The exec sets a rear's
+  command for the **other** rear to max(1 bar, PM − pct·G/100), where G is the lead rear's dump depth (P_lock − CMD)
+  and the lead rear is the one further into its ABS cycle. So the other rear follows the lead rear's dumps: not at
+  all at P_lo (it holds), one dump depth below its own pressure at P_hi. In a corner the inside rear normally
+  leads, so this is the outside rear following the inside rear (`09_chassis_sensor_use.md` §2.1 item 7, §2.3).
+- **pct is not clamped.** While the latch holds, code 32 also runs above P_hi, where pct exceeds 100 %. It is stored
+  as a byte, so at P_lo + 2.56·(P_hi − P_lo) it wraps back to near 0: about 46 bar of pedal at 0.4 g lateral, 52 bar
+  at 0.6 g, 68 bar at 1.0 g. In a firm trail-brake the knockdown can therefore jump from its largest to almost none
+  as pedal rises [I]. Raising P_hi moves the wrap up.
+
+The corner paths need the rear cornering latch (§10.4) or `0x40903C` b7, whose writer has not been traced.
+
+| Parameter | Address | Tag | Unit | Stock | Raise it → |
+|---|---|---|---|---|---|
+| P_lo | `0x40E26` | CAL curve | x \|lat\| 0.01 g → bar | 14 @0, 16 @0.3 g, 19 @0.5, 21 @0.6, 30 @1.0, 37 @1.2 | more pedal range with independent rears. It also releases the cornering latch (§10.4) and is read by `abs_side_select` 0x5C698 |
+| P_hi | `0x40E0A` | CAL curve | x \|lat\| 0.01 g → bar | 26 @0, 30 @0.5 g, 32 @0.6, 40 @1.0, 47 @1.2 | less code-32 knockdown at a given pedal, and a higher wrap point |
+| high-g boost | `0x51C62` | CODE | 0.01 bar | +500 on P_hi above 0.8 g | |
+| straight shortcut | `0x51E00`– | CODE | | \|lat\| < 9 / 15, fronts within 50 % | |
+| yaw cornering flag | `0x40E42` | CAL curve | x −decel 0.01 g → yaw | 699 (2.0 °/s) @0, 1048 (3 °/s) @0.6 g, 1399 (4 °/s) @1.0 g, 1657 (4.7 °/s) @1.2 g | \|yaw\| above it while braking sets `0x409024` b0, which blocks the straight shortcut and the straight latch. It clears below half the curve. Raise it to keep straight-line handling through small yaw |
+
+Both curves are compared with **driver** pressure, so they depend on the master-cylinder and pedal setup.
+A car with more rear weight than the M3 [I] can take a higher P_lo / P_hi before the rears lock.
+
+### 10.4 Rear cornering latch — event classifier 0x4E908
+
+It sits on the **inside** rear: RL only in a left turn, RR only in a right turn (ISO 8855: positive lateral and yaw =
+left turn; wheels 0 / 2 = left). While it holds, the classifier uses the §10.3 lateral branch, which decides how
+much the outside rear follows the inside rear's dumps. On setting it snapshots lateral, driver pressure, yaw and yaw error. It releases when driver pressure
+falls below P_lo (`0x40E26`).
+
+It sets when any one of these triggers fires:
+1. the yaw error `e` = yaw − DSC target is ≥ 1 count in the turn direction: the car rotates at least as much as the
+   model asks, the oversteer side;
+2. \|lat\| > T;
+3. the yaw-limited flag E+37 b7;
+4. the classifier's yaw-recovery flag.
+
+It also needs all of these:
+- the rear not in a cycle;
+- ABS enabled (`0x401FF2` b7);
+- `0x408E6A` ≥ 3 frames;
+- no wheel fault;
+- the coding checks `0xCFC18` / `0xCFC56`;
+- above 0.4 g: that rear's pressure above 100 × curve `0x40CC8`(vref).
+
+**With `abs_cluster_without_szl`, triggers 1, 3 and 4 are always off** (e = 0), so the latch sets only above
+lateral threshold T. With a working SZL, trigger 1 fires whenever the car yaws at least as much as the model
+predicts, at any lateral g. A car without an SZL therefore latches much later than stock, and lowering `0x40B06`
+is the lever to bring that back [I, untested].
+
+T is stored per wheel in `0x409132` + 10·w (loggable):
+- it starts at `0x40B06`;
+- it is reduced while yaw accel exceeds curve `0xD6CA8`(vref) in the direction of yaw, with gain curve
+  `0x40C9E`(vref);
+- above 30 km/h it is reduced again by T·(\|yaw accel\| − 2500)/12000;
+- then T = max(T, `0x403E4`). The floor also caps how far a lower `0x40B06` reaches: below 0.40 g, lower both.
+
+| Parameter | Address | Tag | Unit | Stock | Effect |
+|---|---|---|---|---|---|
+| **lateral threshold** | **`0x40B06`** | **CAL** | 0.01 g | **80** | **main latch lever without an SZL**. Single reader |
+| threshold floor | `0x403E4` | CAL | 0.01 g | 40 | T = max(T, floor), so it is also the lowest value a smaller `0x40B06` can give. Single reader |
+| yaw-accel onset | `0xD6CA8` | ROM curve | x vref 0.1 km/h → yaw accel | 4363 @0, 1013 @60, 409 @100, 176 @200 km/h | turn-in rotation needed before T drops |
+| reduction gain | `0x40C9E` | CAL curve | x vref km/h | 0 @≤20, 12 @60, 23 @100, 60 @200 km/h | |
+| min rear pressure above 0.4 g | `0x40CC8` | CAL curve | x vref km/h → bar | 35 @0, 20 @20, 11 @40, 8 @50–60, 6 @≥80 | blocks the latch on a lightly braked rear |
+| release | `0x40E26` | CAL curve | | P_lo (§10.3) | |
+| 0.4 g gate, ≥ 3 frames, yaw-accel 2500 / 12000 | `0x4E9CE`, `0x4E97A`, `0x4E856` | CODE | | | |
+
+### 10.5 µ-split yaw-moment limiting (GMA) — `abs_pair_logic` 0x54D9A
+
+On a split-µ stop it limits the high-grip front and paces its rebuild in +3 bar steps. It is gated by
+`abs_pair_gate_split_yaw` 0x547D8, which tests neither steering nor `0x408E6D`, so with lateral and yaw valid it
+can start without an SZL [I]. The steering terms in the pacing read 0. The gate needs:
+- vref < `0x40DC8`;
+- a front pressure split above curve `0x40E74`;
+- \|yaw\| > `0x40DD4` toward the side;
+- the yaw-stable flag;
+- `0x408E5F` b2 (writer not traced).
+
+| Parameter | Address | Tag | Unit | Stock | Effect |
+|---|---|---|---|---|---|
+| speed limit | `0x40DC8` | CAL | 0.01 km/h | 11000 | GMA starts only below 110 km/h. 30000 removes the limit |
+| split threshold | `0x40E74` | CAL curve | x wheel pressure 0.01 bar → 0.01 bar | 25 bar up to 25, 34 @50, 48 @75, 62 @100 bar (−12 bar in one state) | shared with `abs_front_split_detect` 0x53D3C |
+| yaw to start | `0x40DD4` | CAL | yaw | 1399 (4.0 °/s) | also read by `abs_pair_gate_hold` 0x54A80 |
+| mode-b2 extra | `0x40D84` | CAL | | 70 | compared with `0x400A99` when `0x408DA1` b2 [open] |
+| pacing | `0x40974`, `0x40DC6`/`0x40D8C`, `0x40DCA`, `0x40DD6`/`0x40DCC`, `0x40D8E` | CAL | | 09 §7.3 | slip, speed, decel and predicted-yaw terms set how slowly the grippy side rebuilds |
+| step size | `0x40DB0` | CAL | bar | 3 | |
+
+### 10.6 Other lateral users (code constants)
+
+| Use | Where | Values |
+|---|---|---|
+| Flag that the lead rear is the inside rear (decision word bit 9; the lead itself is picked from the rears' ABS phase) | `abs_rear_lead_select` 0x5199A–0x519DA | lat +6 / −5, aux +11 / −10 |
+| Corner dump-step cut on the selected front | `abs_dump_frame_flags` 0x4B160 | \|lat\| > 0.50 g → D/2, > 0.80 g → D/3. The front is picked by the side flags `0x408DF0` b7/b6 (wheel-speed based, set in 0x5CAF4) [I] |
+| Lateral build step, code 256 | `abs_decision_resolve` 0x58C4E, exec 0x59064 | \|lat\| ≥ 0.40 g; +0.8 bar when \|lat\| > 0.80 g with PM < 40 bar, or 0.65–0.80 g with PM < 30 bar |
+| Front staged-dump cancel in a corner | `abs_front_stage_cancel` 0x540D4 | \|lat\| > 0.35 g |
+| Straight / homogeneous latch | 0x521EC | \|lat\| < 0.08 g, fronts within 50 %, yaw-stable, `0x409024` b0 clear |
+| Side pick in `abs_side_select` | 0x5AEEE | lateral sign when \|lat\| ≥ 0.11 g, else the rear wheel-speed difference |
+
+### 10.7 Yaw-error features
+
+These compare measured yaw with the DSC yaw target `0x400B1A`, which comes from the steering angle and the
+vehicle model:
+- oversteer state and counter `0x408EA6` in `abs_yaw_deviation_monitor` 0x4A254, threshold curve `0x40C5A`(\|lat\|)
+  = 2024 @0 → 857 @0.5 g → 576 @1.2 g;
+- yaw-limited flag E+37 b7;
+- yaw-recovery flag (bands ±1400 / ±700, CODE);
+- pre-control exit and build rate (`0x403E2` = 600);
+- forced-dump halving (e > 1 °/s, CODE);
+- the oversteer tests in `abs_side_select` (`0x40A3E`, `0x40A66`).
+
+`abs_cluster_without_szl` points all 14 target reads at measured yaw, so e = 0 and none of them acts. Their cals
+do nothing on that build. With a working SZL, the steering calibration and the DSC model (Cf, Cr, mass, steering
+ratio) become ABS tuning inputs through these features: a model that predicts too little yaw makes ABS see
+oversteer in every braked corner, and one that predicts too much hides real oversteer
+(`09_chassis_sensor_use.md` §7.6).
+
+### 10.8 Physical versus to taste
+
+- **Must be physically right:**
+  - yaw zero, which decides whether the yaw-stable flag and everything behind it ever sets;
+  - lateral sign and zero, which decide the rear lead, P_lo / P_hi and the latch side;
+  - ax zero and scale, for trust, the g-term and vref.
+
+  Check them on a log before tuning anything else.
+- **To taste:**
+  - P_lo / P_hi (independent rears against knockdown);
+  - `0x40B06` (when a rear gets cornering handling);
+  - the yaw cornering flag curve;
+  - the GMA gate and pacing.
+
+---
+
+## 11. Limits and open items
+
+- **Without the steering sensor (stock):** lateral and yaw are invalid, so everything in §10 is off. That covers
+  the µ-split pair logic, the cornering step cuts, the rear cornering latch and the independent-rears shortcut.
+  The accelerometer is never trusted either (initial trust needs lateral, pressure and the yaw-stable flag), so:
+  - the decel-threshold g-term and the vref fall limiter run on the wheel-derived decel estimate `0x408DAF`;
+  - the 60 km/h decel floor is never skipped;
+  - the rear decel-gate latch cannot fire.
+
+  The core dump / hold / reapply loop is unaffected (`analysis/agents/abs_full/09_chassis_sensor_use.md`,
+  `10_vref_and_ax.md` §1.1). `abs_cluster_without_szl` restores the §10 features except the steering terms.
+- **Cornering:**
+  - the writer of `0x40903C` b7;
+  - what the straight / homogeneous latch feeds;
+  - the `abs_side_select` downstream;
+  - `0x408E5F` b2 in the GMA gate.
 - **Reapply:** a few first-step rate variants and the step-boost threshold are only partly decoded.
 - **The exact dump → hold release** (EV0.b3) is summarised, not fully reduced.
 - **Logging:** KWP `0x23` cannot read RAM, so the per-wheel breakdown record `0x40912E + 10·w`

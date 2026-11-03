@@ -80,6 +80,16 @@ Go flag `0x400EBE` = (b3 ∨ `0x400EC3`>0) ∧ `(0x400EC2 & 0x70) == 0x70` ∧ n
 `0x40288C` b1 and b5 clear; `0x400952[0..3]` b0 clear (no wheel-speed fault); `dsc_func_state_get() == 3`;
 fault ids `35, 57, 59, 61, 63` (`<<15`) not latched.
 
+The five fault ids decode to group<<16 | 0x8000: `0x118000` (group 0x11, master-cylinder pressure sensor 1), `0x1C8000` / `0x1D8000`
+/ `0x1E8000` / `0x1F8000` (FL / FR / RL / RR wheel pressure sensors). In `dtc_table` (0xF34FC, row = 16·group + bit) bit 15 of
+these groups is "hydraulische Leckage": 0x11F → 5DA7 (front or rear axle), 0x1CF → 5D9D (FL, front axle), 0x1DF → also
+5D9D (FR is aliased to FL), 0x1EF → 5DBD (RL, rear axle), 0x1FF → also 5DBD (RR aliased to RL). DTC numbers are medium
+confidence (table layout, KWP 18 path not traced). **Nothing in 7846816A sets these bits**: no literal, no computed id and
+no other writer of `0x402838` reaches them (the pressure-sensor id tables use only bits 0, 1, 6, 8, 9, 11, 12), so these
+five checks never inhibit. The same five-id list is tested at 0x6C054 (`bco_dry_inhibit_eval`), 0x82BEC, 0x85CD8 and
+0x8CDF4. The only way to see one latched is an EEPROM block 0x31 image that already has the bit (the latch array is
+NVM-backed; restore direction not verified). The leak monitor is probably in other variants or compiled out of the M3 build.
+
 ## 5. Variables
 
 | Address | Name | Type | Notes |
@@ -460,7 +470,11 @@ this behaviour and should not be relied on.
 Three experiment patches live in `../mk60e5_patcher` (profiles `bco_liftoff_force`, `bco_liftoff_track`, `bco_antiknock`, and
 the combination `bco_track_all`): force the lift-off BCO to fire for observation; retune it for a track car (any lift above
 10 km/h, 5 bar, 1 s); and turn the drying mode into a fixed 20 s anti-knock-back pulse. They are byte patches only
-(addresses in this document). `bco_liftoff_enable` adds the DSC-off and no-chassis-sensor enablers. The lift-off
+(addresses in this document). The anti-knock-back patch takes its interval from the profile param `antiknock_interval_s` (default 20; thresholds
+0x417CC / 0x417C4 / 0x41828 = 10 per second) and, as a test, sets the signed cals `0x41824` (accumulate above) and
+`0x41826` (request window floor) to -1 so it works at standstill (vref >= 0 passes `vref > -1`). The pulse height is
+still the speed curve 0x417D0, which is 0 at 0 km/h, so a stopped car runs the sequence but requests about 0 bar.
+`bco_liftoff_enable` adds the DSC-off and no-chassis-sensor enablers. The lift-off
 patches keep the A.10 coding and front-code-0 requirements unless noted.
 
 ## 14. Where the BCO coding bits are in the raw 48 bytes

@@ -9,7 +9,9 @@ the chassis sensors". Why a dead SZL also kills lateral and yaw: FACTS.md "Steer
 ## 1. What the ABS sees
 
 `abs_sensor_gather` 0x5D82C fills these every frame. Valid bits are in `abs_sensor_valid` 0x408E6D
-(b7 lateral, b6 brake pressure, b5 steering, b4 yaw).
+(b7 lateral, b6 brake pressure, b5 steering, b4 yaw). Signs: ISO 8855: positive steering angle, lateral accel and yaw rate = left (driving forwards, all three
+share a sign in a normal turn); wheels 0..3 = FL, FR, RL, RR, so 0 and 2 are the left side (confirmed by the owner
+2026-10-26).
 
 | Signal | SZL + cluster | SZL dead |
 |---|---|---|
@@ -49,27 +51,91 @@ Writes `abs_decision_t` at 0x408DDE (code, pct at 0x408DE0).
    `0x408DBE` b7 clear, plus the rear condition r9 (0x51CB8–0x51DA2). Rears are handled independently instead of
    select-low. **SZL dead: never taken.**
 5. **Code 1 at light pedal in a corner** (0x51E6A): driver pressure `0x408EB2` < P_lo with `0x40903C` b7 or latch b5.
-6. **Code 32 with pct** (0x51EF4–0x51F42): the wheel is dumping, P_lo < P_drv, and (P_drv < P_hi or latch b5), with
-   `0x40903C` b7 or latch b5:
+6. **Code 32 with pct** (0x51EF4–0x51F42): the current wheel is dumping (`rec[0]` b5), P_lo < P_drv, and (P_drv < P_hi
+   or latch b5), with `0x40903C` b7 or latch b5:
 
    `pct = 100 · (P_drv − P_lo) / (P_hi − P_lo)` → 0x408DE0.
 
-   `abs_decision_pressure_exec` 0x58FF4 code 32 then sets `CMD = PM − pct·(LOCKEST − CMD)/100`. So the knockdown
-   grows with how far the driver's pressure sits above the light-braking curve, scaled by lateral g.
+   **pct is not clamped and wraps [C].** The quotient is stored with `st.b` (0x51F42) and read back zero-extended
+   (`ld.b`, 0x59272). With latch b5 the branch also runs above P_hi, where pct exceeds 100. From
+   P_drv = P_lo + 2.56·(P_hi − P_lo) it wraps modulo 256 back toward 0. At 0.4 g lateral (P_lo 18, P_hi 29 bar) that is
+   about 46 bar of pedal; at 1.0 g (30 / 45 bar) about 68 bar. What the wrap does to the rears is [I].
    **SZL dead: P_lo = P_hi = 0 and no latch, so no code 32 from here.**
+7. **Code 32 in the exec** (`abs_decision_pressure_exec` 0x58FF4, arm 0x59222–0x59328) [C].
+   The half-word at 0x408DE8 (decision word +10) holds two 2-bit wheel indexes: s = bits 12–13, t = bits 14–15.
+   - G = `LOCKEST[s] − CMD[s]` (0x408FD0 − 0x408F22, floored at 0) when the partner of the current record
+     (`0x400978` xor 0x40) is dumping or holding (`rec[1] & 0x28`); otherwise G = `0x408F42[s] − CMD[s]`.
+   - K = pct · G / 100.
+   - Normal path: `CMD[t]` (0x408F22) and 0x408F62[t] = max(1 bar, PM[t] − K); rate 0x408F5A[t] = rate[s].
+   - With 0x408F80[t] set the base is the hold pressure 0x408F42[t] instead of PM[t]. With 0x408D9C[t] b7 as well, a
+     wheel already at the full-dump rate (−8000) keeps a command that is lower than that, and a wheel with a negative
+     rate is left alone while rate[s] = 0.
+   - **s is the lead rear, t the other rear.** `abs_rear_lead_select` 0x5184C writes the fields every frame
+     (0x519F2–0x51A3C): lead RL (`0x408DA0` b7 = 1) → s = 2 (RL), bits 10–11 = 3 and t = bits 10–11 = 3 (RR); lead RR
+     → s = 3 (RR), t = 2 (RL). (Wheels 0 / 2 are the left side.) So each frame while code 32 holds, the other rear's
+     command is set K below its own pressure, at the lead rear's rate: it follows the lead rear's dump, scaled by
+     pct. pct 0 holds it where it is; select-low (code 64) would instead pull it to the lead rear's pressure. The
+     classifier's code-32 branch does not write the fields. (0x51CA0, the code-128 path, copies bits 12–13 into
+     14–15 instead.) `abs_pair_logic` also writes code 32, the partner dump on split-µ, with its own fields.
 
 ### 2.2 Rear cornering latch — event classifier 0x4E908 [C]
 
-Needs `0x408E6D & 0xF0` = 0xF0 (lat, pressure, steering and yaw all valid) and `0x408DC6` b2 (0x4E8B6). Sets
-`abs_rear_latch` 0x409049 b2+b5, `abs_estim_flags` 0x408E1B b1, and snapshots lat → 0x408EDA, driver pressure →
-0x408ED6, yaw → 0x408EA0, yaw − AYC target → 0x408EA2. Released when driver pressure < curve 0x40E26(\|lat\|) × 100
-or the lateral conditions lapse. Feeds §2.1 items 3, 5 and 6, and classifier block 14 (0x4E644: yaw beyond the
-snapshot in the same sense as yaw accel → yaw-limited E+37 b7, `0x40912E` = 100). **SZL dead: never latches.**
+Read 2026-10-26 (0x4E59E–0x4EC1E, pools 0x4E8D8 / 0x4EA28 / 0x4EB30 / 0x4EC40 / 0x4ED5C). The latch enables the
+lateral branch of §2.1 (items 3, 5, 6) for one rear. The RL record (sp+88) is tested when lateral ≥ 1 count, the RR
+record (sp+64) when lateral < 0 (0x4E1E0–0x4E1EE: sp+64 = 0x40BFC0, sp+88 = 0x40BF80). With ISO 8855 signs
+(positive lateral and yaw = left turn; wheels 0 / 2 = left), **the latch sits on the inside rear.** In a corner
+that is normally also the lead rear (§2.3), so code 32 makes the outside rear follow the inside rear's dumps.
+
+- **Enable** (0x4E8B6): `0x408E6D & 0xF0` = 0xF0 (lat, pressure, steering, yaw) and `0x408DC6` b2.
+  `abs_cluster_without_szl` drops the steering bit (0xD0).
+- **Pre-gate** (0x4E912–0x4E94A): yaw-deviation counter `0x408EA6` above a bound, or \|lat\| > T, or E+37 b7, or the
+  recovery flag sp+68; otherwise the wheel's `0x409049` b0 must already be set.
+- **Common conditions** (0x4E94C–0x4EA12): the rear not in a cycle (rec b0); `0x409049` b2 and b3 clear;
+  `0x401FF2` b7; `0x408E6A` ≥ 3; with sp+68 = 0 and no driver pressure, both front PM > 1 bar and `0x408DC6` b2;
+  `0x408DB5` b4 clear; at \|lat\| ≥ 40, the wheel's PM `0x408F2A` > 100 · curve **0x40CC8**(vref km/h) (35 bar at
+  standstill, 8 bar at 50–60 km/h, 6 bar above 80 km/h) unless sp+68 is set.
+- **Trigger** (0x4EA44–0x4EAC0), any one of:
+  1. e = yaw − `0x400B1A` ≥ 1 count in the turn direction (e ≥ 1 for RL in a left turn, e < 0 for RR in a right
+     turn): the car rotates at least as much as the DSC model asks, the oversteer side;
+  2. E+37 b7 (classifier block 14, yaw-limited);
+  3. \|lat\| > T;
+  4. sp+68 (classifier block 12, yaw-error recovery).
+
+  Triggers 1, 2 and 4 compare yaw with the DSC yaw target, so they are the only parts of the latch that depend on
+  the steering angle. With `abs_cluster_without_szl` e = 0 and only trigger 3 is left.
+- **Final checks** (0x4EAC2–0x4EAEE): rear not in a cycle, `0x408DA2` b5 clear, no wheel fault `0x400952`, coding
+  `0xCFC18` = 0 and `0xCFC56` ≠ 0.
+- **Set** (0x4EAF0–0x4EB5E): `abs_rear_latch` 0x409049 b2+b5 (b0 cleared), lat → 0x408EDA, driver pressure →
+  0x408ED6, `0x408E1B` b1, yaw → 0x408EA0, e → 0x408EA2.
+- **Release** (0x4EB60–0x4EC1E): a latched wheel releases when driver pressure is 0, the lateral sign no longer
+  matches its side, or driver pressure < P_lo = 100 · curve 0x40E26(\|lat\|). Release clears b2 and zeroes 0x408EDA /
+  0x408ED6. b5 and b0 are cleared only when neither rear is in a cycle, so b5 (the classifier's enable) holds for
+  the rest of a rear cycle. That is how the light-pedal code 1 (§2.1 item 5) is reached while P_drv < P_lo.
+
+**Lateral threshold T** (0x4E5F6–0x4E8B4), stored per wheel at `0x409132` + 10·w:
+- T = cal **0x40B06** = 80 (0.80 g).
+- When yaw accel has the sign of yaw and \|yaw accel\| exceeds curve **0xD6CA8**(vref / 10) (4363 at standstill, 1013
+  at 60 km/h, 409 at 100 km/h), T is lowered in proportion to the excess, with gain curve **0x40C9E**(vref km/h) (0
+  up to 20 km/h, 23 at 100 km/h); the gain is 6 below 60 km/h when \|e\| > 233 [C structure, I exact term].
+- Above 30 km/h with \|yaw accel\| > 2500 and the target of yaw's sign: T −= T · (\|yaw accel\| − 2500) / 12000.
+- **T = max(T, cal 0x403E4 = 40)** (0x4E890). Lowering 0x40B06 below 0x403E4 has no effect unless 0x403E4 is
+  lowered too. Each of the four cals has a single reader.
+
+Meaning: with an SZL the latch picks up any braked corner in which the car rotates at least as much as the model
+asks (trigger 1), and otherwise only above about 0.8 g. Once it holds, a light pedal lets the outside rear build
+independently of the inside rear (code 1), and a firmer pedal makes it follow the inside rear's dumps by pct
+(code 32) [I purpose: the extra outside-rear braking opposes the rotation]. The latch also feeds classifier block 14 and the pre-control
+handler 0x50894 through the yaw / e snapshots (§7.6). **SZL dead: never latches.**
 
 ### 2.3 Which rear leads [C]
 
-- `abs_rear_lead_select` 0x5184C picks the lead rear from the lateral sign (thresholds +6 / −5 / −10, aux ±11) and
-  needs b7 (0x5197E). **SZL dead: skipped.**
+- `abs_rear_lead_select` 0x5184C picks the lead rear (`0x408DA0` b7: 1 = RL, 0 = RR) **from the two rears' phase
+  bits, not from lateral g** (0x51878–0x5193A): the rear further into its ABS cycle leads; a rear with a wheel
+  fault scores 0; on a tie it compares rec+0x28. It then writes the decision word's wheel fields (s = lead,
+  t = other; §2.1 item 7). Bit 9 of 0x408DE8 is set only with lateral valid (b7, 0x5197E), when the lead rear is
+  the **inside** rear and dumping: lead RL with lat ≥ 6, aux ≥ 11 or `0x408DF0` b7; lead RR with lat < −5,
+  aux < −10 or `0x408DF0` b6. So `0x408DF0` b7 / b6 are the left / right-turn side flags. **SZL dead: bit 9 never
+  sets; the lead pick still runs.**
 - `abs_side_select` 0x5AEEE (inside `abs_chassis_frame` 0x5A0DC) uses the lateral sign when \|lat\| ≥ 11 and valid,
   **otherwise the rear wheel-speed difference** (RR vs RL rec+0x1C). This one degrades gracefully.
 
@@ -120,8 +186,8 @@ flag and \|lat\| < cal 0x40C9A, or lat + yaw valid with \|lat\| < half of that a
 
 ### 2.8 Countersteer test — `abs_countersteer_check` 0x5CAF4 [C structure, I meaning]
 
-Lateral, yaw and the aux lateral of one sign, steering valid with road-wheel angle `0x408EE4` of the opposite sign,
-yaw accel opposite, \|yaw\| below half `0x408ED0` → a rear-control branch that writes `0x408DA0` b4/b5/b7.
+Lateral, yaw and the aux lateral of one sign, steering valid with road-wheel angle `0x408EE4` of the opposite sign
+(with ISO 8855 signs: the wheel is steered against the turn, i.e. countersteer), yaw accel opposite, \|yaw\| below half `0x408ED0` → a rear-control branch that writes `0x408DA0` b4/b5/b7.
 **SZL dead: the countersteer condition is skipped.**
 
 ### 2.9 All-sensors flag for the end-of-frame block [C]
@@ -159,7 +225,8 @@ Only the longitudinal accel, and only untrusted. Lateral and yaw are invalid (§
 These do not test b7, so without the SZL they use the wheel-speed estimate:
 
 - classifier block 14 lateral term (0x4E59E–0x4E5D8: factor from \|lat\| 50–60);
-- the direction-selective rear dump 0x4EF72 (lat ≥ 6 on RR / < −5 on RL), gated by `0x408E5F` b1 or `0x400B09` b6;
+- the direction-selective rear dump 0x4EF72 (lat ≥ 6 on RR / < −5 on RL, so the outside rear), gated by `0x408E5F` b1 or
+  `0x400B09` b6;
 - `abs_front_split_detect` 0x53D3C (some branches);
 - the classifier straight shortcut (\|lat\| < 9), which needs yaw-stable anyway.
 
@@ -236,8 +303,8 @@ high-µ rebuild. Score terms (u8 sum):
 | +7 if vref − wheel speed > curve 0x40974(vref), or rec+6 < 0 | — | all |
 | + (vref − 0x40DC6) / 0x40D8C / 100 above 40 km/h | 4000, 7 → +1 per 7 km/h | all |
 | + (−decel 0x408DAF) / 14 below 0x40DCA·100 | 40 km/h | all |
-| + (\|pred yaw\| − 0x40DD6) / 0x40DCC; negative yaw → RR only, positive → RL only | 1047 (3 °/s), 63 | rears |
-| **+ \|rate 0x408EE6\| / 0x40D86 when rate > 0x40D88 (RR) or < −0x40D88 (RL)** | **1143, 457** (≈ 50 °/s, 20 °/s per frame, units [I]) | rears |
+| + (\|pred yaw\| − 0x40DD6) / 0x40DCC; negative yaw (car rotating right) → RR only, positive (left) → RL only: slows the rear on the side the car is turning toward | 1047 (3 °/s), 63 | rears |
+| **+ \|rate 0x408EE6\| / 0x40D86 when rate > 0x40D88 (RR) or < −0x40D88 (RL)**; positive rate = steering moving left, the driver correcting a pull to the right, so it slows the right rear | **1143, 457** (≈ 50 °/s, 20 °/s per frame, units [I]) | rears |
 | **+ 0x40D92·(\|angle\| − min) / (0x40D8A − min)**, min = `0x408EF2` while min < 0x40D8A | **14, 2286 counts (≈ 100° SW)** | all |
 | **score = 248 if \|angle\| > 0x40D8A and own PM − partner PM (`0x408F2A`) > 5 bar** | 2286 | all |
 
@@ -283,9 +350,9 @@ an SZL the target means "wheel straight", so e = the full measured yaw.
 | 0x5B828, 0x5BEAC, 0x5C594, 0x5C8B8 (9) | `abs_side_select` 0x5AEEE | e in the same direction as yaw against ±3°/s (0x5B572), a ctx threshold of at least cal 0x40A3E (0x5BC60 / 0x5BD66), −500 ≈ 1.4°/s (0x5C352 / 0x5C3D2), ±(2°/s + ctx) (0x5C610), curve 0x40A66(vref) × ctx / 100 (0x5C800 / 0x5C82C) and ⅔ ctx (0x5C88C). Feeds the inside / outside rear handling; downstream not decoded |
 | 0x5BBAC (2), 0x5C2CC (1) | `abs_side_select` | the target alone: sign and comparison with a ctx yaw quantity offset by 2°/s and capped at 10°/s (0x5B90E / 0x5BAFA); comparison with a ctx value under the AYC-active flags `0x408DEA+6` b7/b6 (0x5C028) |
 | 0x55560 (1, 0x5543E) | `sub_055420`, every ABS frame from 0x4629C | at start-up (`0x400966` b6) or controller modes 1/2/4: seeds 0x409194–0x4091A6 with r_ref 0x4020EC and `0x40919E` = yaw − r_ref. No literal reader of that block found |
-| 0x4A450 | `abs_yaw_deviation_monitor` 0x4A254 | runs only with AYC active |
+| 0x4A450 (2, 0x4A294 / 0x4A2BC) | `abs_yaw_deviation_monitor` 0x4A254, the tail call of every ABS frame | not AYC-gated. Its snapshot branch needs the side flags `0x408DF0` b7/b6, `0x408E6D & 0xF0` = 0xF0 and `0x401FF2 & 0xA0` = 0x80 (ABS enabled, not engaged). Its oversteer state runs ungated: when \|yaw\| exceeds \|target\| by curve 0x40C5A(\|lat\|) (2024 at 0 g, 857 at 0.5 g, 576 at 1.2 g) with yaw accel the same way, it sets `0x408DF1` b6 and counts `0x408EA6` up (+1 per growing frame, −4 otherwise, cap 20). Reset below 10 km/h, with trusted ax ≥ 0, or when \|yaw\| < \|target\|. Readers: cornering-latch pre-gate, `abs_side_select`, 0x4B3C8, 0x4B970, 0x5AC0C, 0x5CAF4, 0x5CFDC |
 
-`abs_cluster_without_szl` points all of these except 0x4A450 at `abs_yaw`, so e = 0. The target-alone loads then
+`abs_cluster_without_szl` points all of these at `abs_yaw`, so e = 0. The target-alone loads then
 see measured yaw, which is "the driver wants what the car is doing", not the same as e = 0. Whether they end up
 neutral depends on the undecoded ctx quantities.
 
@@ -294,7 +361,7 @@ neutral depends on the undecoded ctx quantities.
 | Calibration | Physical / to-taste | ABS sensitivity |
 |---|---|---|
 | steering valid (0x0C9 frame, alive, status; `steering_angle_init_monitor` 0xB97D4, faults 0x1200xx) | physical (sensor health) | **very high**: invalid turns off lat, yaw and the whole cornering suite (§2) |
-| sign convention (raw 0x0C9 sign) | physical (sensor, install) | **high** for the GMA rate term and the countersteer test; reversed sign makes them act on the wrong side. Also critical for DSC |
+| sign convention (raw 0x0C9 sign; ISO 8855, positive = left, the same sign as lateral and yaw when driving forwards: owner-confirmed 2026-10-26. The chain keeps it: offset subtraction, positive ratio) | physical (sensor, install) | **high** for the GMA rate term and the countersteer test; reversed sign makes them act on the wrong side. Also critical for DSC |
 | zero offset (learner 0x9020C, its gain curves 0xDA8FA–0xDA90A, ±228 step clamp, fault above ≈ 10°) | estimator tuning that corrects a physical error | low–medium: matters near centre (countersteer sign); too small to matter for the 100–130° thresholds. The GMA angle term is relative to its own minimum, so a static offset barely affects it |
 | scale (sensor LSB, ·1029/1024) | physical (sensor) | medium: every ABS steering threshold is in counts, so a 2× scale error halves or doubles the GMA steering terms and moves the 130° / 100° / 50 °/s points |
 | ratio curve 0x40EB4 / 0x40ECC | physical (rack ratio) | **almost none** for ABS (only the road-wheel sign and peak in the countersteer test). Critical for the DSC yaw reference |
@@ -312,7 +379,9 @@ XDF (ABS category, "ABS yaw-stable: …" / "ABS GMA: …").
 
 ## Open
 
-- Writer of `0x40903C` b7 (the other enable of the classifier's lateral branch) and of `0x408DF0` b7/b6.
+- Writer of `0x40903C` b7 (the other enable of the classifier's lateral branch). `0x408DF0` b7/b6 are set at
+  0x5CCBA–0x5CCC0 in the first part of 0x5CAF4 from a wheel-speed side counter (not steering); no clear found.
+- The effect of the pct wrap on the outside rear, and the readers of bit 9 of 0x408DE8.
 - The remainder of `abs_chassis_frame` 0x5A0DC (0x5AEEE after the side pick, 0x5A2E0, 0x5AC0C, 0x5CFDC, 0x5D264,
   0x5D290, 0x5A4E4); outputs 0x40915E–0x409188 have no direct readers.
 - `abs_pair_gate` helpers 0x54954 / 0x54AF8.

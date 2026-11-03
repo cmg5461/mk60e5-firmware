@@ -91,6 +91,8 @@ vref), 17-word sets +0x66E..+0x718, ramp sets +0x534/550/56C (x = signed byte 0x
 ## 5. Other fields [low]
 Gain/bias (sub_0C8E96): +0x37E..384 = 300,300,300,1; +0x376..37C = 130,40,-300,800. Large consts
 +0x3A8=14000, +0x3AC=12000, +0x3B4=5. Tail +0x8FE..+0x930 (37CE,8B82,0B3B,9976,6F9B) = integrity/id words
+**[corrected 2026-10-26]** — the tail words are not integrity/id words: the same constants are the rear-disc
+thermal-model thresholds on the M3 (code literals at 0xCE9B6–0xCEDAC; `analysis/TCS_7846816A.md` §4.7).
 (readers CF1BE/CF35C/CF29C). Zero/unused tables: +0x1E4,+0x310,+0x742,+0x826. +0x550,+0x56C duplicate +0x534.
 
 ## 6. Open

@@ -17,7 +17,7 @@ after the level-5 Authentisierung. Verified pipeline:
   37 transferExit] -> 31 09 02 signature verify (poll) -> 11 01 reset.
 
 Subcommands:
-  * SAFE: info / readcoding / unlock / auth5 / sniff / verify / repack.
+  * SAFE: info / readcoding / eeprom / unlock / auth5 / sniff / verify / repack.
   * `flashplan <dir>` runs a captured/repacked plan. It is DRY-RUN by
     default and only transmits with --arm (+ a typed confirmation). This
     is the verified path - use it, not the old `flash` template.
@@ -79,7 +79,8 @@ class FlowControlTimeout(IOError):
 
 NRC = {
     0x10: "generalReject", 0x11: "serviceNotSupported", 0x12: "subFunctionNotSupported",
-    0x13: "incorrectMessageLengthOrInvalidFormat", 0x22: "conditionsNotCorrect",
+    0x13: "incorrectMessageLengthOrInvalidFormat", 0x21: "busyRepeatRequest (NVM queue full)",
+    0x22: "conditionsNotCorrect",
     0x24: "requestSequenceError", 0x31: "requestOutOfRange", 0x33: "securityAccessDenied",
     0x35: "invalidKey", 0x36: "exceedNumberOfAttempts", 0x37: "requiredTimeDelayNotExpired",
     0x40: "downloadNotAccepted", 0x41: "improperDownloadType",
@@ -488,21 +489,213 @@ def cmd_info(args):
         bus.shutdown()
 
 
+NVM_SIZE = 0x800                            # logical EEPROM space (analysis/EEPROM_MAP_7846816A.md)
+
+
+def read_nvm(uds, addr, n, tries=10, interval=0.05, progress=False):
+    """Read n bytes of logical NVM with 0x23 format 3 (app handler 0xB3112:
+    1..4 bytes per request, addr+len <= 0x800, no block-boundary limit).
+    The driver undoes the chip's bit inversion, so the result is logical bytes.
+    NRC 0x21 (NVM queue busy) is retried; any other NRC raises."""
+    if addr < 0 or n < 0 or addr + n > NVM_SIZE:
+        raise ValueError("NVM range 0x%X+%d is outside 0x000-0x7FF" % (addr, n))
+    data = bytearray()
+    start, end = addr, addr + n
+    while addr < end:
+        chunk = min(4, end - addr)
+        for attempt in range(tries):
+            r = uds.raw(bytes([0x23, 0x00, addr >> 8, addr & 0xFF, 0x03, chunk]))
+            if r and r[0] == 0x7F and len(r) >= 3 and r[2] == 0x21 and attempt < tries - 1:
+                time.sleep(interval)
+                continue
+            break
+        if not r or r[0] != 0x63 or len(r) != 1 + chunk:
+            nrc = r[2] if r and r[0] == 0x7F and len(r) >= 3 else None
+            raise RuntimeError("0x23 read at 0x%03X failed: %s" % (
+                addr, "NRC 0x%02X %s" % (nrc, NRC.get(nrc, "?")) if nrc is not None
+                else "response %s" % (r.hex(" ") if r else "none")))
+        data += r[1:]
+        addr += chunk
+        if progress and (addr - start) % 0x80 == 0:
+            print("\r  0x%03X / 0x%03X" % (addr, end), end="", file=sys.stderr, flush=True)
+    if progress:
+        print(file=sys.stderr)
+    return bytes(data)
+
+
+def hexdump(data, base=0):
+    for off in range(0, len(data), 16):
+        row = data[off:off + 16]
+        asc = "".join(chr(b) if 0x20 <= b < 0x7F else "." for b in row)
+        print("  %03X: %-47s  %s" % (base + off, row.hex(" "), asc))
+
+
+def decode_nvm(data):
+    """Field decode of a full logical-EEPROM image, via tools/eeprom_decode.py (the single
+    source of truth for EEPROM layouts/checksums). No-op with a note if that module is absent
+    or the image doesn't start at 0x000."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("eeprom_decode", os.path.join(HERE, "eeprom_decode.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    except Exception as e:
+        print("  (eeprom_decode.py unavailable: %s)" % e)
+        return
+    mod.decode(bytes(data))
+
+
 def cmd_readcoding(args):
     bus, uds = make_uds(args)
     try:
         uds.start_session(args.session)
-        n = args.length
-        data = bytearray()
-        addr = args.addr
-        while n > 0:
-            chunk = min(4, n)                      # 0x23 serves <=4 bytes/request
-            r = uds.read_mem_by_addr23(addr, chunk)
-            data += r[1:]
-            addr += chunk; n -= chunk
-        print("NVM 0x%03X..: %s" % (args.addr, bytes(data).hex(" ")))
+        data = read_nvm(uds, args.addr, args.length)
+        print("NVM 0x%03X..: %s" % (args.addr, data.hex(" ")))
     finally:
         bus.shutdown()
+
+
+def write_nvm_byte(uds, addr, value, tries=10, interval=0.05):
+    """Write one logical-NVM byte with 0x3D format 3 (app handler 0xB324E).
+    Wire: 3D 00 <hi> <lo> 03 01 <byte> (fixed 7-byte request; the handler forces
+    length 1, so exactly one byte per request). The driver re-inverts on store, so
+    pass the logical value you want to read back. Returns None on success, else an
+    error string (NRC text or unexpected response). NRC 0x21 (NVM queue busy) retried.
+
+    Gating (service table 0xF30A0, verified): 0x3D is session-masked (record+8 = 0x10)
+    and, when 0x4094F7 b7 is set, requires security level 0x7F. A refusal therefore
+    surfaces as NRC 0x33 (level) or 0x22 (wrong session); that is the module telling
+    you this address/state is locked, not a client bug."""
+    if not (0 <= addr < NVM_SIZE):
+        return "addr 0x%X outside 0x000-0x7FF" % addr
+    req = bytes([0x3D, 0x00, addr >> 8, addr & 0xFF, 0x03, 0x01, value & 0xFF])
+    for attempt in range(tries):
+        r = uds.raw(req)
+        if r and r[0] == 0x7F and len(r) >= 3 and r[2] == 0x21 and attempt < tries - 1:
+            time.sleep(interval)
+            continue
+        break
+    if r and r[0] == 0x7D:
+        return None
+    if r and r[0] == 0x7F and len(r) >= 3:
+        return "NRC 0x%02X %s" % (r[2], NRC.get(r[2], "?"))
+    return "unexpected response %s" % (r.hex(" ") if r else "none")
+
+
+def cmd_eeprom_write(args):
+    """Write raw bytes to logical EEPROM via 0x3D, then verify by read-back.
+
+    DRY-RUN unless --arm. This writes PERSISTENT EEPROM (coding, idents, learned
+    data, programming counters all live here) - a wrong address can brick coding or
+    identity. Keep a full `eeprom` dump first."""
+    addr = args.addr
+    try:
+        data = bytes(int(b, 16) for b in args.bytes.replace(",", " ").split())
+    except ValueError:
+        sys.exit("--bytes must be hex, e.g. \"14\" or \"de ad be ef\"")
+    if not data:
+        sys.exit("--bytes is empty")
+    if not (0 <= addr and addr + len(data) <= NVM_SIZE):
+        sys.exit("range 0x%03X+%d is outside 0x000-0x7FF" % (addr, len(data)))
+
+    bus, uds = make_uds(args)
+    try:
+        uds.start_session(args.session)
+        if args.unlock27:
+            # 0x3D is gated at security level 0x7F; the afb10 sub-function (27 FD seed /
+            # 27 FE key, M3 fold 0x091B) grants it. Must be in the SAME session as the write.
+            uds.security_access(args.sa_level, args.sa_algo)
+        if args.auth:
+            authenticate(uds, uid=args.uid, w564_override=args.w564)
+        before = read_nvm(uds, addr, len(data))
+        print("target   0x%03X" % addr)
+        print("  before %s" % before.hex(" "))
+        print("  after  %s  (%d byte%s)" % (data.hex(" "), len(data), "" if len(data) == 1 else "s"))
+        if not args.arm:
+            print("DRY-RUN: re-run with --arm to actually write.")
+            return
+        print("writing %d byte%s ..." % (len(data), "" if len(data) == 1 else "s"))
+        for i, v in enumerate(data):
+            if before[i] == v:
+                continue                       # skip no-op bytes (saves an EEPROM cycle)
+            err = write_nvm_byte(uds, addr + i, v)
+            if err:
+                print("  0x%03X <- %02X  FAILED: %s" % (addr + i, v, err))
+                print("STOPPED at first failure (earlier bytes, if any, were written).")
+                break
+            print("  0x%03X <- %02X  ok" % (addr + i, v))
+        verify = read_nvm(uds, addr, len(data))
+        ok = verify == data
+        print("verify   %s  %s" % (verify.hex(" "), "MATCH" if ok else "MISMATCH"))
+    finally:
+        bus.shutdown()
+
+
+# Bootloader flash programming-cycle counters (EEPROM block 24). Over the ~20 limit the 31 02 erase
+# fails with 71 02 02; resetting them low re-enables flashing (hardware-confirmed 2026-11-03).
+PROG_COUNTER_ADDRS = (0x37E, 0x37F)
+PROG_COUNTER_RESET = 0x01
+
+
+def cmd_reset_prog_counter(args):
+    """Reset the bootloader flash programming-cycle counters (EEPROM 0x37E/0x37F) to 0x01.
+
+    A module flashed enough times hits the counter limit (~20); its 31 02 erase then fails with
+    71 02 02 and it can't be reflashed. This unlocks level 0x7F (27 FD/FE afb10) and writes 0x01
+    to both counters via 0x3D, in one session. DRY-RUN unless --arm."""
+    bus, uds = make_uds(args)
+    try:
+        uds.start_session(args.session)
+        before = {a: read_nvm(uds, a, 1)[0] for a in PROG_COUNTER_ADDRS}
+        for a in PROG_COUNTER_ADDRS:
+            print("  0x%03X  current 0x%02X (%d)  -> 0x%02X" % (a, before[a], before[a], PROG_COUNTER_RESET))
+        if not args.arm:
+            print("DRY-RUN: re-run with --arm to unlock and write.")
+            return
+        uds.security_access(args.sa_level, args.sa_algo)      # 27 FD/FE afb10 -> level 0x7F
+        for a in PROG_COUNTER_ADDRS:
+            if before[a] == PROG_COUNTER_RESET:
+                print("  0x%03X  already 0x%02X, skipped" % (a, PROG_COUNTER_RESET))
+                continue
+            err = write_nvm_byte(uds, a, PROG_COUNTER_RESET)
+            if err:
+                print("  0x%03X <- 0x%02X  FAILED: %s" % (a, PROG_COUNTER_RESET, err))
+                print("STOPPED. (NRC 0x33 = unlock didn't grant level 0x7F; NRC 0x22 = wrong session.)")
+                return
+            print("  0x%03X <- 0x%02X  ok" % (a, PROG_COUNTER_RESET))
+        after = {a: read_nvm(uds, a, 1)[0] for a in PROG_COUNTER_ADDRS}
+        ok = all(after[a] == PROG_COUNTER_RESET for a in PROG_COUNTER_ADDRS)
+        print("verify   %s  %s" % (
+            " ".join("0x%03X=%02X" % (a, after[a]) for a in PROG_COUNTER_ADDRS),
+            "OK - erase should run again" if ok else "MISMATCH"))
+    finally:
+        bus.shutdown()
+
+
+def cmd_eeprom(args):
+    """Dump the logical EEPROM (default all 2 KiB) to a file via 0x23."""
+    start, end = args.start, args.end
+    if not (0 <= start < end <= NVM_SIZE):
+        sys.exit("bad range 0x%X-0x%X (must be within 0x000-0x800)" % (start, end))
+    out = args.out or "eeprom_%s.bin" % time.strftime("%Y%m%d_%H%M%S")
+    bus, uds = make_uds(args)
+    try:
+        uds.start_session(args.session)
+        print("reading NVM 0x%03X-0x%03X (%d bytes, %d requests) ..." % (
+            start, end - 1, end - start, (end - start + 3) // 4))
+        data = read_nvm(uds, start, end - start, progress=True)
+    finally:
+        bus.shutdown()
+    with open(out, "wb") as f:
+        f.write(data)
+    print("wrote %s (%d bytes, logical/un-inverted; file offset 0 = NVM 0x%03X)" % (out, len(data), start))
+    if not args.quiet:
+        hexdump(data, start)
+    if start == 0 and end >= 0x4B0:
+        print("decode:")
+        decode_nvm(data)
+    else:
+        print("(partial dump: run `eeprom_decode.py %s` on a full 0x000-0x800 dump to decode fields)" % out)
 
 
 def _asic_xfer(uds, regfield, data):
@@ -808,6 +1001,10 @@ def cmd_flashplan(args):
             print("[erase] 31 02 %s (polling) ..." % erase.hex())
             r = uds.routine_poll(bytes([0x31, 0x02]) + erase, timeout=args.erase_timeout)
             print("  erase complete: %s" % r.hex(" "))
+            # BL (sub_0156FA, state 4): reply byte is 01 only if the flash routine's status was
+            # 0x90 (ok); anything else (02) means the erase FAILED even though the poll finished.
+            if len(r) >= 3 and r[2] != 0x01:
+                sys.exit("erase FAILED: %s (expected 71 02 01); not downloading anything." % r.hex(" "))
 
         print("[quiet] 28 02 ; 29 02")
         uds.request(bytes([0x28, 0x02]), expect=False)
@@ -1047,6 +1244,47 @@ def main():
     rc.add_argument("--length", type=int, default=64)
     rc.add_argument("--session", type=lambda x: int(x, 0), default=0x81)
     rc.set_defaults(func=cmd_readcoding)
+
+    ee = sub.add_parser("eeprom", help="dump the logical EEPROM (2 KiB) to a .bin via 0x23 (SAFE, read-only)")
+    ee.add_argument("--out", help="output file (default eeprom_<timestamp>.bin)")
+    ee.add_argument("--start", type=lambda x: int(x, 0), default=0x000, help="first NVM address (default 0x000)")
+    ee.add_argument("--end", type=lambda x: int(x, 0), default=NVM_SIZE,
+                    help="end NVM address, exclusive (default 0x800)")
+    ee.add_argument("--session", type=lambda x: int(x, 0), default=0x81)
+    ee.add_argument("-q", "--quiet", action="store_true", help="don't print the hexdump")
+    ee.set_defaults(func=cmd_eeprom)
+
+    ew = sub.add_parser("eeprom-write",
+                        help="write raw bytes to logical EEPROM via 0x3D (DRY-RUN unless --arm; PERSISTENT)")
+    ew.add_argument("--addr", type=lambda x: int(x, 0), required=True,
+                    help="first NVM logical address (0x000-0x7FF), e.g. 0x37E")
+    ew.add_argument("--bytes", required=True,
+                    help="hex byte(s) to write from --addr, e.g. \"03\" or \"de ad be ef\"")
+    ew.add_argument("--arm", action="store_true", help="actually write; omit for a dry run")
+    ew.add_argument("--session", type=lambda x: int(x, 0), default=SESSION_ADJUST,
+                    help="KWP session (default 0x87 adjustment; try 0x85 if NRC 0x22)")
+    ew.add_argument("--unlock27", action="store_true",
+                    help="SecurityAccess 27 FD/FE (afb10) in-session before writing - grants level 0x7F that 0x3D needs")
+    ew.add_argument("--sa-level", type=lambda x: int(x, 0), default=0xFD, dest="sa_level",
+                    help="seed sub-function for --unlock27 (default 0xFD; key sent as +1 = 0xFE)")
+    ew.add_argument("--sa-algo", choices=list(KEY_ALGOS), default="afb10", dest="sa_algo",
+                    help="key algo for --unlock27 (default afb10)")
+    ew.add_argument("--auth", action="store_true",
+                    help="run level-5 Authentisierung first (alternative to --unlock27)")
+    ew.add_argument("--uid", default="273c", help="auth USER_ID (with --auth; default 273c)")
+    ew.add_argument("--w564", default=None, help="override w564 (with --auth)")
+    ew.set_defaults(func=cmd_eeprom_write)
+
+    rp2 = sub.add_parser("reset-prog-counter",
+                         help="reset flash programming-cycle counters 0x37E/0x37F to 01 (un-sticks 71 02 02 erase; DRY-RUN unless --arm)")
+    rp2.add_argument("--arm", action="store_true", help="actually unlock and write; omit for a dry run")
+    rp2.add_argument("--session", type=lambda x: int(x, 0), default=SESSION_ADJUST,
+                     help="KWP session (default 0x87 adjustment; try 0x85 if NRC 0x22)")
+    rp2.add_argument("--sa-level", type=lambda x: int(x, 0), default=0xFD, dest="sa_level",
+                     help="SecurityAccess seed sub-function (default 0xFD; key sent as 0xFE)")
+    rp2.add_argument("--sa-algo", choices=list(KEY_ALGOS), default="afb10", dest="sa_algo",
+                     help="SecurityAccess key algo (default afb10 -> level 0x7F)")
+    rp2.set_defaults(func=cmd_reset_prog_counter)
 
     ap = sub.add_parser("asic", help="ASIC QSPI xfer / RAM peek via patched 0x23 (PROBE IMAGE ONLY)")
     ap.add_argument("mode", choices=["xfer", "dump", "ram"])
