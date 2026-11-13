@@ -18,16 +18,17 @@ after the level-5 Authentisierung. Verified pipeline:
 
 Subcommands:
   * SAFE: info / readcoding / eeprom / unlock / auth5 / sniff / verify / repack.
-  * `flashplan <dir>` runs a captured/repacked plan. It is DRY-RUN by
-    default and only transmits with --arm (+ a typed confirmation). This
-    is the verified path - use it, not the old `flash` template.
-  * `repack` re-slices EDITED bank images onto the captured segment layout
-    to make an edited plan; `extract_flashplan.py` builds the stock plan
-    from the CAN log.
+  * `flash <file.0pa>` flashes a WinKFP .0pa directly: segments are the
+    file's contiguous runs, erase = first addr / 06 / total bytes (matches
+    real WinKFP flashes). DRY-RUN by default; transmits only with --arm
+    (+ a typed confirmation). --skip-eeprom leaves the 0xDF8xxx EEPROM
+    default-image segments out (keeps coding/learned values).
+  * `flashplan <dir>` runs a captured/repacked plan (plan.json + data.bin)
+    through the same sequence and options.
+  * `repack` re-slices EDITED bank images onto a plan's segment layout;
+    `extract_flashplan.py` builds a plan from a WinKFP CAN log.
   * Any edited image MUST be re-signed first (tools/bmy_resign.py fix) or
     the ECU rejects it at the 0x31 09 signature-verify step.
-  * `flash` is the OLD unverified UDS template, kept only for reference.
-    Prefer `flashplan`. Bench work only, with a BDM/JTAG recovery path.
 
 Transport: BMW E-series D-CAN (ISO 15765-2) with byte-0 address extension.
   Request : CAN id 0x6F1, data[0] = ECU address (DSC = 0x29), ISO-TP in [1:].
@@ -919,12 +920,65 @@ def cmd_repack(args):
     print("      python tools/bmy_resign.py fix <bank0 image>   (updates MISR + BMY)")
 
 
+FLASH_FMT = 0x06        # 34/37 + 31 02 format byte; constant, not stored in the .0pa
+
+
+def _load_0pa(path):
+    """Build a flash plan straight from a WinKFP .0pa, in the same shape as
+    _load_plan(). Matches a WinKFP capture of 7846816A byte for byte:
+      segments = the file's contiguous address runs, ascending (Intel-HEX record
+                 types 00 AND 10 are data; 10 = last record before an address record)
+      erase    = 31 02 <first seg addr:3> 06 <total data bytes:3>
+    The file's $CHECKSUMME (CRC-16/ARC over the data in address order) is checked."""
+    import pathlib
+    sys.path.insert(0, HERE)
+    import bmw_hex2bin
+    header, mem = bmw_hex2bin.parse(pathlib.Path(path))
+    if not mem:
+        sys.exit("%s: no data records" % path)
+    addrs = sorted(mem)
+    blob = bytes(mem[a] for a in addrs)
+    want = next((h.split()[1] for h in header if h.startswith("$CHECKSUMME")), None)
+    crc = bmw_hex2bin.crc16_arc(blob)
+    if want is None:
+        sys.exit("%s: no $CHECKSUMME header - not a WinKFP .0pa?" % path)
+    if int(want, 16) != crc:
+        sys.exit("%s: $CHECKSUMME %s but data CRC-16/ARC is %04X - file corrupt or edited "
+                 "without updating the checksum" % (path, want, crc))
+    segs, off = [], 0
+    for lo, hi in bmw_hex2bin.ranges(addrs):
+        n = hi - lo + 1
+        if hi > 0xFFFFFF:
+            sys.exit("%s: data at 0x%X does not fit a 3-byte 0x34 address" % (path, hi))
+        segs.append({"addr": lo, "fmt": FLASH_FMT, "size": n, "offset": off, "len": n})
+        off += n
+    if len(blob) > 0xFFFFFF:
+        sys.exit("%s: %d bytes does not fit the 3-byte erase length" % (path, len(blob)))
+    erase = segs[0]["addr"].to_bytes(3, "big") + bytes([FLASH_FMT]) + len(blob).to_bytes(3, "big")
+    ref = next((h.split()[1] for h in header if h.startswith("$REFERENZ")), "?")
+    plan = {"name": os.path.splitext(os.path.basename(path))[0],
+            "source_log": "%s ($REFERENZ %s, $CHECKSUMME %04X OK)" % (os.path.basename(path), ref, crc),
+            "erase": erase.hex(), "segments": segs}
+    return plan, blob
+
+
 def cmd_flashplan(args):
+    """Execute a captured/repacked plan dir (plan.json + data.bin)."""
+    plan, data = _load_plan(args.plan)
+    _run_flash(plan, data, args)
+
+
+def cmd_flash(args):
+    """Flash a WinKFP .0pa directly (plan derived from the file, see _load_0pa)."""
+    plan, data = _load_0pa(args.image)
+    _run_flash(plan, data, args)
+
+
+def _run_flash(plan, data, args):
     """Execute a flash plan over the Kvaser: verified auth -> erase -> transfer
     every segment (0x34/0x36/0x37) -> signature verify (0x31 09) -> reset.
     DRY-RUN unless --arm. The exact sequence is the one captured from a real
     WinKFP flash of this module (analysis/mk60e5_flash_can_log.txt)."""
-    plan, data = _load_plan(args.plan)
     segs = plan["segments"]
     erase = bytes.fromhex(plan["erase"]) if plan.get("erase") else None
     maxblk = plan.get("max_block", 0xFC)
@@ -947,7 +1001,7 @@ def cmd_flashplan(args):
     print("=" * 70)
     print("FLASH PLAN: %s   (%d segments, %d bytes, maxblock 0x%02X)"
           % (plan.get("name"), len(segs), total, maxblk))
-    print("source log: %s" % plan.get("source_log", "?"))
+    print("source    : %s" % plan.get("source_log", "?"))
     if erase:
         print("erase     : 31 02 %s  (start 0x%06X, %d bytes)"
               % (erase.hex(), int.from_bytes(erase[0:3], "big"), int.from_bytes(erase[4:7], "big")))
@@ -1161,66 +1215,23 @@ def cmd_verify(args):
     sys.exit(0 if ok else 2)
 
 
-def cmd_flash(args):
-    # ---- WinKFP cross-check (C:\EC-APPS\NFS\SGDAT\15DSC60.ipo) -------------
-    # WinKFP's authoritative MK60 flash job order is:
-    #   SG_IDENT_LESEN -> DIAGNOSE_MODE(ECUPM, programming session) ->
-    #   FLASH_PARAMETER_SETZEN -> FLASH_BLOCKLAENGE_LESEN (ECU reports block len!)
-    #   -> FLASH_ZEITEN_LESEN (erase/signature/reset/auth wait times) ->
-    #   FLASH_LOESCHEN + status poll (erase) -> FLASH_SCHREIBEN_ADRESSE ->
-    #   FLASH_SCHREIBEN (A/B buffered) -> FLASH_SCHREIBEN_ENDE ->
-    #   FLASH_SIGNATUR_PRUEFEN(Daten;Programm) (ECU verifies signature!) ->
-    #   FLASH_PROGRAMMIER_STATUS_LESEN -> AIF_SCHREIBEN -> STEUERGERAETE_RESET.
-    # The raw CAN service bytes per job live in the compiled SGBD (DSC_60.prg);
-    # the DEFINITIVE capture is an EDIABAS IFH/API trace of WinKFP flashing the
-    # real module. The template below mirrors the structure but its routine ids
-    # are NOT confirmed - adapt to that trace before trusting it.
-    print("=" * 70)
-    print("UNVERIFIED FLASH TEMPLATE - structure matches WinKFP 15DSC60.ipo, but")
-    print("routine ids are NOT confirmed vs the SGBD/bootloader. CAN BRICK THE ECU.")
-    print("Capture an EDIABAS trace of a real WinKFP flash and adapt first.")
-    print("=" * 70)
-    if not os.path.isfile(args.image):
-        sys.exit("image not found: %s" % args.image)
-    if not resign_verify(args.image):
-        sys.exit("image failed signature verify - run: python tools/bmy_resign.py fix '%s'" % args.image)
-    if not args.i_understand_brick_risk:
-        sys.exit("refusing: pass --i-understand-brick-risk after you have (1) sniffed a real\n"
-                 "flash of THIS module and confirmed the sequence below matches, and (2) have\n"
-                 "a hardware recovery path (BDM/JTAG) ready.")
-    typed = input('Type exactly "FLASH %s": ' % os.path.basename(args.image))
-    if typed.strip() != "FLASH %s" % os.path.basename(args.image):
-        sys.exit("confirmation mismatch - aborted.")
-
-    image = open(args.image, "rb").read()
-    bus, uds = make_uds(args)
-    try:
-        # --- standard BMW UDS programming template (ADAPT to your sniff) -----
-        print("[1] ECUProgrammingMode: StartDiagnosticSession 0x10 0x%02X ..." % args.session)
-        uds.start_session(args.session)
-        print("[2] security access 0x27 ...")
-        uds.security_access(args.level, args.algo)
-        print("[3] request download 0x34 (addr=0x%X len=0x%X) ..." % (args.dest, len(image)))
-        # 0x34 dataFormatId=00, addrLenFmt=0x44 (4-byte addr + 4-byte size)
-        uds.request(bytes([0x34, 0x00, 0x44]) + args.dest.to_bytes(4, "big") + len(image).to_bytes(4, "big"))
-        print("[4] transfer data 0x36 in blocks ...")
-        block, seq = args.block, 1
-        for off in range(0, len(image), block):
-            uds.request(bytes([0x36, seq & 0xFF]) + image[off:off + block], timeout=5.0)
-            seq += 1
-            if off % (block * 32) == 0:
-                print("    %d / %d bytes" % (off, len(image)))
-        print("[5] request transfer exit 0x37 ...")
-        uds.request(bytes([0x37]), timeout=5.0)
-        print("[6] checksum/verify routine 0x31 (module-specific - ADAPT) ...")
-        print("[7] ECU reset 0x11 01 ...")
-        uds.request(bytes([0x11, 0x01]), expect=False)
-        print("done - power-cycle and re-run `info` to confirm the module came back.")
-    finally:
-        bus.shutdown()
-
-
 # ---------------------------------------------------------------- CLI
+def _add_flash_args(p):
+    """Options shared by `flash` (.0pa) and `flashplan` (plan dir)."""
+    p.add_argument("--arm", action="store_true", help="actually transmit (erase+write+reset); omit for a dry run")
+    p.add_argument("--no-auth", action="store_true", dest="no_auth",
+                   help="skip app-level auth: ECU already in bootloader (0x85 opens directly)")
+    p.add_argument("--probe-finalize", action="store_true", dest="probe_finalize",
+                   help="after writing, enumerate 31 09 sub-functions instead of verify+reset (diagnostic)")
+    p.add_argument("--skip-eeprom", action="store_true", dest="skip_eeprom",
+                   help="don't write the 0xDF8xxx EEPROM default-image segments: keeps coding, "
+                        "valve calibration and learned values (minor revision of the same firmware)")
+    p.add_argument("--uid", default="273c", help="auth USER_ID (any 4 chars; default 273c)")
+    p.add_argument("--w564", default=None, help="override w564 (default = per-unit last 4 of 0x1A 0x89)")
+    p.add_argument("--erase-timeout", type=float, default=60.0, dest="erase_timeout")
+    p.add_argument("--verify-timeout", type=float, default=60.0, dest="verify_timeout")
+
+
 def main():
     p = argparse.ArgumentParser(description="Kvaser MK60E5 DSC diagnostic / flash client")
     p.add_argument("--interface", default=None,
@@ -1319,18 +1330,7 @@ def main():
 
     fp = sub.add_parser("flashplan", help="execute a captured/repacked flash plan (DRY-RUN unless --arm)")
     fp.add_argument("plan", help="plan dir (contains plan.json + data.bin), e.g. flash/plan/m3_7846816A_stock")
-    fp.add_argument("--arm", action="store_true", help="actually transmit (erase+write+reset); omit for a dry run")
-    fp.add_argument("--no-auth", action="store_true", dest="no_auth",
-                    help="skip app-level auth: ECU already in bootloader (0x85 opens directly)")
-    fp.add_argument("--probe-finalize", action="store_true", dest="probe_finalize",
-                    help="after writing, enumerate 31 09 sub-functions instead of verify+reset (diagnostic)")
-    fp.add_argument("--skip-eeprom", action="store_true", dest="skip_eeprom",
-                    help="don't write the 0xDF8xxx EEPROM default-image segments: keeps coding, "
-                         "valve calibration and learned values (minor revision of the same firmware)")
-    fp.add_argument("--uid", default="273c", help="auth USER_ID (any 4 chars; default 273c)")
-    fp.add_argument("--w564", default=None, help="override w564 (default = per-unit last 4 of 0x1A 0x89)")
-    fp.add_argument("--erase-timeout", type=float, default=60.0, dest="erase_timeout")
-    fp.add_argument("--verify-timeout", type=float, default=60.0, dest="verify_timeout")
+    _add_flash_args(fp)
     fp.set_defaults(func=cmd_flashplan)
 
     rp = sub.add_parser("repack", help="build a flashable plan from EDITED bank images (SAFE, offline)")
@@ -1355,17 +1355,9 @@ def main():
     vf.add_argument("image")
     vf.set_defaults(func=cmd_verify)
 
-    fl = sub.add_parser("flash", help="UNVERIFIED flash template - can brick the ECU")
-    fl.add_argument("image")
-    fl.add_argument("--dest", type=lambda x: int(x, 0), default=0x8000,
-                    help="program destination CPU address (default 0x8000 = app base; CONFIRM)")
-    fl.add_argument("--block", type=int, default=256,
-                    help="transfer block size (WinKFP reads this from the ECU via FLASH_BLOCKLAENGE_LESEN)")
-    fl.add_argument("--session", type=lambda x: int(x, 0), default=SESSION_PROG,
-                    help="0x85 = ECUProgrammingMode (WinKFP DIAGNOSE_MODE ECUPM)")
-    fl.add_argument("--level", type=lambda x: int(x, 0), default=FLASH_SEED_LEVEL)
-    fl.add_argument("--algo", choices=list(KEY_ALGOS), default=FLASH_ALGO)
-    fl.add_argument("--i-understand-brick-risk", action="store_true", dest="i_understand_brick_risk")
+    fl = sub.add_parser("flash", help="flash a WinKFP .0pa directly (DRY-RUN unless --arm)")
+    fl.add_argument("image", help=".0pa file, e.g. fw/7846816A.0pa (segments + erase derived from it)")
+    _add_flash_args(fl)
     fl.set_defaults(func=cmd_flash)
 
     args = p.parse_args()
